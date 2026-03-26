@@ -83,6 +83,8 @@ export OPENAI_API_KEY="<your-key>"
 # Cloudflare AI Gateway (OpenAI-compatible endpoint) example:
 # export OPENAI_API_KEY="<gateway-token-or-upstream-key>"
 # export OPENAI_API_BASE="https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway_id>/openai"
+# if your gateway requires auth header:
+# export CF_AIG_AUTH_TOKEN="<cloudflare_gateway_token>"
 
 # Try the circle packing benchmark
 uv sync --extra math

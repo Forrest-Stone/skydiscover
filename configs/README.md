@@ -69,6 +69,8 @@ If `OPENAI_API_KEY` is unset but `OPENROUTER_API_KEY` is set, OpenAI-style model
 ```bash
 export OPENAI_API_KEY="<gateway-token-or-upstream-key>"
 export OPENAI_API_BASE="https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway_id>/openai"
+# optional when gateway authentication is enabled:
+export CF_AIG_AUTH_TOKEN="<cloudflare_gateway_token>"
 # then use normal OpenAI-style model names, e.g.
 # --model gpt-5-mini
 ```

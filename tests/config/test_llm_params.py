@@ -132,6 +132,44 @@ class TestOpenAILLMParams:
             llm = OpenAILLM(cfg)
         return llm
 
+    def test_cloudflare_gateway_uses_cf_aig_auth_header(self, monkeypatch):
+        from skydiscover.llm.openai import OpenAILLM
+
+        monkeypatch.setenv("CF_AIG_AUTH_TOKEN", "cf-token")
+        cfg = LLMModelConfig(
+            name="openrouter/deepseek/deepseek-chat",
+            temperature=0.7,
+            top_p=0.95,
+            api_base="https://gateway.ai.cloudflare.com/v1/acc/gw/openrouter",
+            api_key="fake",
+            timeout=10,
+            retries=0,
+            retry_delay=0,
+        )
+        with patch("skydiscover.llm.openai.openai.OpenAI") as mock_openai:
+            OpenAILLM(cfg)
+        kwargs = mock_openai.call_args.kwargs
+        assert kwargs["default_headers"]["cf-aig-authorization"] == "Bearer cf-token"
+
+    def test_default_headers_json_env_is_passed_to_client(self, monkeypatch):
+        from skydiscover.llm.openai import OpenAILLM
+
+        monkeypatch.setenv("OPENAI_DEFAULT_HEADERS_JSON", '{"x-test-header": "abc"}')
+        cfg = LLMModelConfig(
+            name="test-model",
+            temperature=0.7,
+            top_p=0.95,
+            api_base="http://localhost:1234/v1",
+            api_key="fake",
+            timeout=10,
+            retries=0,
+            retry_delay=0,
+        )
+        with patch("skydiscover.llm.openai.openai.OpenAI") as mock_openai:
+            OpenAILLM(cfg)
+        kwargs = mock_openai.call_args.kwargs
+        assert kwargs["default_headers"]["x-test-header"] == "abc"
+
     @pytest.mark.asyncio
     async def test_params_include_temperature_and_top_p(self):
         llm = self._make_llm(temperature=0.5, top_p=0.9)

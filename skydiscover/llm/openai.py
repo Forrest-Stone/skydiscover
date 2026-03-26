@@ -2,6 +2,7 @@
 
 import asyncio
 import base64
+import json
 import logging
 import os
 import tempfile
@@ -29,6 +30,7 @@ REASONING_MODEL_PREFIXES = (
 )
 
 GOOGLE_AI_STUDIO_DOMAIN = "generativelanguage.googleapis.com"
+CLOUDFLARE_AI_GATEWAY_DOMAIN = "gateway.ai.cloudflare.com"
 
 _OPENAI_API_PREFIXES = (
     "https://api.openai.com",
@@ -65,6 +67,38 @@ def _normalize_openrouter_model_name(model_name: str) -> str:
     return model_name
 
 
+def _parse_default_headers_json(env_name: str) -> Dict[str, str]:
+    raw = os.environ.get(env_name)
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        logger.warning("Invalid JSON in %s; ignoring custom headers.", env_name)
+        return {}
+    if not isinstance(parsed, dict):
+        logger.warning("%s must be a JSON object; ignoring custom headers.", env_name)
+        return {}
+    headers: Dict[str, str] = {}
+    for k, v in parsed.items():
+        if isinstance(k, str) and isinstance(v, str):
+            headers[k] = v
+    return headers
+
+
+def _resolve_default_headers(api_base: Optional[str]) -> Optional[Dict[str, str]]:
+    headers: Dict[str, str] = {}
+    headers.update(_parse_default_headers_json("OPENAI_DEFAULT_HEADERS_JSON"))
+    headers.update(_parse_default_headers_json("OPENROUTER_DEFAULT_HEADERS_JSON"))
+
+    # Cloudflare AI Gateway optional auth header support.
+    if api_base and CLOUDFLARE_AI_GATEWAY_DOMAIN in api_base.lower():
+        cf_token = os.environ.get("CF_AIG_AUTH_TOKEN")
+        if cf_token and "cf-aig-authorization" not in {k.lower() for k in headers}:
+            headers["cf-aig-authorization"] = f"Bearer {cf_token}"
+    return headers or None
+
+
 class OpenAILLM(LLMInterface):
     """LLM backend using OpenAI-compatible APIs (Chat Completions + Responses)."""
 
@@ -80,6 +114,7 @@ class OpenAILLM(LLMInterface):
         self.api_key = model_cfg.api_key
         self.reasoning_effort = getattr(model_cfg, "reasoning_effort", None)
         self._has_switched_region_fallback = False
+        self.default_headers = _resolve_default_headers(self.api_base)
 
         max_retries = self.retries if self.retries is not None else 0
         is_azure = self.api_base and ".openai.azure.com" in self.api_base.lower()
@@ -96,6 +131,7 @@ class OpenAILLM(LLMInterface):
                 api_version=api_version,
                 timeout=self.timeout,
                 max_retries=max_retries,
+                default_headers=self.default_headers,
             )
         else:
             self.client = openai.OpenAI(
@@ -103,6 +139,7 @@ class OpenAILLM(LLMInterface):
                 base_url=self.api_base,
                 timeout=self.timeout,
                 max_retries=max_retries,
+                default_headers=self.default_headers,
             )
 
         if not hasattr(logger, "_initialized_models"):
