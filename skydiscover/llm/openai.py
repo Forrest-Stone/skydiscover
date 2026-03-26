@@ -2,6 +2,7 @@
 
 import asyncio
 import base64
+import json
 import logging
 import os
 import tempfile
@@ -29,6 +30,7 @@ REASONING_MODEL_PREFIXES = (
 )
 
 GOOGLE_AI_STUDIO_DOMAIN = "generativelanguage.googleapis.com"
+CLOUDFLARE_AI_GATEWAY_DOMAIN = "gateway.ai.cloudflare.com"
 
 _OPENAI_API_PREFIXES = (
     "https://api.openai.com",
@@ -47,6 +49,56 @@ def is_openai_reasoning_model(model_name: str, api_base: str) -> bool:
     return is_openai_api and model_name.lower().startswith(REASONING_MODEL_PREFIXES)
 
 
+def _is_region_restricted_error(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return "not available in your region" in text or "'code': 403" in text
+
+
+def _normalize_openrouter_model_name(model_name: str) -> str:
+    if "/" in model_name:
+        return model_name
+    lowered = model_name.lower()
+    if lowered.startswith(("gpt-", "o1", "o3", "o4")):
+        return f"openai/{model_name}"
+    if lowered.startswith("claude-"):
+        return f"anthropic/{model_name}"
+    if lowered.startswith("gemini-"):
+        return f"google/{model_name}"
+    return model_name
+
+
+def _parse_default_headers_json(env_name: str) -> Dict[str, str]:
+    raw = os.environ.get(env_name)
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        logger.warning("Invalid JSON in %s; ignoring custom headers.", env_name)
+        return {}
+    if not isinstance(parsed, dict):
+        logger.warning("%s must be a JSON object; ignoring custom headers.", env_name)
+        return {}
+    headers: Dict[str, str] = {}
+    for k, v in parsed.items():
+        if isinstance(k, str) and isinstance(v, str):
+            headers[k] = v
+    return headers
+
+
+def _resolve_default_headers(api_base: Optional[str]) -> Optional[Dict[str, str]]:
+    headers: Dict[str, str] = {}
+    headers.update(_parse_default_headers_json("OPENAI_DEFAULT_HEADERS_JSON"))
+    headers.update(_parse_default_headers_json("OPENROUTER_DEFAULT_HEADERS_JSON"))
+
+    # Cloudflare AI Gateway optional auth header support.
+    if api_base and CLOUDFLARE_AI_GATEWAY_DOMAIN in api_base.lower():
+        cf_token = os.environ.get("CF_AIG_AUTH_TOKEN")
+        if cf_token and "cf-aig-authorization" not in {k.lower() for k in headers}:
+            headers["cf-aig-authorization"] = f"Bearer {cf_token}"
+    return headers or None
+
+
 class OpenAILLM(LLMInterface):
     """LLM backend using OpenAI-compatible APIs (Chat Completions + Responses)."""
 
@@ -61,6 +113,8 @@ class OpenAILLM(LLMInterface):
         self.api_base = model_cfg.api_base
         self.api_key = model_cfg.api_key
         self.reasoning_effort = getattr(model_cfg, "reasoning_effort", None)
+        self._has_switched_region_fallback = False
+        self.default_headers = _resolve_default_headers(self.api_base)
 
         max_retries = self.retries if self.retries is not None else 0
         is_azure = self.api_base and ".openai.azure.com" in self.api_base.lower()
@@ -77,6 +131,7 @@ class OpenAILLM(LLMInterface):
                 api_version=api_version,
                 timeout=self.timeout,
                 max_retries=max_retries,
+                default_headers=self.default_headers,
             )
         else:
             self.client = openai.OpenAI(
@@ -84,6 +139,7 @@ class OpenAILLM(LLMInterface):
                 base_url=self.api_base,
                 timeout=self.timeout,
                 max_retries=max_retries,
+                default_headers=self.default_headers,
             )
 
         if not hasattr(logger, "_initialized_models"):
@@ -104,6 +160,34 @@ class OpenAILLM(LLMInterface):
                 provider = "OpenAI"
             logger.info(f"{provider} LLM: {self.model}")
             logger._initialized_models.add(self.model)
+
+    def _maybe_switch_region_fallback_model(self, exc: Exception) -> bool:
+        """Switch to an OpenRouter fallback model once on region-restricted 403 errors."""
+        base = (self.api_base or "").lower()
+        if self._has_switched_region_fallback or "openrouter" not in base:
+            return False
+        if not _is_region_restricted_error(exc):
+            return False
+
+        fallback = (
+            os.environ.get("OPENROUTER_REGION_FALLBACK_MODEL")
+            or os.environ.get("OPENROUTER_FALLBACK_MODEL")
+            or "deepseek/deepseek-chat"
+        )
+        fallback = _normalize_openrouter_model_name(fallback.strip())
+        if not fallback or fallback == self.model:
+            return False
+
+        original = self.model
+        self.model = fallback
+        self._has_switched_region_fallback = True
+        logger.warning(
+            "Region-restricted model detected (%s). Switching OpenRouter model from %s to %s.",
+            exc,
+            original,
+            fallback,
+        )
+        return True
 
     async def generate(
         self, system_message: str, messages: List[Dict[str, Any]], **kwargs
@@ -166,6 +250,8 @@ class OpenAILLM(LLMInterface):
                 else:
                     raise
             except Exception as e:
+                if self._maybe_switch_region_fallback_model(e):
+                    continue
                 if attempt < retries:
                     logger.warning(f"Error attempt {attempt + 1}/{retries + 1}: {e}, retrying...")
                     await asyncio.sleep(retry_delay)

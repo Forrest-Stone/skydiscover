@@ -74,6 +74,17 @@ See [Dependency extras](#dependency-extras) for install commands per benchmark.
 # Install
 uv sync
 export OPENAI_API_KEY="<your-key>"
+# or use OpenRouter
+# export OPENROUTER_API_KEY="<your-openrouter-key>"
+# if OpenRouter is blocked in your network, route through your own proxy/base URL:
+# export OPENROUTER_API_BASE="https://your-proxy.example.com/v1"
+# tip: if OPENAI_API_KEY is unset but OPENROUTER_API_KEY is set, OpenAI-style models
+# (e.g. gpt-5) are automatically routed through OpenRouter.
+# Cloudflare AI Gateway (OpenAI-compatible endpoint) example:
+# export OPENAI_API_KEY="<gateway-token-or-upstream-key>"
+# export OPENAI_API_BASE="https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway_id>/openai"
+# if your gateway requires auth header:
+# export CF_AIG_AUTH_TOKEN="<cloudflare_gateway_token>"
 
 # Try the circle packing benchmark
 uv sync --extra math
@@ -285,6 +296,7 @@ Any [LiteLLM](https://docs.litellm.ai/)-compatible model works using `provider/m
 
 ```bash
 --model gpt-5                                               # OpenAI (default)
+--model openrouter/openai/gpt-5                             # OpenRouter
 --model gemini/gemini-3-pro-preview                          # Gemini
 --model anthropic/claude-sonnet-4-20250514                   # Anthropic
 --model ollama/llama3 --api-base http://localhost:11434/v1   # Local (Ollama, vLLM, etc.)

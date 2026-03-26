@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from skydiscover.config import LLMConfig, LLMModelConfig
+from skydiscover.config import LLMConfig, LLMModelConfig, apply_overrides
 
 _OPENAI_DEFAULT_API_BASE: str = next(
     f.default for f in fields(LLMConfig) if f.name == "api_base"
@@ -63,6 +63,56 @@ class TestApiBaseRouting:
         assert cfg.models[0].api_base == "https://api.anthropic.com/v1/"
         assert cfg.models[1].api_base == "http://localhost:11434/v1"
 
+    def test_openrouter_model_uses_openrouter_api_base(self):
+        cfg = LLMConfig(
+            models=[LLMModelConfig(name="openrouter/deepseek/deepseek-r1")],
+        )
+        assert cfg.models[0].api_base == "https://openrouter.ai/api/v1"
+
+    def test_openrouter_prefers_openrouter_api_key(self, monkeypatch):
+        monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
+        monkeypatch.setenv("OPENAI_API_KEY", "oa-key")
+        cfg = LLMConfig(
+            models=[LLMModelConfig(name="openrouter/deepseek/deepseek-r1")],
+        )
+        assert cfg.models[0].api_key == "or-key"
+
+    def test_openrouter_api_base_from_env(self, monkeypatch):
+        monkeypatch.setenv("OPENROUTER_API_BASE", "https://my-cn-proxy.example/v1")
+        cfg = LLMConfig(
+            models=[LLMModelConfig(name="openrouter/deepseek/deepseek-r1")],
+        )
+        assert cfg.models[0].api_base == "https://my-cn-proxy.example/v1"
+
+    def test_apply_overrides_openrouter_uses_env_api_base(self, monkeypatch):
+        monkeypatch.setenv("OPENROUTER_API_BASE", "https://my-cn-proxy.example/v1")
+        cfg = LLMConfig(models=[LLMModelConfig(name="gpt-5")])
+        outer = type("Cfg", (), {"llm": cfg, "agentic": type("A", (), {"enabled": False})()})()
+        apply_overrides(outer, model="openrouter/openai/gpt-5")
+        assert outer.llm.models[0].api_base == "https://my-cn-proxy.example/v1"
+
+    def test_openai_model_bridges_to_openrouter_when_only_openrouter_key_exists(self, monkeypatch):
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_BASE", raising=False)
+        monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
+        cfg = LLMConfig(models=[LLMModelConfig(name="gpt-5")])
+        assert cfg.models[0].api_key == "or-key"
+        assert cfg.models[0].api_base == "https://openrouter.ai/api/v1"
+        assert cfg.models[0].name == "openai/gpt-5"
+
+    def test_openrouter_bare_claude_model_gets_upstream_prefix(self):
+        cfg = LLMConfig(models=[LLMModelConfig(name="openrouter/claude-3-5-haiku")])
+        assert cfg.models[0].name == "anthropic/claude-3-5-haiku"
+
+    def test_apply_overrides_bridged_openai_model_gets_upstream_prefix(self, monkeypatch):
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
+        cfg = LLMConfig(models=[LLMModelConfig(name="gpt-5")])
+        outer = type("Cfg", (), {"llm": cfg, "agentic": type("A", (), {"enabled": False})()})()
+        apply_overrides(outer, model="gpt-5-mini")
+        assert outer.llm.models[0].name == "openai/gpt-5-mini"
+        assert outer.llm.models[0].api_base == "https://openrouter.ai/api/v1"
+
 
 class TestOpenAILLMParams:
     def _make_llm(self, temperature=0.7, top_p=0.95):
@@ -81,6 +131,44 @@ class TestOpenAILLMParams:
         with patch("skydiscover.llm.openai.openai.OpenAI"):
             llm = OpenAILLM(cfg)
         return llm
+
+    def test_cloudflare_gateway_uses_cf_aig_auth_header(self, monkeypatch):
+        from skydiscover.llm.openai import OpenAILLM
+
+        monkeypatch.setenv("CF_AIG_AUTH_TOKEN", "cf-token")
+        cfg = LLMModelConfig(
+            name="openrouter/deepseek/deepseek-chat",
+            temperature=0.7,
+            top_p=0.95,
+            api_base="https://gateway.ai.cloudflare.com/v1/acc/gw/openrouter",
+            api_key="fake",
+            timeout=10,
+            retries=0,
+            retry_delay=0,
+        )
+        with patch("skydiscover.llm.openai.openai.OpenAI") as mock_openai:
+            OpenAILLM(cfg)
+        kwargs = mock_openai.call_args.kwargs
+        assert kwargs["default_headers"]["cf-aig-authorization"] == "Bearer cf-token"
+
+    def test_default_headers_json_env_is_passed_to_client(self, monkeypatch):
+        from skydiscover.llm.openai import OpenAILLM
+
+        monkeypatch.setenv("OPENAI_DEFAULT_HEADERS_JSON", '{"x-test-header": "abc"}')
+        cfg = LLMModelConfig(
+            name="test-model",
+            temperature=0.7,
+            top_p=0.95,
+            api_base="http://localhost:1234/v1",
+            api_key="fake",
+            timeout=10,
+            retries=0,
+            retry_delay=0,
+        )
+        with patch("skydiscover.llm.openai.openai.OpenAI") as mock_openai:
+            OpenAILLM(cfg)
+        kwargs = mock_openai.call_args.kwargs
+        assert kwargs["default_headers"]["x-test-header"] == "abc"
 
     @pytest.mark.asyncio
     async def test_params_include_temperature_and_top_p(self):
@@ -122,3 +210,39 @@ class TestOpenAILLMParams:
         params = llm._call_api.call_args[0][0]
         assert "temperature" not in params
         assert "top_p" not in params
+
+    @pytest.mark.asyncio
+    async def test_openrouter_region_403_switches_to_fallback(self, monkeypatch):
+        llm = self._make_llm()
+        llm.api_base = "https://openrouter.ai/api/v1"
+        llm.model = "openai/gpt-5-mini"
+        monkeypatch.setenv("OPENROUTER_REGION_FALLBACK_MODEL", "deepseek/deepseek-chat")
+
+        llm._call_api = AsyncMock(
+            side_effect=[
+                Exception("Error code: 403 - {'error': {'message': 'This model is not available in your region.', 'code': 403}}"),
+                "ok",
+            ]
+        )
+        resp = await llm.generate(system_message="sys", messages=[{"role": "user", "content": "user"}])
+
+        assert resp.text == "ok"
+        assert llm.model == "deepseek/deepseek-chat"
+        assert llm._call_api.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_openrouter_region_403_uses_default_fallback(self):
+        llm = self._make_llm()
+        llm.api_base = "https://openrouter.ai/api/v1"
+        llm.model = "gpt-5-mini"
+
+        llm._call_api = AsyncMock(
+            side_effect=[
+                Exception("Error code: 403 - {'error': {'message': 'This model is not available in your region.', 'code': 403}}"),
+                "ok",
+            ]
+        )
+        resp = await llm.generate(system_message="sys", messages=[{"role": "user", "content": "user"}])
+
+        assert resp.text == "ok"
+        assert llm.model == "deepseek/deepseek-chat"
