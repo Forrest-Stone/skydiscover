@@ -98,6 +98,20 @@ class TestApiBaseRouting:
         cfg = LLMConfig(models=[LLMModelConfig(name="gpt-5")])
         assert cfg.models[0].api_key == "or-key"
         assert cfg.models[0].api_base == "https://openrouter.ai/api/v1"
+        assert cfg.models[0].name == "openai/gpt-5"
+
+    def test_openrouter_bare_claude_model_gets_upstream_prefix(self):
+        cfg = LLMConfig(models=[LLMModelConfig(name="openrouter/claude-3-5-haiku")])
+        assert cfg.models[0].name == "anthropic/claude-3-5-haiku"
+
+    def test_apply_overrides_bridged_openai_model_gets_upstream_prefix(self, monkeypatch):
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
+        cfg = LLMConfig(models=[LLMModelConfig(name="gpt-5")])
+        outer = type("Cfg", (), {"llm": cfg, "agentic": type("A", (), {"enabled": False})()})()
+        apply_overrides(outer, model="gpt-5-mini")
+        assert outer.llm.models[0].name == "openai/gpt-5-mini"
+        assert outer.llm.models[0].api_base == "https://openrouter.ai/api/v1"
 
 
 class TestOpenAILLMParams:

@@ -58,6 +58,18 @@ _PROVIDER_API_BASE_ENVS: Dict[str, List[str]] = {
     "openrouter": ["OPENROUTER_API_BASE", "OPENROUTER_BASE_URL", "OPENAI_API_BASE", "OPENAI_BASE_URL"],
 }
 
+_OPENROUTER_UPSTREAM_BY_PREFIX: Dict[str, str] = {
+    "gpt-": "openai",
+    "o1": "openai",
+    "o3": "openai",
+    "o4": "openai",
+    "claude-": "anthropic",
+    "gemini-": "google",
+    "deepseek-": "deepseek",
+    "mistral-": "mistralai",
+    "command-": "cohere",
+}
+
 
 def _should_use_openrouter_bridge_for_openai() -> bool:
     """Return True when OpenAI models should be routed via OpenRouter defaults."""
@@ -117,6 +129,31 @@ def _resolve_api_base_from_env(provider: Optional[str] = None) -> Optional[str]:
         if api_base:
             return api_base
     return None
+
+
+def _is_openrouter_api_base(api_base: Optional[str]) -> bool:
+    if not api_base:
+        return False
+    base = api_base.lower()
+    return "openrouter.ai" in base or "/openrouter" in base
+
+
+def _normalize_model_name_for_api_base(model_name: str, api_base: Optional[str]) -> str:
+    """Normalize model names for specific OpenAI-compatible gateways.
+
+    For OpenRouter endpoints, bare model names like ``gpt-5-mini`` can be
+    region-routed inconsistently. Prefixing with upstream provider (e.g.
+    ``openai/gpt-5-mini``) makes routing explicit.
+    """
+    if not _is_openrouter_api_base(api_base):
+        return model_name
+    if "/" in model_name:
+        return model_name
+    lower = model_name.lower()
+    for prefix, upstream in _OPENROUTER_UPSTREAM_BY_PREFIX.items():
+        if lower.startswith(prefix):
+            return f"{upstream}/{model_name}"
+    return model_name
 
 
 def _expand_env_vars(text: str) -> str:
@@ -247,6 +284,7 @@ class LLMConfig(LLMModelConfig):
                 # Strip provider prefix so the API receives the bare model name
                 if "/" in model.name and provider != "openai":
                     model.name = bare_name
+                model.name = _normalize_model_name_for_api_base(model.name, model.api_base)
 
         # Update models with shared configuration values
         shared_config = {
@@ -895,7 +933,7 @@ def apply_overrides(
             resolved_key = _resolve_api_key_from_env(env_vars)
             models.append(
                 LLMModelConfig(
-                    name=model_name,
+                    name=_normalize_model_name_for_api_base(model_name, effective_base),
                     api_base=effective_base,
                     api_key=resolved_key,
                 )
