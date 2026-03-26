@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from skydiscover.config import LLMConfig, LLMModelConfig
+from skydiscover.config import LLMConfig, LLMModelConfig, apply_overrides
 
 _OPENAI_DEFAULT_API_BASE: str = next(
     f.default for f in fields(LLMConfig) if f.name == "api_base"
@@ -62,6 +62,56 @@ class TestApiBaseRouting:
         )
         assert cfg.models[0].api_base == "https://api.anthropic.com/v1/"
         assert cfg.models[1].api_base == "http://localhost:11434/v1"
+
+    def test_openrouter_model_uses_openrouter_api_base(self):
+        cfg = LLMConfig(
+            models=[LLMModelConfig(name="openrouter/deepseek/deepseek-r1")],
+        )
+        assert cfg.models[0].api_base == "https://openrouter.ai/api/v1"
+
+    def test_openrouter_prefers_openrouter_api_key(self, monkeypatch):
+        monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
+        monkeypatch.setenv("OPENAI_API_KEY", "oa-key")
+        cfg = LLMConfig(
+            models=[LLMModelConfig(name="openrouter/deepseek/deepseek-r1")],
+        )
+        assert cfg.models[0].api_key == "or-key"
+
+    def test_openrouter_api_base_from_env(self, monkeypatch):
+        monkeypatch.setenv("OPENROUTER_API_BASE", "https://my-cn-proxy.example/v1")
+        cfg = LLMConfig(
+            models=[LLMModelConfig(name="openrouter/deepseek/deepseek-r1")],
+        )
+        assert cfg.models[0].api_base == "https://my-cn-proxy.example/v1"
+
+    def test_apply_overrides_openrouter_uses_env_api_base(self, monkeypatch):
+        monkeypatch.setenv("OPENROUTER_API_BASE", "https://my-cn-proxy.example/v1")
+        cfg = LLMConfig(models=[LLMModelConfig(name="gpt-5")])
+        outer = type("Cfg", (), {"llm": cfg, "agentic": type("A", (), {"enabled": False})()})()
+        apply_overrides(outer, model="openrouter/openai/gpt-5")
+        assert outer.llm.models[0].api_base == "https://my-cn-proxy.example/v1"
+
+    def test_openai_model_bridges_to_openrouter_when_only_openrouter_key_exists(self, monkeypatch):
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_BASE", raising=False)
+        monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
+        cfg = LLMConfig(models=[LLMModelConfig(name="gpt-5")])
+        assert cfg.models[0].api_key == "or-key"
+        assert cfg.models[0].api_base == "https://openrouter.ai/api/v1"
+        assert cfg.models[0].name == "openai/gpt-5"
+
+    def test_openrouter_bare_claude_model_gets_upstream_prefix(self):
+        cfg = LLMConfig(models=[LLMModelConfig(name="openrouter/claude-3-5-haiku")])
+        assert cfg.models[0].name == "anthropic/claude-3-5-haiku"
+
+    def test_apply_overrides_bridged_openai_model_gets_upstream_prefix(self, monkeypatch):
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
+        cfg = LLMConfig(models=[LLMModelConfig(name="gpt-5")])
+        outer = type("Cfg", (), {"llm": cfg, "agentic": type("A", (), {"enabled": False})()})()
+        apply_overrides(outer, model="gpt-5-mini")
+        assert outer.llm.models[0].name == "openai/gpt-5-mini"
+        assert outer.llm.models[0].api_base == "https://openrouter.ai/api/v1"
 
 
 class TestOpenAILLMParams:
