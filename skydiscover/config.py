@@ -22,6 +22,10 @@ logger = logging.getLogger(__name__)
 
 _PROVIDERS: Dict[str, tuple] = {
     "openai": ("https://api.openai.com/v1", ["OPENAI_API_KEY"]),
+    "openrouter": (
+        "https://openrouter.ai/api/v1",
+        ["OPENROUTER_API_KEY", "OPENAI_API_KEY"],
+    ),
     "azure": ("https://api.openai.com/v1", ["AZURE_API_KEY", "OPENAI_API_KEY"]),
     "gemini": (
         "https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -47,6 +51,11 @@ _BARE_PREFIX_MAP: Dict[str, str] = {
     "deepseek-": "deepseek",
     "mistral-": "mistral",
     "command-": "cohere",
+}
+
+_PROVIDER_API_BASE_ENVS: Dict[str, List[str]] = {
+    "openai": ["OPENAI_API_BASE", "OPENAI_BASE_URL"],
+    "openrouter": ["OPENROUTER_API_BASE", "OPENROUTER_BASE_URL", "OPENAI_API_BASE", "OPENAI_BASE_URL"],
 }
 
 
@@ -84,6 +93,18 @@ def _resolve_api_key_from_env(env_vars: Optional[List[str]] = None) -> Optional[
         if key:
             return key
     return os.environ.get("OPENAI_API_KEY")
+
+
+def _resolve_api_base_from_env(provider: Optional[str] = None) -> Optional[str]:
+    """Resolve API base override from environment variables."""
+    env_names = _PROVIDER_API_BASE_ENVS.get(provider or "", [])
+    if not env_names:
+        env_names = _PROVIDER_API_BASE_ENVS["openai"]
+    for env_name in env_names:
+        api_base = os.environ.get(env_name)
+        if api_base:
+            return api_base
+    return None
 
 
 def _expand_env_vars(text: str) -> str:
@@ -197,6 +218,7 @@ class LLMConfig(LLMModelConfig):
         for model in self.models + self.evaluator_models + self.guide_models:
             if model.name and model.api_base is None:
                 provider, bare_name, provider_base, env_vars = _parse_model_spec(model.name)
+                env_api_base = _resolve_api_base_from_env(provider)
                 # Skip provider URL only for unrecognized bare names that fell
                 # through to the OpenAI default — never for an explicitly-prefixed
                 # provider (e.g. "anthropic/claude-3-sonnet") or a known bare prefix.
@@ -204,7 +226,9 @@ class LLMConfig(LLMModelConfig):
                     model.name.startswith("openai/")
                     or any(model.name.startswith(p) for p in _BARE_PREFIX_MAP)
                 )
-                if provider_base and not (user_set_api_base and is_fallback):
+                if env_api_base:
+                    model.api_base = env_api_base
+                elif provider_base and not (user_set_api_base and is_fallback):
                     model.api_base = provider_base
                 if model.api_key is None:
                     model.api_key = _resolve_api_key_from_env(env_vars)
@@ -767,7 +791,10 @@ def load_config(config_path: Optional[Union[str, Path]] = None) -> Config:
 
     # Update api_base from environment if provided — use overwrite=True
     # because __post_init__ already pushed the hardcoded default to all models.
-    api_base = os.environ.get("OPENAI_API_BASE") or os.environ.get("OPENAI_BASE_URL")
+    first_provider = "openai"
+    if config.llm.models and config.llm.models[0].name:
+        first_provider, _, _, _ = _parse_model_spec(config.llm.models[0].name)
+    api_base = _resolve_api_base_from_env(first_provider)
     if api_base:
         config.llm.api_base = api_base
         config.llm.update_model_params({"api_base": api_base}, overwrite=True)
@@ -847,7 +874,7 @@ def apply_overrides(
         models: List[LLMModelConfig] = []
         for spec in specs:
             provider, model_name, default_api_base, env_vars = _parse_model_spec(spec)
-            effective_base = api_base or default_api_base
+            effective_base = api_base or _resolve_api_base_from_env(provider) or default_api_base
             if effective_base is None:
                 raise ValueError(
                     f"Provider '{provider}' requires an explicit api_base.\n"

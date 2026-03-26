@@ -55,6 +55,7 @@ llm:
 | Provider | Format | API key env var |
 |----------|--------|-----------------|
 | OpenAI | `gpt-5`, `o3-mini` | OPENAI_API_KEY |
+| OpenRouter | `openrouter/openai/gpt-5`, `openrouter/deepseek/deepseek-r1` | OPENROUTER_API_KEY (fallback: OPENAI_API_KEY). Optional base override: OPENROUTER_API_BASE |
 | Gemini | `gemini/gemini-2.0-flash` | GEMINI_API_KEY or GOOGLE_API_KEY |
 | Anthropic | `claude-sonnet-4-6` or `anthropic/claude-sonnet-4-6` | ANTHROPIC_API_KEY |
 | DeepSeek | `deepseek-chat` or `deepseek/deepseek-chat` | DEEPSEEK_API_KEY |
