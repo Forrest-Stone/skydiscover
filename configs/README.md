@@ -62,6 +62,8 @@ llm:
 | Mistral | `mistral-large` or `mistral/mistral-large` | MISTRAL_API_KEY |
 | Ollama / vLLM | `ollama/llama3`, `vllm/my-model` | — |
 
+If `OPENAI_API_KEY` is unset but `OPENROUTER_API_KEY` is set, OpenAI-style models (such as `gpt-5`) will automatically use OpenRouter as the API base.
+
 <details>
 <summary><b>Single model, multi-model pool, separate pools, and API override examples</b></summary>
 

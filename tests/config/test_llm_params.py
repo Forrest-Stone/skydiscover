@@ -91,6 +91,14 @@ class TestApiBaseRouting:
         apply_overrides(outer, model="openrouter/openai/gpt-5")
         assert outer.llm.models[0].api_base == "https://my-cn-proxy.example/v1"
 
+    def test_openai_model_bridges_to_openrouter_when_only_openrouter_key_exists(self, monkeypatch):
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_BASE", raising=False)
+        monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
+        cfg = LLMConfig(models=[LLMModelConfig(name="gpt-5")])
+        assert cfg.models[0].api_key == "or-key"
+        assert cfg.models[0].api_base == "https://openrouter.ai/api/v1"
+
 
 class TestOpenAILLMParams:
     def _make_llm(self, temperature=0.7, top_p=0.95):

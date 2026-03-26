@@ -78,6 +78,8 @@ export OPENAI_API_KEY="<your-key>"
 # export OPENROUTER_API_KEY="<your-openrouter-key>"
 # if OpenRouter is blocked in your network, route through your own proxy/base URL:
 # export OPENROUTER_API_BASE="https://your-proxy.example.com/v1"
+# tip: if OPENAI_API_KEY is unset but OPENROUTER_API_KEY is set, OpenAI-style models
+# (e.g. gpt-5) are automatically routed through OpenRouter.
 
 # Try the circle packing benchmark
 uv sync --extra math

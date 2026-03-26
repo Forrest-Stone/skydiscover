@@ -59,6 +59,11 @@ _PROVIDER_API_BASE_ENVS: Dict[str, List[str]] = {
 }
 
 
+def _should_use_openrouter_bridge_for_openai() -> bool:
+    """Return True when OpenAI models should be routed via OpenRouter defaults."""
+    return bool(os.environ.get("OPENROUTER_API_KEY")) and not os.environ.get("OPENAI_API_KEY")
+
+
 def _parse_model_spec(model_str: str) -> tuple:
     """Parse a model string into ``(provider, model_name, default_api_base, env_vars)``.
 
@@ -92,12 +97,19 @@ def _resolve_api_key_from_env(env_vars: Optional[List[str]] = None) -> Optional[
         key = os.environ.get(var)
         if key:
             return key
-    return os.environ.get("OPENAI_API_KEY")
+    return os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENROUTER_API_KEY")
 
 
 def _resolve_api_base_from_env(provider: Optional[str] = None) -> Optional[str]:
     """Resolve API base override from environment variables."""
-    env_names = _PROVIDER_API_BASE_ENVS.get(provider or "", [])
+    provider_name = provider or ""
+    if provider_name == "openai" and _should_use_openrouter_bridge_for_openai():
+        return (
+            os.environ.get("OPENROUTER_API_BASE")
+            or os.environ.get("OPENROUTER_BASE_URL")
+            or _PROVIDERS["openrouter"][0]
+        )
+    env_names = _PROVIDER_API_BASE_ENVS.get(provider_name, [])
     if not env_names:
         env_names = _PROVIDER_API_BASE_ENVS["openai"]
     for env_name in env_names:
