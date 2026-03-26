@@ -172,3 +172,39 @@ class TestOpenAILLMParams:
         params = llm._call_api.call_args[0][0]
         assert "temperature" not in params
         assert "top_p" not in params
+
+    @pytest.mark.asyncio
+    async def test_openrouter_region_403_switches_to_fallback(self, monkeypatch):
+        llm = self._make_llm()
+        llm.api_base = "https://openrouter.ai/api/v1"
+        llm.model = "openai/gpt-5-mini"
+        monkeypatch.setenv("OPENROUTER_REGION_FALLBACK_MODEL", "deepseek/deepseek-chat")
+
+        llm._call_api = AsyncMock(
+            side_effect=[
+                Exception("Error code: 403 - {'error': {'message': 'This model is not available in your region.', 'code': 403}}"),
+                "ok",
+            ]
+        )
+        resp = await llm.generate(system_message="sys", messages=[{"role": "user", "content": "user"}])
+
+        assert resp.text == "ok"
+        assert llm.model == "deepseek/deepseek-chat"
+        assert llm._call_api.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_openrouter_region_403_uses_default_fallback(self):
+        llm = self._make_llm()
+        llm.api_base = "https://openrouter.ai/api/v1"
+        llm.model = "gpt-5-mini"
+
+        llm._call_api = AsyncMock(
+            side_effect=[
+                Exception("Error code: 403 - {'error': {'message': 'This model is not available in your region.', 'code': 403}}"),
+                "ok",
+            ]
+        )
+        resp = await llm.generate(system_message="sys", messages=[{"role": "user", "content": "user"}])
+
+        assert resp.text == "ok"
+        assert llm.model == "deepseek/deepseek-chat"

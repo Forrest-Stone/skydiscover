@@ -80,6 +80,9 @@ export OPENAI_API_KEY="<your-key>"
 # export OPENROUTER_API_BASE="https://your-proxy.example.com/v1"
 # tip: if OPENAI_API_KEY is unset but OPENROUTER_API_KEY is set, OpenAI-style models
 # (e.g. gpt-5) are automatically routed through OpenRouter.
+# Cloudflare AI Gateway (OpenAI-compatible endpoint) example:
+# export OPENAI_API_KEY="<gateway-token-or-upstream-key>"
+# export OPENAI_API_BASE="https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway_id>/openai"
 
 # Try the circle packing benchmark
 uv sync --extra math
