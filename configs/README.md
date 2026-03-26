@@ -55,11 +55,14 @@ llm:
 | Provider | Format | API key env var |
 |----------|--------|-----------------|
 | OpenAI | `gpt-5`, `o3-mini` | OPENAI_API_KEY |
+| OpenRouter | `openrouter/openai/gpt-5`, `openrouter/deepseek/deepseek-r1` | OPENROUTER_API_KEY (fallback: OPENAI_API_KEY). Optional base override: OPENROUTER_API_BASE |
 | Gemini | `gemini/gemini-2.0-flash` | GEMINI_API_KEY or GOOGLE_API_KEY |
 | Anthropic | `claude-sonnet-4-6` or `anthropic/claude-sonnet-4-6` | ANTHROPIC_API_KEY |
 | DeepSeek | `deepseek-chat` or `deepseek/deepseek-chat` | DEEPSEEK_API_KEY |
 | Mistral | `mistral-large` or `mistral/mistral-large` | MISTRAL_API_KEY |
 | Ollama / vLLM | `ollama/llama3`, `vllm/my-model` | — |
+
+If `OPENAI_API_KEY` is unset but `OPENROUTER_API_KEY` is set, OpenAI-style models (such as `gpt-5`) will automatically use OpenRouter as the API base.
 
 <details>
 <summary><b>Single model, multi-model pool, separate pools, and API override examples</b></summary>
