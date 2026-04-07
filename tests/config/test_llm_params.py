@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from skydiscover.config import LLMConfig, LLMModelConfig, apply_overrides
+from skydiscover.config import Config, LLMConfig, LLMModelConfig, apply_overrides
 
 _OPENAI_DEFAULT_API_BASE: str = next(
     f.default for f in fields(LLMConfig) if f.name == "api_base"
@@ -112,6 +112,32 @@ class TestApiBaseRouting:
         apply_overrides(outer, model="gpt-5-mini")
         assert outer.llm.models[0].name == "openai/gpt-5-mini"
         assert outer.llm.models[0].api_base == "https://openrouter.ai/api/v1"
+
+    def test_apply_overrides_evox_model_override_enables_share_llm(self):
+        cfg = Config()
+        cfg.search.type = "evox"
+        cfg.search.share_llm = False
+
+        apply_overrides(cfg, model="openrouter/deepseek/deepseek-r1")
+
+        assert cfg.search.share_llm is True
+
+    def test_apply_overrides_model_syncs_default_monitor_summary_model(self):
+        cfg = Config()
+        cfg.monitor.summary_model = "gpt-5-mini"
+
+        apply_overrides(cfg, model="openrouter/deepseek/deepseek-r1")
+
+        assert cfg.monitor.summary_model == "deepseek/deepseek-r1"
+        assert cfg.monitor.summary_api_base == cfg.llm.api_base
+
+    def test_apply_overrides_keeps_custom_monitor_summary_model(self):
+        cfg = Config()
+        cfg.monitor.summary_model = "openai/gpt-4o-mini"
+
+        apply_overrides(cfg, model="openrouter/deepseek/deepseek-r1")
+
+        assert cfg.monitor.summary_model == "openai/gpt-4o-mini"
 
 
 class TestOpenAILLMParams:
@@ -246,3 +272,32 @@ class TestOpenAILLMParams:
 
         assert resp.text == "ok"
         assert llm.model == "deepseek/deepseek-chat"
+
+    def test_extract_chat_text_handles_none_message_content(self):
+        from skydiscover.llm.openai import OpenAILLM
+
+        class _Msg:
+            content = None
+
+        class _Choice:
+            message = _Msg()
+            text = "fallback-text"
+
+        class _Resp:
+            choices = [_Choice()]
+
+        assert OpenAILLM._extract_chat_text(_Resp()) == "fallback-text"
+
+    def test_extract_chat_text_handles_dict_content_parts(self):
+        from skydiscover.llm.openai import OpenAILLM
+
+        resp = {
+            "choices": [
+                {
+                    "message": {
+                        "content": [{"type": "output_text", "text": "hello"}, {"text": " world"}]
+                    }
+                }
+            ]
+        }
+        assert OpenAILLM._extract_chat_text(resp) == "hello world"

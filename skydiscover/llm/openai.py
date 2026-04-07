@@ -343,7 +343,7 @@ class OpenAILLM(LLMInterface):
                 response = await asyncio.wait_for(
                     self._call_api_full_response(params), timeout=timeout
                 )
-                content = response.choices[0].message.content or ""
+                content = self._extract_chat_text(response)
                 usage = getattr(response, "usage", None)
                 prompt_tokens, completion_tokens, raw_usage = self._extract_usage_counts(usage)
                 return LLMResponse(
@@ -373,13 +373,16 @@ class OpenAILLM(LLMInterface):
             response = await loop.run_in_executor(
                 None, lambda: self.client.chat.completions.create(**params)
             )
-            return response.choices[0].message.content
+            return self._extract_chat_text(response)
         except (openai.BadRequestError, openai.APIStatusError) as exc:
             # Some Azure deployments only expose the Responses API.
             # Fall back transparently when Chat Completions is unsupported.
             if "unsupported" not in str(exc).lower() and "not found" not in str(exc).lower():
                 raise
             logger.info("Chat Completions unsupported; falling back to Responses API")
+            return await self._call_api_via_responses(params)
+        except (TypeError, KeyError, IndexError, AttributeError) as exc:
+            logger.info("Unexpected chat response shape; falling back to Responses API: %s", exc)
             return await self._call_api_via_responses(params)
 
     async def _call_api_via_responses(self, params: Dict[str, Any]) -> str:
@@ -416,17 +419,62 @@ class OpenAILLM(LLMInterface):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
 
-    async def _call_api_full_response(self, params: Dict[str, Any]):
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
+    @staticmethod
+    def _extract_chat_text(response: Any) -> str:
+        """Extract text from OpenAI-compatible chat response object/dict safely."""
+        # SDK object style
+        choices = getattr(response, "choices", None)
+        if choices:
+            first = choices[0]
+            message = getattr(first, "message", None)
+            if message is not None:
+                content = getattr(message, "content", None)
+                if isinstance(content, str):
+                    return content
+                if isinstance(content, list):
+                    text_parts = []
+                    for item in content:
+                        if isinstance(item, dict):
+                            txt = item.get("text")
+                            if txt:
+                                text_parts.append(txt)
+                        else:
+                            txt = getattr(item, "text", None)
+                            if txt:
+                                text_parts.append(txt)
+                    if text_parts:
+                        return "".join(text_parts)
+            text = getattr(first, "text", None)
+            if isinstance(text, str):
+                return text
 
-    async def _call_api_full_response(self, params: Dict[str, Any]):
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
+        # Dict style
+        if isinstance(response, dict):
+            choices = response.get("choices") or []
+            if choices:
+                first = choices[0] or {}
+                message = first.get("message") or {}
+                content = message.get("content")
+                if isinstance(content, str):
+                    return content
+                if isinstance(content, list):
+                    text_parts = [c.get("text", "") for c in content if isinstance(c, dict)]
+                    if text_parts:
+                        return "".join(text_parts)
+                text = first.get("text")
+                if isinstance(text, str):
+                    return text
 
-    async def _call_api_full_response(self, params: Dict[str, Any]):
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
+        # Responses API-like fallback fields
+        output_text = getattr(response, "output_text", None)
+        if isinstance(output_text, str) and output_text:
+            return output_text
+        if isinstance(response, dict):
+            output_text = response.get("output_text")
+            if isinstance(output_text, str) and output_text:
+                return output_text
+
+        raise TypeError("unable to extract text from chat completion response")
 
     def _resolve_retry_options(self, **kwargs) -> Tuple[int, int, int]:
         """Resolve retry/timeout options from kwargs, falling back to instance defaults."""
