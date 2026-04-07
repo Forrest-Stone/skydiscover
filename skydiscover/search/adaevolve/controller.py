@@ -27,6 +27,14 @@ from skydiscover.context_builder.default import DefaultContextBuilder
 from skydiscover.evaluation.llm_judge import LLMJudge
 from skydiscover.llm.llm_pool import LLMPool
 from skydiscover.search.adaevolve.paradigm import ParadigmGenerator
+from skydiscover.search.adaevolve.adaptation import (
+    BudgetAction,
+    BudgetActionScheduler,
+    BudgetLedger,
+    BudgetState,
+    BudgetStateBuilder,
+    UsageRecord,
+)
 from skydiscover.search.base_database import Program
 from skydiscover.search.default_discovery_controller import (
     DiscoveryController,
@@ -707,3 +715,316 @@ class AdaEvolveController(DiscoveryController):
             llm_response=response,
             iteration=iteration,
         )
+
+
+class BudgetAdaEvolveController(AdaEvolveController):
+    """AdaEvolve controller with explicit budget-aware action scheduling."""
+
+    def __init__(self, controller_input: DiscoveryControllerInput):
+        super().__init__(controller_input)
+        from skydiscover.context_builder.adaevolve import BudgetAdaEvolveContextBuilder
+
+        self.context_builder = BudgetAdaEvolveContextBuilder(self.config)
+        db_cfg = self.config.search.database
+        self.budget_enabled = bool(getattr(db_cfg, "budget_enabled", False))
+        self.budget_ledger = BudgetLedger(
+            total_budget=getattr(db_cfg, "token_budget_total", 500000),
+            strict_stop=getattr(db_cfg, "budget_strict_stop", True),
+            cost_budget_total=getattr(db_cfg, "cost_budget_total", 0.0),
+            input_token_cost=getattr(db_cfg, "input_token_cost", 0.0),
+            output_token_cost=getattr(db_cfg, "output_token_cost", 0.0),
+        )
+        self.budget_state_builder = BudgetStateBuilder(self.config)
+        self.budget_scheduler = BudgetActionScheduler(self.config)
+        self._recent_frontier_gains: List[float] = []
+        self._no_improve_steps = 0
+        self._current_budget_state: Optional[BudgetState] = None
+        self._current_budget_action: Optional[BudgetAction] = None
+        self._current_usage: Optional[UsageRecord] = None
+        self._current_frontier_gain: float = 0.0
+
+    def _estimate_prompt_tokens(self, prompt: Dict[str, str]) -> int:
+        text = (prompt.get("system", "") if prompt else "") + (prompt.get("user", "") if prompt else "")
+        return max(1, int(len(text) / 4))
+
+    def _recent_gain_ma(self) -> float:
+        if not self._recent_frontier_gains:
+            return 0.0
+        n = min(10, len(self._recent_frontier_gains))
+        return sum(self._recent_frontier_gains[-n:]) / n
+
+    def _burn_rate(self, iteration: int) -> float:
+        if iteration <= 0:
+            return float(self.budget_ledger.spent_tokens)
+        return float(self.budget_ledger.spent_tokens) / max(1, iteration)
+
+    def _downgrade_action(self, action: BudgetAction) -> BudgetAction:
+        db = self.config.search.database
+        if action.tier == "rich":
+            return BudgetAction(action.family, "standard", db.standard_max_output_tokens)
+        if action.tier == "standard":
+            return BudgetAction(action.family, "cheap", db.cheap_max_output_tokens)
+        return action
+
+    def _build_budget_context(self, state: BudgetState, action: BudgetAction) -> Dict[str, Any]:
+        return {
+            "budget_enabled": self.budget_enabled,
+            "spent_tokens": self.budget_ledger.spent_tokens,
+            "spent_cost": self.budget_ledger.spent_cost,
+            "remaining_budget_ratio": state.remaining_ratio,
+            "budget_bin": state.budget_bin,
+            "progress_regime": state.progress_regime,
+            "budget_action_family": action.family,
+            "budget_action_tier": action.tier,
+            "max_output_tokens": action.max_output_tokens,
+        }
+
+    async def _generate_paradigms_if_needed(self) -> None:
+        if not self.budget_enabled:
+            return await super()._generate_paradigms_if_needed()
+        if self.paradigm_generator is None:
+            return
+        tracker = getattr(self.database, "paradigm_tracker", None)
+        if tracker is None:
+            return
+        should_trigger = tracker.should_trigger_budgeted(
+            remaining_ratio=self.budget_ledger.remaining_ratio,
+            meta_budget_threshold=getattr(self.config.search.database, "budget_meta_threshold", 0.25),
+            estimated_meta_cost=2048,
+            remaining_tokens=self.budget_ledger.remaining_tokens,
+            recent_meta_success_rate=None,
+        )
+        if not should_trigger or self.database.has_active_paradigm():
+            return
+
+        logger.info("Budget-aware paradigm trigger fired; generating tactics.")
+        best_program = self.database.get_best_program()
+        best_solution = best_program.solution if best_program else ""
+        best_score = self.database.get_program_proxy_score(best_program)
+        previously_tried = self.database.get_previously_tried_ideas()
+        paradigms = await self.paradigm_generator.generate(
+            current_program_solution=best_solution,
+            current_best_score=best_score,
+            previously_tried_ideas=previously_tried,
+            evaluator_feedback=(best_program.artifacts or {}).get("feedback") if best_program else None,
+            mode="summary",
+        )
+        if paradigms:
+            self.database.set_paradigms(paradigms)
+
+    async def _generate_child(
+        self,
+        iteration: int,
+        error_context: Optional[str] = None,
+        force_exploration: bool = False,
+    ) -> SerializableResult:
+        if not self.budget_enabled:
+            return await super()._generate_child(iteration, error_context, force_exploration)
+
+        if not self.database.programs:
+            return await self._run_from_scratch_iteration(iteration)
+        self._ensure_all_islands_seeded()
+
+        island_id = self.database.current_island
+        intensity = (
+            self.database.adapter.get_search_intensity(island_id)
+            if self.database.use_adaptive_search
+            else self.database.fixed_intensity
+        )
+        state = self.budget_state_builder.build(
+            island_id=island_id,
+            intensity=intensity,
+            ledger=self.budget_ledger,
+            recent_gain_ma=self._recent_gain_ma(),
+            no_improve_steps=self._no_improve_steps,
+            burn_rate=self._burn_rate(iteration),
+        )
+        action = self.budget_scheduler.select(state)
+        self._current_budget_state = state
+        self._current_budget_action = action
+
+        parent_dict, context_programs_dict = self.database.sample(
+            self.num_context_programs,
+            force_exploration=force_exploration,
+            island_id=island_id,
+            intensity=intensity,
+            family=action.family,
+            tier=action.tier,
+            budget_bin=state.budget_bin,
+        )
+        parent_label = list(parent_dict.keys())[0]
+        parent = list(parent_dict.values())[0]
+        siblings = []
+        if hasattr(self.database, "get_children"):
+            try:
+                siblings = self.database.get_children(parent.id)
+            except (AttributeError, NotImplementedError):
+                siblings = []
+        paradigm = self.database.get_current_paradigm() if self.database.use_paradigm_breakthrough else None
+        context = {
+            "program_metrics": parent.metrics,
+            "other_context_programs": context_programs_dict,
+            "paradigm": paradigm,
+            "siblings": siblings,
+            "error_context": error_context,
+            **self._build_budget_context(state, action),
+        }
+        for k, v in self._prompt_context.items():
+            context.setdefault(k, v)
+        prompt = self.context_builder.build_prompt(parent_dict, context)
+
+        est_in = self._estimate_prompt_tokens(prompt)
+        if not self.budget_ledger.feasible(est_in, action.max_output_tokens):
+            action = self._downgrade_action(action)
+            context.update(self._build_budget_context(state, action))
+            prompt = self.context_builder.build_prompt(parent_dict, context)
+            est_in = self._estimate_prompt_tokens(prompt)
+            if not self.budget_ledger.feasible(est_in, action.max_output_tokens):
+                return SerializableResult(error="Budget exhausted before generation", iteration=iteration)
+            self._current_budget_action = action
+
+        parent_info = (parent_label, parent.id)
+        context_info = [(label, p.id) for label, programs in context_programs_dict.items() for p in programs]
+        context_program_ids = [p.id for programs in context_programs_dict.values() for p in programs]
+
+        return await self._execute_generation_budget(
+            parent,
+            prompt,
+            iteration,
+            action=action,
+            parent_info=parent_info,
+            context_info=context_info,
+            context_program_ids=context_program_ids,
+            other_context_programs=context_programs_dict,
+        )
+
+    async def _execute_generation_budget(
+        self,
+        parent: Program,
+        prompt: Dict[str, str],
+        iteration: int,
+        action: BudgetAction,
+        parent_info: Optional[tuple] = None,
+        context_info: Optional[List[tuple]] = None,
+        context_program_ids: Optional[List[str]] = None,
+        other_context_programs: Optional[Dict] = None,
+    ) -> SerializableResult:
+        start_time = time.time()
+        child_id = str(uuid.uuid4())
+        llm_start = time.time()
+        try:
+            llm_result = await self.llms.generate_with_usage(
+                prompt["system"],
+                [{"role": "user", "content": prompt["user"]}],
+                max_tokens=action.max_output_tokens,
+            )
+            response = llm_result.text
+            llm_generation_time = time.time() - llm_start
+        except Exception as e:
+            return SerializableResult(error=f"LLM error: {e}", iteration=iteration)
+
+        self._current_usage = UsageRecord(
+            input_tokens=llm_result.input_tokens,
+            output_tokens=llm_result.output_tokens,
+            total_tokens=llm_result.total_tokens,
+            raw_usage=llm_result.raw_usage,
+        )
+        self.budget_ledger.update(self._current_usage)
+
+        if not response:
+            return SerializableResult(error="Empty LLM response", iteration=iteration)
+
+        if self.config.diff_based_generation:
+            diffs = extract_diffs(response)
+            if diffs:
+                child_solution = apply_diff(parent.solution, response)
+                changes = format_diff_summary(diffs)
+            else:
+                child_solution = parse_full_rewrite(response, self.config.language)
+                changes = "Full rewrite"
+        else:
+            child_solution = parse_full_rewrite(response, self.config.language)
+            changes = "Full rewrite"
+
+        if not child_solution:
+            return SerializableResult(error="No valid solution in response", iteration=iteration)
+
+        try:
+            eval_start = time.time()
+            eval_result = await self.evaluator.evaluate_program(child_solution, child_id)
+            eval_time = time.time() - eval_start
+        except Exception as e:
+            return SerializableResult(error=f"Evaluation error: {e}", iteration=iteration)
+
+        metrics = eval_result.metrics
+        artifacts = eval_result.artifacts
+        child_metadata = {"changes": changes, "parent_metrics": parent.metrics}
+        child = Program(
+            id=child_id,
+            solution=child_solution,
+            language=self.config.language,
+            metrics=metrics,
+            iteration_found=iteration,
+            parent_id=parent.id,
+            other_context_ids=context_program_ids,
+            parent_info=parent_info,
+            context_info=context_info,
+            generation=parent.generation + 1,
+            metadata=child_metadata,
+            artifacts=artifacts,
+        )
+        serializable = SerializableResult(
+            child_program_dict=child.to_dict(),
+            parent_id=parent.id,
+            other_context_ids=context_program_ids,
+            iteration_time=time.time() - start_time,
+            llm_generation_time=llm_generation_time,
+            eval_time=eval_time,
+            prompt=prompt,
+            llm_response=response,
+            iteration=iteration,
+        )
+
+        metrics = serializable.child_program_dict.get("metrics", {}) or {}
+        new_score = metrics.get("combined_score", float("-inf"))
+        prev_best_program = self.database.get_best_program()
+        prev_best = self.database.get_program_proxy_score(prev_best_program)
+        frontier_gain = max(0.0, float(new_score) - float(prev_best))
+        self._current_frontier_gain = frontier_gain
+        self._recent_frontier_gains.append(frontier_gain)
+        self._recent_frontier_gains = self._recent_frontier_gains[-10:]
+        self._no_improve_steps = 0 if frontier_gain > 0 else self._no_improve_steps + 1
+        serializable.child_program_dict.setdefault("metadata", {})
+        serializable.child_program_dict["metadata"]["budget"] = {
+            "input_tokens": self._current_usage.input_tokens,
+            "output_tokens": self._current_usage.output_tokens,
+            "total_tokens": self._current_usage.total_tokens,
+            "spent_tokens_after": self.budget_ledger.spent_tokens,
+            "spent_cost_after": self.budget_ledger.spent_cost,
+            "remaining_ratio_after": self.budget_ledger.remaining_ratio,
+            "action_family": action.family,
+            "action_tier": action.tier,
+            "frontier_gain": frontier_gain,
+            "roi": frontier_gain / max(1, self._current_usage.total_tokens),
+        }
+        return serializable
+
+    def _process_result(
+        self,
+        result: SerializableResult,
+        iteration: int,
+        checkpoint_callback,
+    ) -> None:
+        super()._process_result(result, iteration, checkpoint_callback)
+        if (
+            self.budget_enabled
+            and self._current_budget_state is not None
+            and self._current_budget_action is not None
+            and self._current_usage is not None
+        ):
+            self.budget_scheduler.update(
+                state=self._current_budget_state,
+                action=self._current_budget_action,
+                frontier_gain=self._current_frontier_gain,
+                cost=self._current_usage.total_tokens,
+            )
