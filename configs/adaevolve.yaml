@@ -39,7 +39,7 @@ llm:
 
 # Search configuration
 search:
-  type: "adaevolve"
+  type: "budget_adaevolve"
   num_context_programs: 4
   database:
     # Population settings
@@ -101,8 +101,26 @@ search:
     enable_error_retry: true
     max_error_retries: 2
 
+    # --- Budget-aware controls ---
+    budget_enabled: true
+    token_budget_total: 500000
+    cost_budget_total: 0.0            # 0 disables hard cost cap
+    input_token_cost: 0.0             # per token
+    output_token_cost: 0.0            # per token
+    budget_accounting_mode: "provider_usage"
+    budget_strict_stop: true
+    budget_bins: [0.2, 0.5, 0.8]
+    cheap_max_output_tokens: 512
+    standard_max_output_tokens: 1024
+    rich_max_output_tokens: 2048
+    budget_lambda: 0.0001
+    budget_ucb_beta: 0.5
+    budget_meta_threshold: 0.25
+    budget_significant_gain_eps: 1.0e-6
+
 # Prompt configuration
 prompt:
+  template: "budget_adaevolve"
   system_message: |
     <REPLACE WITH YOUR PROBLEM-SPECIFIC SYSTEM MESSAGE>
 

@@ -15,6 +15,13 @@ class LLMResponse:
 
     text: str = ""
     image_path: Optional[str] = None
+    input_tokens: int = 0
+    output_tokens: int = 0
+    raw_usage: Optional[Dict[str, Any]] = None
+
+    @property
+    def total_tokens(self) -> int:
+        return max(0, int(self.input_tokens)) + max(0, int(self.output_tokens))
 
 
 class LLMInterface(ABC):
@@ -39,3 +46,9 @@ class LLMInterface(ABC):
             LLMResponse with text and optional image_path.
         """
         pass
+
+    async def generate_with_usage(
+        self, system_message: str, messages: List[Dict[str, Any]], **kwargs
+    ) -> LLMResponse:
+        """Generate a response with usage metadata if available."""
+        return await self.generate(system_message, messages, **kwargs)
