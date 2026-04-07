@@ -516,6 +516,23 @@ class AdaEvolveDatabaseConfig(DatabaseConfig):
     pareto_objectives: List[str] = field(default_factory=list)
     pareto_objectives_weight: float = 0.0
 
+    # Budget-aware control
+    budget_enabled: bool = False
+    token_budget_total: int = 500000
+    cost_budget_total: float = 0.0
+    input_token_cost: float = 0.0
+    output_token_cost: float = 0.0
+    budget_accounting_mode: str = "provider_usage"
+    budget_strict_stop: bool = True
+    budget_bins: List[float] = field(default_factory=lambda: [0.2, 0.5, 0.8])
+    cheap_max_output_tokens: int = 512
+    standard_max_output_tokens: int = 1024
+    rich_max_output_tokens: int = 2048
+    budget_lambda: float = 1e-4
+    budget_ucb_beta: float = 0.5
+    budget_meta_threshold: float = 0.25
+    budget_significant_gain_eps: float = 1e-6
+
 
 @dataclass
 class OpenEvolveNativeDatabaseConfig(DatabaseConfig):
@@ -563,6 +580,7 @@ _DB_CONFIG_BY_TYPE: Dict[str, type] = {
     "best_of_n": BestOfNDatabaseConfig,
     "topk": DatabaseConfig,
     "adaevolve": AdaEvolveDatabaseConfig,
+    "budget_adaevolve": AdaEvolveDatabaseConfig,
     "openevolve_native": OpenEvolveNativeDatabaseConfig,
     "gepa_native": GEPANativeDatabaseConfig,
 }
