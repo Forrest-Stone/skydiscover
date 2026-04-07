@@ -782,26 +782,51 @@ class BudgetAdaEvolveController(AdaEvolveController):
             "max_output_tokens": action.max_output_tokens,
         }
 
-    async def _call_llm_with_usage(self, prompt: Dict[str, str], max_tokens: int):
-        """
-        Usage-aware LLM call that preserves agentic behavior.
+    def _resolve_usage_record(self, prompt: Dict[str, str], response: str, llm_result: Dict[str, Any]) -> UsageRecord:
+        """Build a usage record with provider-first accounting and estimator fallback."""
+        in_tokens = int(llm_result.get("input_tokens", 0) or 0)
+        out_tokens = int(llm_result.get("output_tokens", 0) or 0)
+        mode = getattr(self.config.search.database, "budget_accounting_mode", "provider_usage")
+        if mode == "tokenizer_estimate" or in_tokens <= 0:
+            in_tokens = self._estimate_prompt_tokens(prompt)
+        if mode == "tokenizer_estimate" or out_tokens <= 0:
+            out_tokens = self._estimate_text_tokens(response)
+        return UsageRecord(
+            input_tokens=in_tokens,
+            output_tokens=out_tokens,
+            total_tokens=in_tokens + out_tokens,
+            raw_usage=llm_result.get("raw_usage"),
+        )
 
-        If agentic mode is enabled, generation goes through agentic path but usage is unavailable
-        (falls back to estimator in accounting).
-        """
+    def _attach_budget_metadata(
+        self,
+        child_program_dict: Dict[str, Any],
+        action: BudgetAction,
+        frontier_gain: float,
+    ) -> None:
+        child_program_dict.setdefault("metadata", {})
+        child_program_dict["metadata"]["budget"] = {
+            "input_tokens": self._current_usage.input_tokens,
+            "output_tokens": self._current_usage.output_tokens,
+            "total_tokens": self._current_usage.total_tokens,
+            "spent_tokens_after": self.budget_ledger.spent_tokens,
+            "spent_cost_after": self.budget_ledger.spent_cost,
+            "remaining_ratio_after": self.budget_ledger.remaining_ratio,
+            "action_family": action.family,
+            "action_tier": action.tier,
+            "frontier_gain": frontier_gain,
+            "roi": frontier_gain / max(1, self._current_usage.total_tokens),
+        }
+
+    async def _call_llm_with_usage(self, prompt: Dict[str, str], max_tokens: int):
+        """Usage-aware LLM call; keeps agentic path compatible."""
         if self.agentic_generator and self.config.language != "image":
             text = await self.agentic_generator.generate(prompt["system"], prompt["user"])
             return {"text": text or "", "input_tokens": 0, "output_tokens": 0, "raw_usage": None}
 
         if self.config.language == "image":
-            result = await self._call_llm(
-                prompt["system"],
-                [{"type": "text", "text": prompt["user"]}],
-                image_output=True,
-                output_dir=self._get_image_output_dir(),
-                program_id=str(uuid.uuid4()),
-                max_tokens=max_tokens,
-            )
+            # Image generation usage is provider-dependent; fallback estimation is applied later.
+            result = await self._call_llm(prompt["system"], prompt["user"], max_tokens=max_tokens)
             return {
                 "text": result.text or "",
                 "image_path": result.image_path,
@@ -977,20 +1002,7 @@ class BudgetAdaEvolveController(AdaEvolveController):
         except Exception as e:
             return SerializableResult(error=f"LLM error: {e}", iteration=iteration)
 
-        in_tokens = int(llm_result.get("input_tokens", 0) or 0)
-        out_tokens = int(llm_result.get("output_tokens", 0) or 0)
-        accounting_mode = getattr(self.config.search.database, "budget_accounting_mode", "provider_usage")
-        if accounting_mode == "tokenizer_estimate" or in_tokens <= 0:
-            in_tokens = self._estimate_prompt_tokens(prompt)
-        if accounting_mode == "tokenizer_estimate" or out_tokens <= 0:
-            out_tokens = self._estimate_text_tokens(response)
-
-        self._current_usage = UsageRecord(
-            input_tokens=in_tokens,
-            output_tokens=out_tokens,
-            total_tokens=in_tokens + out_tokens,
-            raw_usage=llm_result.get("raw_usage"),
-        )
+        self._current_usage = self._resolve_usage_record(prompt, response, llm_result)
         self.budget_ledger.update(self._current_usage)
 
         if not response:
@@ -1055,19 +1067,7 @@ class BudgetAdaEvolveController(AdaEvolveController):
         self._recent_frontier_gains.append(frontier_gain)
         self._recent_frontier_gains = self._recent_frontier_gains[-10:]
         self._no_improve_steps = 0 if frontier_gain > 0 else self._no_improve_steps + 1
-        serializable.child_program_dict.setdefault("metadata", {})
-        serializable.child_program_dict["metadata"]["budget"] = {
-            "input_tokens": self._current_usage.input_tokens,
-            "output_tokens": self._current_usage.output_tokens,
-            "total_tokens": self._current_usage.total_tokens,
-            "spent_tokens_after": self.budget_ledger.spent_tokens,
-            "spent_cost_after": self.budget_ledger.spent_cost,
-            "remaining_ratio_after": self.budget_ledger.remaining_ratio,
-            "action_family": action.family,
-            "action_tier": action.tier,
-            "frontier_gain": frontier_gain,
-            "roi": frontier_gain / max(1, self._current_usage.total_tokens),
-        }
+        self._attach_budget_metadata(serializable.child_program_dict, action, frontier_gain)
         return serializable
 
     def _process_result(

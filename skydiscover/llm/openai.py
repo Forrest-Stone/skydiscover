@@ -212,6 +212,35 @@ class OpenAILLM(LLMInterface):
         result = await self._generate_text_with_usage(system_message, messages, **kwargs)
         return result
 
+    @staticmethod
+    def _extract_usage_counts(usage: Any) -> Tuple[int, int, Optional[Dict[str, Any]]]:
+        """
+        Extract (input_tokens, output_tokens, raw_usage) across provider shapes.
+
+        OpenAI-compatible gateways (including OpenRouter) may return usage as:
+        - pydantic object with attributes
+        - plain dict
+        - or missing entirely
+        """
+        if usage is None:
+            return 0, 0, None
+
+        if isinstance(usage, dict):
+            prompt_tokens = int(usage.get("prompt_tokens", 0) or usage.get("input_tokens", 0) or 0)
+            completion_tokens = int(
+                usage.get("completion_tokens", 0) or usage.get("output_tokens", 0) or 0
+            )
+            return prompt_tokens, completion_tokens, usage
+
+        prompt_tokens = int(
+            getattr(usage, "prompt_tokens", 0) or getattr(usage, "input_tokens", 0) or 0
+        )
+        completion_tokens = int(
+            getattr(usage, "completion_tokens", 0) or getattr(usage, "output_tokens", 0) or 0
+        )
+        raw_usage = usage.model_dump() if hasattr(usage, "model_dump") else None
+        return prompt_tokens, completion_tokens, raw_usage
+
     # ------------------------------------------------------------------
     # Text generation (Chat Completions API)
     # ------------------------------------------------------------------
@@ -316,15 +345,7 @@ class OpenAILLM(LLMInterface):
                 )
                 content = response.choices[0].message.content or ""
                 usage = getattr(response, "usage", None)
-                prompt_tokens = int(
-                    getattr(usage, "prompt_tokens", 0) or getattr(usage, "input_tokens", 0) or 0
-                )
-                completion_tokens = int(
-                    getattr(usage, "completion_tokens", 0)
-                    or getattr(usage, "output_tokens", 0)
-                    or 0
-                )
-                raw_usage = usage.model_dump() if hasattr(usage, "model_dump") else None
+                prompt_tokens, completion_tokens, raw_usage = self._extract_usage_counts(usage)
                 return LLMResponse(
                     text=content,
                     input_tokens=prompt_tokens,
@@ -390,6 +411,10 @@ class OpenAILLM(LLMInterface):
         )
         text, _ = self._extract_responses_output(response)
         return text or ""
+
+    async def _call_api_full_response(self, params: Dict[str, Any]):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
 
     async def _call_api_full_response(self, params: Dict[str, Any]):
         loop = asyncio.get_running_loop()

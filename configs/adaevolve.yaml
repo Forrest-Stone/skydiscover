@@ -36,6 +36,11 @@ llm:
   #   - name: "gemini-3-pro-preview"
   # api_base: "https://generativelanguage.googleapis.com/v1beta/openai/"
   # api_key: ${GEMINI_API_KEY}
+  # To use OpenRouter (recommended when you want a single OpenAI-compatible endpoint):
+  # models:
+  #   - name: "openai/gpt-5-mini"   # or anthropic/claude-3.7-sonnet, google/gemini-2.5-pro, etc.
+  # api_base: "https://openrouter.ai/api/v1"
+  # api_key: ${OPENROUTER_API_KEY}
 
 # Search configuration
 search:

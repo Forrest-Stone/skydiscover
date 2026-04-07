@@ -123,6 +123,17 @@ uv run skydiscover-run initial_program.py evaluator.py \
   --iterations 100
 ```
 
+If you prefer OpenRouter as the unified API endpoint:
+
+```bash
+export OPENROUTER_API_KEY=...
+uv run skydiscover-run initial_program.py evaluator.py \
+  --config configs/adaevolve.yaml \
+  --model openrouter/openai/gpt-5-mini \
+  --search budget_adaevolve \
+  --iterations 100
+```
+
 #### Python API
 
 ```python
