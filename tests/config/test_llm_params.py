@@ -272,3 +272,32 @@ class TestOpenAILLMParams:
 
         assert resp.text == "ok"
         assert llm.model == "deepseek/deepseek-chat"
+
+    def test_extract_chat_text_handles_none_message_content(self):
+        from skydiscover.llm.openai import OpenAILLM
+
+        class _Msg:
+            content = None
+
+        class _Choice:
+            message = _Msg()
+            text = "fallback-text"
+
+        class _Resp:
+            choices = [_Choice()]
+
+        assert OpenAILLM._extract_chat_text(_Resp()) == "fallback-text"
+
+    def test_extract_chat_text_handles_dict_content_parts(self):
+        from skydiscover.llm.openai import OpenAILLM
+
+        resp = {
+            "choices": [
+                {
+                    "message": {
+                        "content": [{"type": "output_text", "text": "hello"}, {"text": " world"}]
+                    }
+                }
+            ]
+        }
+        assert OpenAILLM._extract_chat_text(resp) == "hello world"
