@@ -325,3 +325,27 @@ class TestOpenAILLMParams:
         assert text == ""
         assert image_b64 is None
         assert tool_calls == []
+
+    @pytest.mark.asyncio
+    async def test_call_api_via_responses_uses_module_helpers(self):
+        llm = self._make_llm()
+
+        class _TextPart:
+            text = "ok"
+
+        class _Item:
+            type = "message"
+            content = [_TextPart()]
+
+        class _Resp:
+            output = [_Item()]
+
+        llm.client.responses.create = lambda **kwargs: _Resp()
+        text = await llm._call_api_via_responses(
+            {
+                "model": "openrouter/deepseek/deepseek-r1",
+                "messages": [{"role": "user", "content": "hi"}],
+                "max_tokens": 16,
+            }
+        )
+        assert text == "ok"

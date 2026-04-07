@@ -391,7 +391,7 @@ class OpenAILLM(LLMInterface):
         messages = params.get("messages", [])
         if not isinstance(messages, list):
             messages = []
-        input_items = self._convert_to_responses_input(
+        input_items = convert_messages_to_responses_input(
             [m for m in messages if isinstance(m, dict) and m.get("role") != "system"]
         )
         system_msg = next(
@@ -421,7 +421,7 @@ class OpenAILLM(LLMInterface):
         response = await loop.run_in_executor(
             None, lambda: self.client.responses.create(**resp_params)
         )
-        text, _ = self._extract_responses_output(response)
+        text, _, _ = extract_responses_output(response)
         return text or ""
 
     async def _call_api_full_response(self, params: Dict[str, Any]):
