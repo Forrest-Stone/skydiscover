@@ -747,6 +747,9 @@ class BudgetAdaEvolveController(AdaEvolveController):
         text = (prompt.get("system", "") if prompt else "") + (prompt.get("user", "") if prompt else "")
         return max(1, int(len(text) / 4))
 
+    def _estimate_text_tokens(self, text: str) -> int:
+        return max(1, int(len(text or "") / 4))
+
     def _recent_gain_ma(self) -> float:
         if not self._recent_frontier_gains:
             return 0.0
@@ -777,6 +780,46 @@ class BudgetAdaEvolveController(AdaEvolveController):
             "budget_action_family": action.family,
             "budget_action_tier": action.tier,
             "max_output_tokens": action.max_output_tokens,
+        }
+
+    async def _call_llm_with_usage(self, prompt: Dict[str, str], max_tokens: int):
+        """
+        Usage-aware LLM call that preserves agentic behavior.
+
+        If agentic mode is enabled, generation goes through agentic path but usage is unavailable
+        (falls back to estimator in accounting).
+        """
+        if self.agentic_generator and self.config.language != "image":
+            text = await self.agentic_generator.generate(prompt["system"], prompt["user"])
+            return {"text": text or "", "input_tokens": 0, "output_tokens": 0, "raw_usage": None}
+
+        if self.config.language == "image":
+            result = await self._call_llm(
+                prompt["system"],
+                [{"type": "text", "text": prompt["user"]}],
+                image_output=True,
+                output_dir=self._get_image_output_dir(),
+                program_id=str(uuid.uuid4()),
+                max_tokens=max_tokens,
+            )
+            return {
+                "text": result.text or "",
+                "image_path": result.image_path,
+                "input_tokens": result.input_tokens,
+                "output_tokens": result.output_tokens,
+                "raw_usage": result.raw_usage,
+            }
+
+        result = await self.llms.generate_with_usage(
+            prompt["system"],
+            [{"role": "user", "content": prompt["user"]}],
+            max_tokens=max_tokens,
+        )
+        return {
+            "text": result.text or "",
+            "input_tokens": result.input_tokens,
+            "output_tokens": result.output_tokens,
+            "raw_usage": result.raw_usage,
         }
 
     async def _generate_paradigms_if_needed(self) -> None:
@@ -861,6 +904,11 @@ class BudgetAdaEvolveController(AdaEvolveController):
             except (AttributeError, NotImplementedError):
                 siblings = []
         paradigm = self.database.get_current_paradigm() if self.database.use_paradigm_breakthrough else None
+        if paradigm:
+            best_program = self.database.get_best_program()
+            if best_program:
+                parent_dict = {parent_label: best_program}
+                parent = best_program
         context = {
             "program_metrics": parent.metrics,
             "other_context_programs": context_programs_dict,
@@ -872,6 +920,8 @@ class BudgetAdaEvolveController(AdaEvolveController):
         for k, v in self._prompt_context.items():
             context.setdefault(k, v)
         prompt = self.context_builder.build_prompt(parent_dict, context)
+        if paradigm:
+            self.database.use_paradigm()
 
         est_in = self._estimate_prompt_tokens(prompt)
         if not self.budget_ledger.feasible(est_in, action.max_output_tokens):
@@ -886,6 +936,14 @@ class BudgetAdaEvolveController(AdaEvolveController):
         parent_info = (parent_label, parent.id)
         context_info = [(label, p.id) for label, programs in context_programs_dict.items() for p in programs]
         context_program_ids = [p.id for programs in context_programs_dict.values() for p in programs]
+
+        # Apply human feedback (append/replace) to keep parity with base AdaEvolve flow
+        if self.feedback_reader:
+            self.feedback_reader.set_current_prompt(prompt["system"])
+            feedback = self.feedback_reader.read()
+            if feedback:
+                prompt = self.feedback_reader.apply_feedback(prompt)
+                self.feedback_reader.log_usage(iteration, feedback, self.feedback_reader.mode)
 
         return await self._execute_generation_budget(
             parent,
@@ -913,21 +971,25 @@ class BudgetAdaEvolveController(AdaEvolveController):
         child_id = str(uuid.uuid4())
         llm_start = time.time()
         try:
-            llm_result = await self.llms.generate_with_usage(
-                prompt["system"],
-                [{"role": "user", "content": prompt["user"]}],
-                max_tokens=action.max_output_tokens,
-            )
-            response = llm_result.text
+            llm_result = await self._call_llm_with_usage(prompt, action.max_output_tokens)
+            response = llm_result.get("text", "")
             llm_generation_time = time.time() - llm_start
         except Exception as e:
             return SerializableResult(error=f"LLM error: {e}", iteration=iteration)
 
+        in_tokens = int(llm_result.get("input_tokens", 0) or 0)
+        out_tokens = int(llm_result.get("output_tokens", 0) or 0)
+        accounting_mode = getattr(self.config.search.database, "budget_accounting_mode", "provider_usage")
+        if accounting_mode == "tokenizer_estimate" or in_tokens <= 0:
+            in_tokens = self._estimate_prompt_tokens(prompt)
+        if accounting_mode == "tokenizer_estimate" or out_tokens <= 0:
+            out_tokens = self._estimate_text_tokens(response)
+
         self._current_usage = UsageRecord(
-            input_tokens=llm_result.input_tokens,
-            output_tokens=llm_result.output_tokens,
-            total_tokens=llm_result.total_tokens,
-            raw_usage=llm_result.raw_usage,
+            input_tokens=in_tokens,
+            output_tokens=out_tokens,
+            total_tokens=in_tokens + out_tokens,
+            raw_usage=llm_result.get("raw_usage"),
         )
         self.budget_ledger.update(self._current_usage)
 
@@ -985,8 +1047,7 @@ class BudgetAdaEvolveController(AdaEvolveController):
             iteration=iteration,
         )
 
-        metrics = serializable.child_program_dict.get("metrics", {}) or {}
-        new_score = metrics.get("combined_score", float("-inf"))
+        new_score = self.database.get_program_proxy_score(child)
         prev_best_program = self.database.get_best_program()
         prev_best = self.database.get_program_proxy_score(prev_best_program)
         frontier_gain = max(0.0, float(new_score) - float(prev_best))
