@@ -349,3 +349,27 @@ class TestOpenAILLMParams:
             }
         )
         assert text == "ok"
+
+    @pytest.mark.asyncio
+    async def test_call_api_falls_back_when_chat_text_empty(self):
+        llm = self._make_llm()
+
+        class _ChatResp:
+            choices = None
+
+        class _TextPart:
+            text = "resp-ok"
+
+        class _Item:
+            type = "message"
+            content = [_TextPart()]
+
+        class _Resp:
+            output = [_Item()]
+
+        llm.client.chat.completions.create = lambda **kwargs: _ChatResp()
+        llm.client.responses.create = lambda **kwargs: _Resp()
+        text = await llm._call_api(
+            {"model": "openrouter/deepseek/deepseek-r1", "messages": [{"role": "user", "content": "x"}]}
+        )
+        assert text == "resp-ok"

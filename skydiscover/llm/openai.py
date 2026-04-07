@@ -344,6 +344,8 @@ class OpenAILLM(LLMInterface):
                     self._call_api_full_response(params), timeout=timeout
                 )
                 content = self._extract_chat_text(response)
+                if not content:
+                    content = await self._call_api_via_responses(params)
                 usage = getattr(response, "usage", None)
                 prompt_tokens, completion_tokens, raw_usage = self._extract_usage_counts(usage)
                 return LLMResponse(
@@ -373,7 +375,11 @@ class OpenAILLM(LLMInterface):
             response = await loop.run_in_executor(
                 None, lambda: self.client.chat.completions.create(**params)
             )
-            return self._extract_chat_text(response)
+            text = self._extract_chat_text(response)
+            if text:
+                return text
+            logger.debug("Empty/unsupported chat response content; trying Responses API fallback")
+            return await self._call_api_via_responses(params)
         except (openai.BadRequestError, openai.APIStatusError) as exc:
             # Some Azure deployments only expose the Responses API.
             # Fall back transparently when Chat Completions is unsupported.
@@ -382,7 +388,7 @@ class OpenAILLM(LLMInterface):
             logger.info("Chat Completions unsupported; falling back to Responses API")
             return await self._call_api_via_responses(params)
         except (TypeError, KeyError, IndexError, AttributeError) as exc:
-            logger.info("Unexpected chat response shape; falling back to Responses API: %s", exc)
+            logger.debug("Unexpected chat response shape; falling back to Responses API: %s", exc)
             return await self._call_api_via_responses(params)
 
     async def _call_api_via_responses(self, params: Dict[str, Any]) -> str:
@@ -483,7 +489,7 @@ class OpenAILLM(LLMInterface):
             if isinstance(output_text, str) and output_text:
                 return output_text
 
-        raise TypeError("unable to extract text from chat completion response")
+        return ""
 
     def _resolve_retry_options(self, **kwargs) -> Tuple[int, int, int]:
         """Resolve retry/timeout options from kwargs, falling back to instance defaults."""
