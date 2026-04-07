@@ -750,6 +750,54 @@ class BudgetAdaEvolveController(AdaEvolveController):
     def _estimate_text_tokens(self, text: str) -> int:
         return max(1, int(len(text or "") / 4))
 
+    def _budget_exhausted(self) -> bool:
+        if not self.budget_enabled:
+            return False
+        if self.budget_ledger.remaining_tokens <= 0:
+            return True
+        if self.budget_ledger.cost_budget_total > 0 and self.budget_ledger.remaining_cost <= 0:
+            return True
+        return False
+
+    async def run_discovery(
+        self,
+        start_iteration: int,
+        max_iterations: int,
+        checkpoint_callback=None,
+    ) -> Optional[Program]:
+        """
+        Run discovery with budget-aware early stop.
+
+        Stop criteria:
+        1) normal iteration cap (max_iterations)
+        2) budget exhausted (token or monetary budget, when enabled)
+        """
+        total = start_iteration + max_iterations
+        self._setup_iteration_stats_logging()
+        self._ensure_all_islands_seeded()
+
+        for iteration in range(start_iteration, total):
+            if self.shutdown_event.is_set():
+                logger.info("Shutdown requested")
+                break
+            if self._budget_exhausted():
+                logger.info(
+                    "Budget exhausted, stopping run early "
+                    f"(tokens_remaining={self.budget_ledger.remaining_tokens}, "
+                    f"cost_remaining={self.budget_ledger.remaining_cost:.6f})"
+                )
+                break
+
+            try:
+                await self._run_iteration(iteration, checkpoint_callback)
+            except Exception as e:
+                logger.exception(f"Iteration {iteration} failed: {e}")
+            finally:
+                self.database.end_iteration(iteration)
+
+        self.database.log_status()
+        return self.database.get_best_program()
+
     def _recent_gain_ma(self) -> float:
         if not self._recent_frontier_gains:
             return 0.0
