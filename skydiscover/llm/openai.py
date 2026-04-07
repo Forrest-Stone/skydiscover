@@ -389,10 +389,19 @@ class OpenAILLM(LLMInterface):
         """Translate a Chat-Completions-style *params* dict into a Responses API
         call and return the assistant text."""
         messages = params.get("messages", [])
+        if not isinstance(messages, list):
+            messages = []
         input_items = self._convert_to_responses_input(
-            [m for m in messages if m.get("role") != "system"]
+            [m for m in messages if isinstance(m, dict) and m.get("role") != "system"]
         )
-        system_msg = next((m["content"] for m in messages if m.get("role") == "system"), None)
+        system_msg = next(
+            (
+                m.get("content")
+                for m in messages
+                if isinstance(m, dict) and m.get("role") == "system"
+            ),
+            None,
+        )
         resp_params: Dict[str, Any] = {
             "model": params.get("model", self.model),
             "input": input_items,

@@ -301,3 +301,27 @@ class TestOpenAILLMParams:
             ]
         }
         assert OpenAILLM._extract_chat_text(resp) == "hello world"
+
+    def test_convert_messages_to_responses_input_ignores_invalid_items(self):
+        from skydiscover.llm.responses_utils import convert_messages_to_responses_input
+
+        items = convert_messages_to_responses_input(
+            [None, {"role": "user", "content": [{"type": "text", "text": "hi"}, None]}]
+        )
+        assert len(items) == 1
+        assert items[0]["content"][0]["text"] == "hi"
+
+    def test_extract_responses_output_handles_empty_content(self):
+        from skydiscover.llm.responses_utils import extract_responses_output
+
+        class _Item:
+            type = "message"
+            content = None
+
+        class _Resp:
+            output = [_Item()]
+
+        text, image_b64, tool_calls = extract_responses_output(_Resp())
+        assert text == ""
+        assert image_b64 is None
+        assert tool_calls == []

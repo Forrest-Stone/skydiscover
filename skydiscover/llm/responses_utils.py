@@ -17,6 +17,8 @@ def convert_messages_to_responses_input(messages: List[Dict[str, Any]]) -> list:
     """
     items: list = []
     for msg in messages:
+        if not isinstance(msg, dict):
+            continue
         role = msg.get("role", "user")
         content = msg.get("content", "")
 
@@ -34,7 +36,11 @@ def convert_messages_to_responses_input(messages: List[Dict[str, Any]]) -> list:
             tool_calls = msg.get("tool_calls", [])
             if tool_calls:
                 for tc in tool_calls:
+                    if not isinstance(tc, dict):
+                        continue
                     fn = tc.get("function", {})
+                    if not isinstance(fn, dict):
+                        fn = {}
                     items.append(
                         {
                             "type": "function_call",
@@ -60,9 +66,11 @@ def convert_messages_to_responses_input(messages: List[Dict[str, Any]]) -> list:
         elif isinstance(content, list):
             parts = []
             for part in content:
+                if not isinstance(part, dict):
+                    continue
                 ptype = part.get("type", "")
                 if ptype == "text":
-                    parts.append({"type": "input_text", "text": part["text"]})
+                    parts.append({"type": "input_text", "text": part.get("text", "")})
                 elif ptype == "image_url":
                     url = part.get("image_url", {}).get("url", "")
                     parts.append({"type": "input_image", "image_url": url, "detail": "auto"})
@@ -84,20 +92,27 @@ def extract_responses_output(
     image_b64: Optional[str] = None
     tool_calls: List[Dict[str, Any]] = []
 
-    for item in response.output:
-        if item.type == "message":
-            for part in item.content:
-                if hasattr(part, "text"):
+    output_items = getattr(response, "output", None) or []
+    for item in output_items:
+        item_type = getattr(item, "type", None)
+        if item_type == "message":
+            content_parts = getattr(item, "content", None) or []
+            for part in content_parts:
+                if hasattr(part, "text") and part.text is not None:
                     text_parts.append(part.text)
-        elif item.type == "image_generation_call":
-            if item.result:
-                image_b64 = item.result
-        elif item.type == "function_call":
+        elif item_type == "image_generation_call":
+            result = getattr(item, "result", None)
+            if result:
+                image_b64 = result
+        elif item_type == "function_call":
             tool_calls.append(
                 {
-                    "id": item.call_id,
+                    "id": getattr(item, "call_id", ""),
                     "type": "function",
-                    "function": {"name": item.name, "arguments": item.arguments},
+                    "function": {
+                        "name": getattr(item, "name", ""),
+                        "arguments": getattr(item, "arguments", "{}"),
+                    },
                 }
             )
 
