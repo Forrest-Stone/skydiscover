@@ -75,6 +75,125 @@ result = run_discovery(
 )
 ```
 
+### Budget-AdaEvolve (budget-aware extension, architecture-compatible)
+
+Budget-AdaEvolve **does not replace** AdaEvolve's 3-layer adaptation.
+It keeps the same backbone and inserts a budget control loop between
+`compute intensity` and `sample parent/context`.
+
+Runtime loop (conceptual):
+
+```
+1) select island (UCB)                           # Global adaptation (unchanged)
+2) compute island intensity from G               # Local adaptation (unchanged)
+3) build budget state + choose action(family,tier)
+4) family/tier-conditioned sampling in database
+5) tier-aware context builder + budget guidance in prompt
+6) pre-call feasibility gate (token/cost budget)
+7) LLM generate_with_usage -> evaluator -> add program
+8) update ledger + scheduler stats + (optional) budget-gated paradigm trigger
+```
+
+### Budget-AdaEvolve Code Structure
+
+```
+adaevolve/
+├── controller.py
+│   ├── AdaEvolveController            # Original
+│   └── BudgetAdaEvolveController      # Budget-aware control loop
+├── database.py                        # sample(..., family, tier, budget_bin, ...)
+├── adaptation.py
+│   ├── AdaptiveState / MultiDimensionalAdapter   # Original adaptive core
+│   ├── BudgetLedger                               # Token + cost accounting
+│   ├── BudgetStateBuilder                         # state abstraction
+│   └── BudgetActionScheduler                      # family/tier action selection
+├── paradigm/
+│   ├── tracker.py                    # adds should_trigger_budgeted(...)
+│   └── generator.py                  # supports mode={full,summary}
+```
+
+### How to Run Budget-AdaEvolve
+
+#### CLI
+
+```bash
+uv run skydiscover-run initial_program.py evaluator.py \
+  --config configs/adaevolve.yaml \
+  --search budget_adaevolve \
+  --iterations 100
+```
+
+If you prefer OpenRouter as the unified API endpoint:
+
+```bash
+export OPENROUTER_API_KEY=...
+uv run skydiscover-run initial_program.py evaluator.py \
+  --config configs/adaevolve.yaml \
+  --model openrouter/openai/gpt-5-mini \
+  --search budget_adaevolve \
+  --iterations 100
+```
+
+#### Python API
+
+```python
+from skydiscover import run_discovery
+
+result = run_discovery(
+    initial_program="initial_program.py",
+    evaluator="evaluator.py",
+    config="configs/adaevolve.yaml",
+    search="budget_adaevolve",
+    model="gpt-5",
+    iterations=100,
+)
+```
+
+### Budget Config (token + monetary cost)
+
+`cost = input_tokens * input_token_cost + output_tokens * output_token_cost`
+
+```yaml
+search:
+  type: "budget_adaevolve"
+  database:
+    # enable budget-aware control
+    budget_enabled: true
+
+    # hard token budget
+    token_budget_total: 500000
+
+    # optional hard cost budget (0.0 disables hard cap)
+    cost_budget_total: 0.0
+    input_token_cost: 0.0
+    output_token_cost: 0.0
+
+    # budget-stage bins by remaining ratio
+    budget_bins: [0.2, 0.5, 0.8]
+
+    # compute tiers
+    cheap_max_output_tokens: 512
+    standard_max_output_tokens: 1024
+    rich_max_output_tokens: 2048
+
+    # scheduler and meta-trigger knobs
+    budget_lambda: 0.0001
+    budget_ucb_beta: 0.5
+    budget_meta_threshold: 0.25
+```
+
+### Prompt Template
+
+Budget mode can be selected with:
+
+```yaml
+prompt:
+  template: "budget_adaevolve"
+```
+
+This enables the budget-aware context builder that injects `## BUDGET STATUS`
+and applies tier-aware context truncation.
+
 ## Config
 
 See `configs/adaevolve.yaml` for the full template. Key settings:

@@ -110,6 +110,7 @@ class ParadigmGenerator:
         current_best_score: float,
         previously_tried_ideas: Optional[List[str]] = None,
         evaluator_feedback: Optional[str] = None,
+        mode: str = "full",
     ) -> List[Dict[str, Any]]:
         """
         Generate breakthrough paradigms with retry logic.
@@ -129,6 +130,7 @@ class ParadigmGenerator:
             current_best_score,
             previously_tried_ideas or [],
             evaluator_feedback=evaluator_feedback,
+            mode=mode,
         )
 
         last_error = None
@@ -149,6 +151,17 @@ class ParadigmGenerator:
                     break
 
                 paradigms = self._parse_response(response)
+                if mode == "summary":
+                    paradigms = [
+                        {
+                            "idea": p.get("idea", "")[:180],
+                            "description": p.get("description", "")[:320],
+                            "what_to_optimize": p.get("what_to_optimize", ""),
+                            "cautions": p.get("cautions", "")[:200],
+                            "approach_type": p.get("approach_type", "summary"),
+                        }
+                        for p in paradigms[:3]
+                    ]
 
                 if not paradigms:
                     logger.warning(
@@ -213,6 +226,7 @@ class ParadigmGenerator:
         best_score: float,
         previously_tried: List[str],
         evaluator_feedback: Optional[str] = None,
+        mode: str = "full",
     ) -> str:
         """Build the full prompt for paradigm generation."""
         if self._is_prompt_optimization:
@@ -222,7 +236,7 @@ class ParadigmGenerator:
                 self._build_prompt_opt_analysis_framework(best_score),
                 self._build_previously_tried_section(previously_tried),
                 self._build_prompt_opt_techniques_section(),
-                self._build_prompt_opt_output_format_section(),
+                self._build_prompt_opt_output_format_section(summary_mode=mode == "summary"),
             ]
         else:
             sections = [
@@ -231,7 +245,7 @@ class ParadigmGenerator:
                 self._build_analysis_framework(best_score),
                 self._build_previously_tried_section(previously_tried),
                 self._build_techniques_section(),
-                self._build_output_format_section(),
+                self._build_output_format_section(summary_mode=mode == "summary"),
             ]
 
         # Inject evaluator feedback so paradigm ideas are informed by
@@ -551,8 +565,25 @@ Specific: "Use scipy.optimize.minimize with SLSQP method"
 - Concrete visual descriptions beat abstract concepts
 - Structural prompt changes (reordering, sectioning) often help more than adding words"""
 
-    def _build_output_format_section(self) -> str:
+    def _build_output_format_section(self, summary_mode: bool = False) -> str:
         """Build the output format section."""
+        if summary_mode:
+            return f"""## Output Format
+
+Generate {self.num_paradigms} concise breakthrough ideas.
+Return JSON only.
+
+```json
+[
+  {{
+    "idea": "short tactic title",
+    "description": "1-3 concise sentences",
+    "what_to_optimize": "{', '.join(self.objective_names) if self.objective_names else 'primary evaluator score'}",
+    "cautions": "short caution",
+    "approach_type": "summary.tactic"
+  }}
+]
+```"""
         if self._is_image_mode:
             return self._build_image_output_format_section()
         return f"""## Output Format
@@ -749,8 +780,10 @@ Each idea must:
 - Be independently implementable as a complete prompt
 - Be specific and actionable (not just "improve clarity")"""
 
-    def _build_prompt_opt_output_format_section(self) -> str:
+    def _build_prompt_opt_output_format_section(self, summary_mode: bool = False) -> str:
         """Build output format for prompt optimization paradigms."""
+        if summary_mode:
+            return self._build_output_format_section(summary_mode=True)
         return f"""## Output Format
 
 Generate {self.num_paradigms} breakthrough prompt strategies of DIFFERENT types.
