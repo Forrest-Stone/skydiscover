@@ -143,10 +143,15 @@ class DiscoveryController:
 
     def _init_context_builder(self):
         """Initialize the appropriate context builder based on config."""
-        if getattr(self.config.context_builder, "template", "default") == "evox":
+        template = getattr(self.config.context_builder, "template", "default")
+        if template == "evox":
             self.context_builder = EvoxContextBuilder(self.config)
             template_name = "search_evolution_user_message"
             self.context_builder.set_templates(user_template=template_name)
+        elif template == "budget_adaevolve":
+            from skydiscover.context_builder.adaevolve import BudgetAdaEvolveContextBuilder
+
+            self.context_builder = BudgetAdaEvolveContextBuilder(self.config)
         else:
             self.context_builder = DefaultContextBuilder(self.config)
 

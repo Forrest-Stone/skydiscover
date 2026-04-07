@@ -198,6 +198,45 @@ class OpenAILLM(LLMInterface):
         text = await self._generate_text(system_message, messages, **kwargs)
         return LLMResponse(text=text)
 
+    async def generate_with_usage(
+        self, system_message: str, messages: List[Dict[str, Any]], **kwargs
+    ) -> LLMResponse:
+        """Generate text and return provider token usage when available."""
+        if kwargs.get("image_output"):
+            return await self.generate(system_message, messages, **kwargs)
+
+        result = await self._generate_text_with_usage(system_message, messages, **kwargs)
+        return result
+
+    @staticmethod
+    def _extract_usage_counts(usage: Any) -> Tuple[int, int, Optional[Dict[str, Any]]]:
+        """
+        Extract (input_tokens, output_tokens, raw_usage) across provider shapes.
+
+        OpenAI-compatible gateways (including OpenRouter) may return usage as:
+        - pydantic object with attributes
+        - plain dict
+        - or missing entirely
+        """
+        if usage is None:
+            return 0, 0, None
+
+        if isinstance(usage, dict):
+            prompt_tokens = int(usage.get("prompt_tokens", 0) or usage.get("input_tokens", 0) or 0)
+            completion_tokens = int(
+                usage.get("completion_tokens", 0) or usage.get("output_tokens", 0) or 0
+            )
+            return prompt_tokens, completion_tokens, usage
+
+        prompt_tokens = int(
+            getattr(usage, "prompt_tokens", 0) or getattr(usage, "input_tokens", 0) or 0
+        )
+        completion_tokens = int(
+            getattr(usage, "completion_tokens", 0) or getattr(usage, "output_tokens", 0) or 0
+        )
+        raw_usage = usage.model_dump() if hasattr(usage, "model_dump") else None
+        return prompt_tokens, completion_tokens, raw_usage
+
     # ------------------------------------------------------------------
     # Text generation (Chat Completions API)
     # ------------------------------------------------------------------
@@ -258,12 +297,82 @@ class OpenAILLM(LLMInterface):
                 else:
                     raise
 
+    async def _generate_text_with_usage(
+        self, system_message: str, messages: List[Dict[str, Any]], **kwargs
+    ) -> LLMResponse:
+        system_content = system_message if system_message is not None else ""
+        formatted_messages = [{"role": "system", "content": system_content}]
+        formatted_messages.extend(messages)
+
+        is_reasoning = is_openai_reasoning_model(self.model, self.api_base)
+        if is_reasoning:
+            params = {
+                "model": self.model,
+                "messages": formatted_messages,
+                "max_completion_tokens": kwargs.get("max_tokens", self.max_tokens),
+            }
+            reasoning_effort = kwargs.get("reasoning_effort", self.reasoning_effort)
+            if reasoning_effort is not None:
+                params["reasoning_effort"] = reasoning_effort
+            if "verbosity" in kwargs:
+                params["verbosity"] = kwargs["verbosity"]
+        else:
+            params = {
+                "model": self.model,
+                "messages": formatted_messages,
+                "max_tokens": kwargs.get("max_tokens", self.max_tokens),
+            }
+            temperature = kwargs.get("temperature", self.temperature)
+            if temperature is not None:
+                params["temperature"] = temperature
+            top_p = kwargs.get("top_p", self.top_p)
+            if top_p is not None:
+                params["top_p"] = top_p
+            reasoning_effort = kwargs.get("reasoning_effort", self.reasoning_effort)
+            if reasoning_effort is not None:
+                params["reasoning_effort"] = reasoning_effort
+
+        retries, retry_delay, timeout = self._resolve_retry_options(**kwargs)
+
+        for attempt in range(retries + 1):
+            try:
+                response = await asyncio.wait_for(
+                    self._call_api_full_response(params), timeout=timeout
+                )
+                content = response.choices[0].message.content or ""
+                usage = getattr(response, "usage", None)
+                prompt_tokens, completion_tokens, raw_usage = self._extract_usage_counts(usage)
+                return LLMResponse(
+                    text=content,
+                    input_tokens=prompt_tokens,
+                    output_tokens=completion_tokens,
+                    raw_usage=raw_usage,
+                )
+            except asyncio.TimeoutError:
+                if attempt < retries:
+                    logger.warning(f"Timeout attempt {attempt + 1}/{retries + 1}, retrying...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    raise
+            except Exception as e:
+                if self._maybe_switch_region_fallback_model(e):
+                    continue
+                if attempt < retries:
+                    logger.warning(f"Error attempt {attempt + 1}/{retries + 1}: {e}, retrying...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    raise
+
     async def _call_api(self, params: Dict[str, Any]) -> str:
         loop = asyncio.get_running_loop()
         response = await loop.run_in_executor(
             None, lambda: self.client.chat.completions.create(**params)
         )
         return response.choices[0].message.content
+
+    async def _call_api_full_response(self, params: Dict[str, Any]):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
 
     def _resolve_retry_options(self, **kwargs) -> Tuple[int, int, int]:
         """Resolve retry/timeout options from kwargs, falling back to instance defaults."""

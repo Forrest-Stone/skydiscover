@@ -497,6 +497,11 @@ class AdaEvolveDatabase(ProgramDatabase):
         self,
         num_context_programs: Optional[int] = 4,
         force_exploration: bool = False,
+        island_id: Optional[int] = None,
+        intensity: Optional[float] = None,
+        family: Optional[str] = None,
+        tier: Optional[str] = None,
+        budget_bin: Optional[str] = None,
         **kwargs,
     ) -> Tuple[Dict[str, Program], Dict[str, List[Program]]]:
         """
@@ -524,18 +529,38 @@ class AdaEvolveDatabase(ProgramDatabase):
         Returns:
             Tuple of (parent_dict, context_programs_dict)
         """
-        island_idx = self.current_island
+        island_idx = self.current_island if island_id is None else island_id
 
         if self.use_unified_archive and self.archives:
-            return self._sample_from_archive(island_idx, num_context_programs, force_exploration)
+            return self._sample_from_archive(
+                island_idx,
+                num_context_programs,
+                force_exploration,
+                intensity=intensity,
+                family=family,
+                tier=tier,
+                budget_bin=budget_bin,
+            )
         else:
-            return self._sample_legacy(island_idx, num_context_programs, force_exploration)
+            return self._sample_legacy(
+                island_idx,
+                num_context_programs,
+                force_exploration,
+                intensity=intensity,
+                family=family,
+                tier=tier,
+                budget_bin=budget_bin,
+            )
 
     def _sample_from_archive(
         self,
         island_idx: int,
         num_context_programs: Optional[int] = 4,
         force_exploration: bool = False,
+        intensity: Optional[float] = None,
+        family: Optional[str] = None,
+        tier: Optional[str] = None,
+        budget_bin: Optional[str] = None,
     ) -> Tuple[Dict[str, Program], Dict[str, List[Program]]]:
         """Sample using the per-island unified archive."""
         archive = self.archives[island_idx]
@@ -544,7 +569,9 @@ class AdaEvolveDatabase(ProgramDatabase):
             raise ValueError(f"Cannot sample: island {island_idx} is empty")
 
         # Get search intensity: adaptive (G-based) or fixed
-        if self.use_adaptive_search:
+        if intensity is not None:
+            intensity = float(intensity)
+        elif self.use_adaptive_search:
             intensity = self.adapter.get_search_intensity(island_idx)
         else:
             intensity = self.fixed_intensity
@@ -563,9 +590,12 @@ class AdaEvolveDatabase(ProgramDatabase):
         else:
             mode = "balanced"
 
-        # Sample parent based on mode
+        # Sample parent based on mode or budget-aware family override
         population = archive.get_all()
-        if mode == "exploitation":
+        if family:
+            parent = self._sample_parent_by_family(archive, population, family)
+            mode = f"budget_{family}"
+        elif mode == "exploitation":
             if archive.config.pareto_objectives and archive._pareto_ranks:
                 parent = self._sample_pareto_front(archive, population)
             else:
@@ -576,6 +606,10 @@ class AdaEvolveDatabase(ProgramDatabase):
 
         # Hybrid context programs: local diversity + global top
         num = num_context_programs or 4
+        if tier == "cheap":
+            num = min(num, 2)
+        elif tier == "rich":
+            num = max(num, 5)
         local_count = max(1, int(num * self.local_context_program_ratio))
         global_count = num - local_count
 
@@ -611,6 +645,10 @@ class AdaEvolveDatabase(ProgramDatabase):
         island_idx: int,
         num_context_programs: Optional[int] = 4,
         force_exploration: bool = False,
+        intensity: Optional[float] = None,
+        family: Optional[str] = None,
+        tier: Optional[str] = None,
+        budget_bin: Optional[str] = None,
     ) -> Tuple[Dict[str, Program], Dict[str, List[Program]]]:
         """Sample using legacy list-based logic."""
         population = self.islands[island_idx]
@@ -619,7 +657,9 @@ class AdaEvolveDatabase(ProgramDatabase):
             raise ValueError(f"Cannot sample: island {island_idx} is empty")
 
         # Get search intensity: adaptive (G-based) or fixed
-        if self.use_adaptive_search:
+        if intensity is not None:
+            intensity = float(intensity)
+        elif self.use_adaptive_search:
             intensity = self.adapter.get_search_intensity(island_idx)
         else:
             intensity = self.fixed_intensity
@@ -630,19 +670,27 @@ class AdaEvolveDatabase(ProgramDatabase):
         # Determine sampling mode based on intensity
         # Formula: exploration=intensity%, exploitation=(1-intensity)*70%, balanced=(1-intensity)*30%
         # Example with intensity=0.4: exploration=40%, exploitation=42%, balanced=18%
-        rand = random.random()
-        if rand < intensity:
-            parent = self._sample_random(population)
-            mode = "exploration"
-        elif rand < intensity + (1 - intensity) * 0.7:
-            parent = self._sample_top(population)
-            mode = "exploitation"
+        if family:
+            parent = self._sample_parent_from_population_by_family(population, family)
+            mode = f"budget_{family}"
         else:
-            parent = self._sample_weighted(population)
-            mode = "balanced"
+            rand = random.random()
+            if rand < intensity:
+                parent = self._sample_random(population)
+                mode = "exploration"
+            elif rand < intensity + (1 - intensity) * 0.7:
+                parent = self._sample_top(population)
+                mode = "exploitation"
+            else:
+                parent = self._sample_weighted(population)
+                mode = "balanced"
 
         # Sample context programs from ALL islands (global cross-pollination)
         num = num_context_programs or 4
+        if tier == "cheap":
+            num = min(num, 2)
+        elif tier == "rich":
+            num = max(num, 5)
         other_context_programs = self._sample_global_top(parent.id, num)
 
         # Map mode to label for the framework's prompt injection
@@ -663,6 +711,28 @@ class AdaEvolveDatabase(ProgramDatabase):
         )
 
         return {label: parent}, {"": other_context_programs}
+
+    def _sample_parent_from_population_by_family(
+        self, population: List[Program], family: str
+    ) -> Program:
+        if family == "refine":
+            return self._sample_top(population)
+        if family == "structural":
+            return self._sample_random(population)
+        if family == "tactic_guided":
+            return self._sample_weighted(population)
+        return self._sample_weighted(population)
+
+    def _sample_parent_by_family(self, archive, population: List[Program], family: str) -> Program:
+        if family == "refine":
+            if archive.config.pareto_objectives and archive._pareto_ranks:
+                return self._sample_pareto_front(archive, population)
+            return self._sample_top(population)
+        if family == "structural":
+            return archive.sample_parent("exploration")
+        if family == "tactic_guided":
+            return archive.sample_parent("balanced")
+        return archive.sample_parent("balanced")
 
     def _sample_random(self, population: List[Program]) -> Program:
         """Sample uniformly at random (exploration)."""
