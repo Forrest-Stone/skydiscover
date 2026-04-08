@@ -10,6 +10,8 @@ import logging
 
 from skydiscover.search.adaevolve.controller import AdaEvolveController, BudgetAdaEvolveController
 from skydiscover.search.adaevolve.database import AdaEvolveDatabase
+from skydiscover.search.budgetevolve.controller import BudgetEvolveController
+from skydiscover.search.budgetevolve.database import BudgetEvolveDatabase
 from skydiscover.search.beam_search.database import BeamSearchDatabase
 
 # Algorithm implementations
@@ -58,8 +60,10 @@ register_database("topk", TopKDatabase)
 # AdaEvolve
 register_database("adaevolve", AdaEvolveDatabase)
 register_controller("adaevolve", AdaEvolveController)
-register_database("budget_adaevolve", AdaEvolveDatabase)
-register_controller("budget_adaevolve", BudgetAdaEvolveController)
+register_database("budget_adaevolve", BudgetEvolveDatabase)
+register_controller("budget_adaevolve", BudgetEvolveController)
+register_database("budgetevolve", BudgetEvolveDatabase)
+register_controller("budgetevolve", BudgetEvolveController)
 
 # OpenEvolve Native
 register_database("openevolve_native", OpenEvolveNativeDatabase)

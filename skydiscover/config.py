@@ -610,6 +610,7 @@ _DB_CONFIG_BY_TYPE: Dict[str, type] = {
     "topk": DatabaseConfig,
     "adaevolve": AdaEvolveDatabaseConfig,
     "budget_adaevolve": AdaEvolveDatabaseConfig,
+    "budgetevolve": AdaEvolveDatabaseConfig,
     "openevolve_native": OpenEvolveNativeDatabaseConfig,
     "gepa_native": GEPANativeDatabaseConfig,
 }
