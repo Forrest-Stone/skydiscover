@@ -60,6 +60,15 @@ class LLMPool:
         model = self._sample_model()
         return await model.generate(system_message, messages, **kwargs)
 
+    async def generate_with_usage(
+        self, system_message: str, messages: List[Dict[str, Any]], **kwargs
+    ) -> LLMResponse:
+        """Sample a model and generate a response with usage metadata when available."""
+        model = self._sample_model()
+        if hasattr(model, "generate_with_usage"):
+            return await model.generate_with_usage(system_message, messages, **kwargs)
+        return await model.generate(system_message, messages, **kwargs)
+
     async def generate_all(
         self, system_message: str, messages: List[Dict[str, Any]], **kwargs
     ) -> List[LLMResponse]:
