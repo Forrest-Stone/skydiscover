@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # Optional: set your API key once here if you don't want per-shell exports.
 # Example: _HARDCODED_FALLBACK_API_KEY = "sk-or-xxxxxxxx"
 # Keep empty by default to avoid committing secrets accidentally.
-_HARDCODED_FALLBACK_API_KEY = "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"
+_HARDCODED_FALLBACK_API_KEY = ""
 
 
 # ═══════════════════════════════════════════════════════════════════════
