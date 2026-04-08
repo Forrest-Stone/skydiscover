@@ -343,9 +343,7 @@ class OpenAILLM(LLMInterface):
                 response = await asyncio.wait_for(
                     self._call_api_full_response(params), timeout=timeout
                 )
-                content = self._extract_chat_text(response)
-                if not content:
-                    content = await self._call_api_via_responses(params)
+                content = response.choices[0].message.content or ""
                 usage = getattr(response, "usage", None)
                 prompt_tokens, completion_tokens, raw_usage = self._extract_usage_counts(usage)
                 return LLMResponse(
@@ -490,6 +488,10 @@ class OpenAILLM(LLMInterface):
                 return output_text
 
         return ""
+
+    async def _call_api_full_response(self, params: Dict[str, Any]):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
 
     def _resolve_retry_options(self, **kwargs) -> Tuple[int, int, int]:
         """Resolve retry/timeout options from kwargs, falling back to instance defaults."""

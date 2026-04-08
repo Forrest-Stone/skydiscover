@@ -148,10 +148,10 @@ class DiscoveryController:
             self.context_builder = EvoxContextBuilder(self.config)
             template_name = "search_evolution_user_message"
             self.context_builder.set_templates(user_template=template_name)
-        elif template == "budget_adaevolve":
-            from skydiscover.context_builder.adaevolve import BudgetAdaEvolveContextBuilder
+        elif template in {"budget_adaevolve", "budgetevolve"}:
+            from skydiscover.context_builder.budgetevolve import BudgetEvolveContextBuilder
 
-            self.context_builder = BudgetAdaEvolveContextBuilder(self.config)
+            self.context_builder = BudgetEvolveContextBuilder(self.config)
         else:
             self.context_builder = DefaultContextBuilder(self.config)
 
