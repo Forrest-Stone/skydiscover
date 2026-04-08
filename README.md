@@ -100,8 +100,14 @@ uv run skydiscover-run benchmarks/math/circle_packing/initial_program.py \
   --search adaevolve \
   --iterations 100
 
+uv run skydiscover-run benchmarks/math/circle_packing/initial_program.py \
+  benchmarks/math/circle_packing/evaluator.py \
+  --config benchmarks/math/circle_packing/config.yaml \
+  --search budgetevolve \
+  --iterations 100
+
 # Or run on your own problem
-# algo can be "evox", "adaevolve", "openevolve", "gepa", "shinkaevolve"
+# algo can be "evox", "adaevolve", "budgetevolve", "openevolve", "gepa", "shinkaevolve"
 uv run skydiscover-run initial_program.py evaluator.py \
   --search <algo> \
   --model gpt-5 \
@@ -129,7 +135,7 @@ from skydiscover import run_discovery
 result = run_discovery(
     initial_program="initial_program.py",
     evaluator="evaluator.py",
-    search=[algo], # algo can be "adaevolve", "evox", "openevolve", "gepa", "shinkaevolve"
+    search=[algo], # algo can be "adaevolve", "budgetevolve", "evox", "openevolve", "gepa", "shinkaevolve"
     model="gpt-5",
     iterations=100,
 )
@@ -193,6 +199,7 @@ If no markers are present, the entire file is treated as mutatable.
 | Algorithm | Flag | Description |
 |:---|:---|:---|
 | ⭐&nbsp;**AdaEvolve** | `--search adaevolve` | Multi-island adaptive search with UCB, migration, and paradigm breakthroughs |
+| 💰&nbsp;**BudgetEvolve** | `--search budgetevolve` | Budget-aware AdaEvolve variant with token/cost accounting and tiered generation control |
 | 🧠&nbsp;**EvoX** | `--search evox` | Self-evolving paradigm that co-adapts solution generation and experience management |
 | 📊&nbsp;**Top-K** | `--search topk` | Selects top-K solutions to refine |
 | 🔍&nbsp;**Beam&nbsp;Search** | `--search beam_search` | Breadth-first expansion of a beam of top solutions |
@@ -230,7 +237,7 @@ max_iterations: 100
 llm:
   models: [{ name: "gemini/gemini-3-pro-preview", weight: 1.0 }]
 search:
-  type: "adaevolve"                  # or "evox", "topk", "beam_search", "best_of_n"
+  type: "adaevolve"                  # or "budgetevolve", "evox", "topk", "beam_search", "best_of_n"
 prompt:
   system_message: |
     You are an expert at optimizing algorithms.

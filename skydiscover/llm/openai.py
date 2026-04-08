@@ -493,6 +493,10 @@ class OpenAILLM(LLMInterface):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
 
+    async def _call_api_full_response(self, params: Dict[str, Any]):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
+
     def _resolve_retry_options(self, **kwargs) -> Tuple[int, int, int]:
         """Resolve retry/timeout options from kwargs, falling back to instance defaults."""
         retries = kwargs.get("retries", self.retries)
