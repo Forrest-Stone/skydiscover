@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from skydiscover.config import LLMConfig, LLMModelConfig, apply_overrides
+from skydiscover.config import Config, LLMConfig, LLMModelConfig, apply_overrides
 
 _OPENAI_DEFAULT_API_BASE: str = next(
     f.default for f in fields(LLMConfig) if f.name == "api_base"
@@ -104,6 +104,17 @@ class TestApiBaseRouting:
         cfg = LLMConfig(models=[LLMModelConfig(name="openrouter/claude-3-5-haiku")])
         assert cfg.models[0].name == "anthropic/claude-3-5-haiku"
 
+    def test_api_key_can_be_hardcoded_in_single_code_location(self, monkeypatch):
+        import skydiscover.config as config_module
+
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+        monkeypatch.delenv("SKYDISCOVER_API_KEY", raising=False)
+        monkeypatch.setattr(config_module, "_HARDCODED_FALLBACK_API_KEY", "sk-or-hardcoded")
+
+        cfg = LLMConfig(models=[LLMModelConfig(name="openrouter/deepseek/deepseek-r1")])
+        assert cfg.models[0].api_key == "sk-or-hardcoded"
+
     def test_apply_overrides_bridged_openai_model_gets_upstream_prefix(self, monkeypatch):
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
@@ -112,6 +123,32 @@ class TestApiBaseRouting:
         apply_overrides(outer, model="gpt-5-mini")
         assert outer.llm.models[0].name == "openai/gpt-5-mini"
         assert outer.llm.models[0].api_base == "https://openrouter.ai/api/v1"
+
+    def test_apply_overrides_evox_model_override_enables_share_llm(self):
+        cfg = Config()
+        cfg.search.type = "evox"
+        cfg.search.share_llm = False
+
+        apply_overrides(cfg, model="openrouter/deepseek/deepseek-r1")
+
+        assert cfg.search.share_llm is True
+
+    def test_apply_overrides_model_syncs_default_monitor_summary_model(self):
+        cfg = Config()
+        cfg.monitor.summary_model = "gpt-5-mini"
+
+        apply_overrides(cfg, model="openrouter/deepseek/deepseek-r1")
+
+        assert cfg.monitor.summary_model == "deepseek/deepseek-r1"
+        assert cfg.monitor.summary_api_base == cfg.llm.api_base
+
+    def test_apply_overrides_keeps_custom_monitor_summary_model(self):
+        cfg = Config()
+        cfg.monitor.summary_model = "openai/gpt-4o-mini"
+
+        apply_overrides(cfg, model="openrouter/deepseek/deepseek-r1")
+
+        assert cfg.monitor.summary_model == "openai/gpt-4o-mini"
 
 
 class TestOpenAILLMParams:
@@ -246,3 +283,104 @@ class TestOpenAILLMParams:
 
         assert resp.text == "ok"
         assert llm.model == "deepseek/deepseek-chat"
+
+    def test_extract_chat_text_handles_none_message_content(self):
+        from skydiscover.llm.openai import OpenAILLM
+
+        class _Msg:
+            content = None
+
+        class _Choice:
+            message = _Msg()
+            text = "fallback-text"
+
+        class _Resp:
+            choices = [_Choice()]
+
+        assert OpenAILLM._extract_chat_text(_Resp()) == "fallback-text"
+
+    def test_extract_chat_text_handles_dict_content_parts(self):
+        from skydiscover.llm.openai import OpenAILLM
+
+        resp = {
+            "choices": [
+                {
+                    "message": {
+                        "content": [{"type": "output_text", "text": "hello"}, {"text": " world"}]
+                    }
+                }
+            ]
+        }
+        assert OpenAILLM._extract_chat_text(resp) == "hello world"
+
+    def test_convert_messages_to_responses_input_ignores_invalid_items(self):
+        from skydiscover.llm.responses_utils import convert_messages_to_responses_input
+
+        items = convert_messages_to_responses_input(
+            [None, {"role": "user", "content": [{"type": "text", "text": "hi"}, None]}]
+        )
+        assert len(items) == 1
+        assert items[0]["content"][0]["text"] == "hi"
+
+    def test_extract_responses_output_handles_empty_content(self):
+        from skydiscover.llm.responses_utils import extract_responses_output
+
+        class _Item:
+            type = "message"
+            content = None
+
+        class _Resp:
+            output = [_Item()]
+
+        text, image_b64, tool_calls = extract_responses_output(_Resp())
+        assert text == ""
+        assert image_b64 is None
+        assert tool_calls == []
+
+    @pytest.mark.asyncio
+    async def test_call_api_via_responses_uses_module_helpers(self):
+        llm = self._make_llm()
+
+        class _TextPart:
+            text = "ok"
+
+        class _Item:
+            type = "message"
+            content = [_TextPart()]
+
+        class _Resp:
+            output = [_Item()]
+
+        llm.client.responses.create = lambda **kwargs: _Resp()
+        text = await llm._call_api_via_responses(
+            {
+                "model": "openrouter/deepseek/deepseek-r1",
+                "messages": [{"role": "user", "content": "hi"}],
+                "max_tokens": 16,
+            }
+        )
+        assert text == "ok"
+
+    @pytest.mark.asyncio
+    async def test_call_api_falls_back_when_chat_text_empty(self):
+        llm = self._make_llm()
+
+        class _ChatResp:
+            choices = None
+
+        class _TextPart:
+            text = "resp-ok"
+
+        class _Item:
+            type = "message"
+            content = [_TextPart()]
+
+        class _Resp:
+            output = [_Item()]
+
+        llm.client.chat.completions.create = lambda **kwargs: _ChatResp()
+        llm.client.responses.create = lambda **kwargs: _Resp()
+        text = await llm._call_api(
+            {"model": "openrouter/deepseek/deepseek-r1", "messages": [{"role": "user", "content": "x"}]}
+        )
+        assert text == "resp-ok"

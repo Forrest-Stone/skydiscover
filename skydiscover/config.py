@@ -15,6 +15,11 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
+# Optional: set your API key once here if you don't want per-shell exports.
+# Example: _HARDCODED_FALLBACK_API_KEY = "sk-or-xxxxxxxx"
+# Keep empty by default to avoid committing secrets accidentally.
+_HARDCODED_FALLBACK_API_KEY = ""
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # Internal — provider resolution helpers
@@ -71,6 +76,26 @@ _OPENROUTER_UPSTREAM_BY_PREFIX: Dict[str, str] = {
 }
 
 
+def _load_local_default_api_key() -> Optional[str]:
+    """Load API key from a single in-code/env fallback when provider env vars are not set.
+
+    Priority:
+    1) _HARDCODED_FALLBACK_API_KEY (edit once in code)
+    2) SKYDISCOVER_API_KEY env var
+    """
+    hardcoded = (_HARDCODED_FALLBACK_API_KEY or "").strip()
+    if hardcoded:
+        return hardcoded
+
+    key = os.environ.get("SKYDISCOVER_API_KEY")
+    if key:
+        key = key.strip()
+        if key:
+            return key
+
+    return None
+
+
 def _should_use_openrouter_bridge_for_openai() -> bool:
     """Return True when OpenAI models should be routed via OpenRouter defaults."""
     return bool(os.environ.get("OPENROUTER_API_KEY")) and not os.environ.get("OPENAI_API_KEY")
@@ -109,7 +134,11 @@ def _resolve_api_key_from_env(env_vars: Optional[List[str]] = None) -> Optional[
         key = os.environ.get(var)
         if key:
             return key
-    return os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENROUTER_API_KEY")
+    return (
+        os.environ.get("OPENAI_API_KEY")
+        or os.environ.get("OPENROUTER_API_KEY")
+        or _load_local_default_api_key()
+    )
 
 
 def _resolve_api_base_from_env(provider: Optional[str] = None) -> Optional[str]:
@@ -1020,6 +1049,24 @@ def apply_overrides(
         new_db_cls = _DB_CONFIG_BY_TYPE.get(search)
         if new_db_cls and not isinstance(config.search.database, new_db_cls):
             config.search.database = new_db_cls()
+
+    # For EvoX, CLI model/api-base overrides should apply to the co-evolved
+    # search-strategy side as well. Otherwise it falls back to
+    # `skydiscover/search/evox/config/search.yaml` defaults (e.g. gpt-5-mini).
+    if hasattr(config, "search") and config.search.type == "evox" and (model or api_base):
+        config.search.share_llm = True
+
+    # Keep monitor summary model aligned with runtime override unless user already
+    # set a custom summary model explicitly in config.
+    if hasattr(config, "monitor") and model:
+        if getattr(config.monitor, "summary_model", None) == "gpt-5-mini":
+            first_model = config.llm.models[0].name if config.llm.models else None
+            if first_model:
+                config.monitor.summary_model = first_model
+        if not getattr(config.monitor, "summary_api_key", None):
+            config.monitor.summary_api_key = config.llm.api_key
+        if getattr(config.monitor, "summary_api_base", None) == _PROVIDERS["openai"][0]:
+            config.monitor.summary_api_base = config.llm.api_base
 
     if system_prompt:
         config.context_builder.system_message = system_prompt
