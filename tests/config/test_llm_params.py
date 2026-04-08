@@ -104,6 +104,17 @@ class TestApiBaseRouting:
         cfg = LLMConfig(models=[LLMModelConfig(name="openrouter/claude-3-5-haiku")])
         assert cfg.models[0].name == "anthropic/claude-3-5-haiku"
 
+    def test_api_key_can_be_hardcoded_in_single_code_location(self, monkeypatch):
+        import skydiscover.config as config_module
+
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+        monkeypatch.delenv("SKYDISCOVER_API_KEY", raising=False)
+        monkeypatch.setattr(config_module, "_HARDCODED_FALLBACK_API_KEY", "sk-or-hardcoded")
+
+        cfg = LLMConfig(models=[LLMModelConfig(name="openrouter/deepseek/deepseek-r1")])
+        assert cfg.models[0].api_key == "sk-or-hardcoded"
+
     def test_apply_overrides_bridged_openai_model_gets_upstream_prefix(self, monkeypatch):
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
