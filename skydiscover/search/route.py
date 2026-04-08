@@ -8,7 +8,7 @@ this module wires up implementations and provides ``get_discovery_controller``.
 
 import logging
 
-from skydiscover.search.adaevolve.controller import AdaEvolveController
+from skydiscover.search.adaevolve.controller import AdaEvolveController, BudgetAdaEvolveController
 from skydiscover.search.adaevolve.database import AdaEvolveDatabase
 from skydiscover.search.budgetevolve.controller import BudgetEvolveController
 from skydiscover.search.budgetevolve.database import BudgetEvolveDatabase

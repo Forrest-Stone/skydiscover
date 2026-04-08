@@ -3,6 +3,35 @@ import yaml
 import json
 
 
+def _resolve_openai_compatible_env():
+    """Resolve api_key/api_base for OpenAI-compatible clients.
+
+    Priority:
+    1) OPENAI_* explicit values
+    2) OPENROUTER_* values
+    3) OpenRouter default base when only OPENROUTER_API_KEY is present
+    """
+    openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+    openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+    api_key = openai_key or openrouter_key
+
+    if openrouter_key and not openai_key:
+        api_base = (
+            os.getenv("OPENROUTER_API_BASE")
+            or os.getenv("OPENROUTER_BASE_URL")
+            or "https://openrouter.ai/api/v1"
+        )
+    else:
+        api_base = (
+            os.getenv("OPENAI_API_BASE")
+            or os.getenv("OPENAI_BASE_URL")
+            or os.getenv("OPENROUTER_API_BASE")
+            or os.getenv("OPENROUTER_BASE_URL")
+            or None
+        )
+    return api_key, api_base
+
+
 def load_task_as_prompt(task_json, task_num):
     with open(task_json, 'r') as f:
         tasks = json.load(f)
@@ -74,10 +103,12 @@ def generate_config(task_num, task_file, dataset_root=None, base_config=None):
         config = yaml.safe_load(file)
     
     config['prompt']['system_message'] = prompt
-    # Use OPENAI_API_KEY at runtime if set (keeps real key out of committed config)
-    api_key_env = os.getenv("OPENAI_API_KEY")
-    if api_key_env and api_key_env.strip() and api_key_env != "your-gemini-api-key":
-        config["llm"]["api_key"] = api_key_env.strip()
+    # Use runtime env key/base (supports both OPENAI_* and OPENROUTER_*).
+    api_key_env, api_base_env = _resolve_openai_compatible_env()
+    if api_key_env and api_key_env != "your-gemini-api-key":
+        config["llm"]["api_key"] = api_key_env
+    if api_base_env:
+        config["llm"]["api_base"] = api_base_env
     # Override max_iterations from env if set (e.g. by run_discovery.sh)
     max_iter_env = os.getenv("MAX_ITERATIONS")
     if max_iter_env is not None and str(max_iter_env).strip() != "":

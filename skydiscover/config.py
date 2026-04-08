@@ -598,6 +598,9 @@ class SearchConfig:
     switch_interval: Optional[int] = (
         None  # EvoX: stagnation iters before strategy switch. Auto-calculated if None.
     )
+    share_llm: bool = (
+        False  # EvoX: if True, meta-level search evolution uses the same LLM as the main discovery process.
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -883,6 +886,10 @@ def load_config(config_path: Optional[Union[str, Path]] = None) -> Config:
     # Make the system message available to the individual models, in case it is not provided from the prompt sampler
     config.llm.update_model_params({"system_message": config.context_builder.system_message})
 
+    # Bridge provider env vars so that downstream configs (e.g. evox search.yaml)
+    # can resolve ${OPENAI_API_KEY} from the environment.
+    bridge_provider_env(config)
+
     return config
 
 
@@ -1014,6 +1021,24 @@ def apply_overrides(
         new_db_cls = _DB_CONFIG_BY_TYPE.get(search)
         if new_db_cls and not isinstance(config.search.database, new_db_cls):
             config.search.database = new_db_cls()
+
+    # For EvoX, CLI model/api-base overrides should apply to the co-evolved
+    # search-strategy side as well. Otherwise it falls back to
+    # `skydiscover/search/evox/config/search.yaml` defaults (e.g. gpt-5-mini).
+    if hasattr(config, "search") and config.search.type == "evox" and (model or api_base):
+        config.search.share_llm = True
+
+    # Keep monitor summary model aligned with runtime override unless user already
+    # set a custom summary model explicitly in config.
+    if hasattr(config, "monitor") and model:
+        if getattr(config.monitor, "summary_model", None) == "gpt-5-mini":
+            first_model = config.llm.models[0].name if config.llm.models else None
+            if first_model:
+                config.monitor.summary_model = first_model
+        if not getattr(config.monitor, "summary_api_key", None):
+            config.monitor.summary_api_key = config.llm.api_key
+        if getattr(config.monitor, "summary_api_base", None) == _PROVIDERS["openai"][0]:
+            config.monitor.summary_api_base = config.llm.api_base
 
     if system_prompt:
         config.context_builder.system_message = system_prompt
