@@ -55,7 +55,13 @@ def is_openai_reasoning_model(model_name: str, api_base: str) -> bool:
 
 def _is_region_restricted_error(exc: Exception) -> bool:
     text = str(exc).lower()
-    return "not available in your region" in text or "'code': 403" in text
+    return (
+        "not available in your region" in text
+        or "'code': 403" in text
+        or "error code: 403" in text
+        or "unsupported_country_region_territory" in text
+        or "request_forbidden" in text
+    )
 
 
 def _normalize_openrouter_model_name(model_name: str) -> str:
