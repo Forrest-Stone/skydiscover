@@ -236,8 +236,8 @@ class LLMModelConfig:
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     max_tokens: Optional[int] = None
-    input_price_per_1m: Optional[float] = None
-    output_price_per_1m: Optional[float] = None
+    input_price_per_1m: Optional[float] = 0.72
+    output_price_per_1m: Optional[float] = 2.3
 
     # Request parameters
     timeout: Optional[int] = None

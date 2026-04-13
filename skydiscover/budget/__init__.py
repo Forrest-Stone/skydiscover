@@ -6,7 +6,7 @@ from skydiscover.budget.core import (
     IterationBudgetRecord,
 )
 from skydiscover.budget.hooks import call_record_from_response
-from skydiscover.budget.io import write_iteration_record, write_summary
+from skydiscover.budget.io import plot_run_best_score_vs_cost, write_iteration_record, write_summary
 
 __all__ = [
     "BudgetConfig",
@@ -15,6 +15,7 @@ __all__ = [
     "CallRole",
     "IterationBudgetRecord",
     "call_record_from_response",
+    "plot_run_best_score_vs_cost",
     "write_iteration_record",
     "write_summary",
 ]

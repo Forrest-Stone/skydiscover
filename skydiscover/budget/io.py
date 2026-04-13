@@ -41,3 +41,45 @@ def write_summary(path: Path, ledger: BudgetLedger, best_score: float | None = N
         summary["best_score"] = float(best_score)
     with path.open("w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
+
+
+def plot_run_best_score_vs_cost(iterations_path: Path, out_png: Path) -> bool:
+    """Plot best-score-vs-cost for a single run.
+
+    Returns False when plotting dependencies are unavailable.
+    """
+    try:
+        import matplotlib.pyplot as plt
+    except Exception:
+        return False
+
+    if not iterations_path.exists():
+        return False
+
+    costs = []
+    best_scores = []
+    with iterations_path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            costs.append(float(row.get("cumulative_cost", 0.0) or 0.0))
+            best_scores.append(row.get("global_best_after"))
+
+    if not costs:
+        return False
+
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(7.5, 4.8))
+    plt.plot(costs, best_scores, linewidth=1.8)
+    plt.xlabel("Cumulative cost (USD)")
+    plt.ylabel("Best score")
+    plt.title("Best score vs cumulative cost")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True

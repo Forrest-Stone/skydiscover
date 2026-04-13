@@ -21,6 +21,7 @@ from skydiscover.budget import (
     BudgetLedger,
     CallRole,
     call_record_from_response,
+    plot_run_best_score_vs_cost,
     write_iteration_record,
     write_summary,
 )
@@ -826,11 +827,30 @@ class DiscoveryController:
         write_iteration_record(self._budget_iterations_path, budget_record)
 
     def _write_budget_summary(self) -> None:
+        summary = self.budget_ledger.summary()
         write_summary(
             self._budget_summary_path,
             self.budget_ledger,
             best_score=self._best_score_or_zero(),
         )
+        logger.info(
+            "Budget summary: total_cost=%.6f, nominal_budget=%.6f, oob=%s, overshoot=%.6f",
+            float(summary.get("total_cost", 0.0) or 0.0),
+            float(summary.get("nominal_budget", 0.0) or 0.0),
+            bool(summary.get("oob", False)),
+            float(summary.get("overshoot", 0.0) or 0.0),
+        )
+        plotted = plot_run_best_score_vs_cost(
+            self._budget_iterations_path,
+            self._budget_summary_path.parent / "best_score_vs_cost.png",
+        )
+        if plotted:
+            logger.info(
+                "Budget plot saved: %s",
+                self._budget_summary_path.parent / "best_score_vs_cost.png",
+            )
+        else:
+            logger.info("Budget plot skipped (no trace yet or matplotlib unavailable).")
 
     # ------------------------------------------------------------------
     # Prompt / parsing / program creation helpers
