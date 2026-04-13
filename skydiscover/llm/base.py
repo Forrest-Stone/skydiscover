@@ -15,13 +15,30 @@ class LLMResponse:
 
     text: str = ""
     image_path: Optional[str] = None
-    input_tokens: int = 0
-    output_tokens: int = 0
-    raw_usage: Optional[Dict[str, Any]] = None
+    model_name: Optional[str] = None
+    prompt_tokens: Optional[int] = None
+    completion_tokens: Optional[int] = None
+    estimated_cost: Optional[float] = None
+    usage_raw: Optional[Dict[str, Any]] = None
 
     @property
     def total_tokens(self) -> int:
-        return max(0, int(self.input_tokens)) + max(0, int(self.output_tokens))
+        return max(0, int(self.prompt_tokens or 0)) + max(0, int(self.completion_tokens or 0))
+
+    @property
+    def input_tokens(self) -> int:
+        """Backward-compatible alias for prompt_tokens."""
+        return max(0, int(self.prompt_tokens or 0))
+
+    @property
+    def output_tokens(self) -> int:
+        """Backward-compatible alias for completion_tokens."""
+        return max(0, int(self.completion_tokens or 0))
+
+    @property
+    def raw_usage(self) -> Optional[Dict[str, Any]]:
+        """Backward-compatible alias for usage_raw."""
+        return self.usage_raw
 
 
 class LLMInterface(ABC):

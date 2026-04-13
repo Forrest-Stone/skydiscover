@@ -13,8 +13,17 @@ import os
 import time
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+from skydiscover.budget import (
+    BudgetConfig,
+    BudgetLedger,
+    CallRole,
+    call_record_from_response,
+    write_iteration_record,
+    write_summary,
+)
 from skydiscover.config import Config
 from skydiscover.context_builder.default import DefaultContextBuilder
 from skydiscover.context_builder.evox import EvoxContextBuilder
@@ -101,6 +110,11 @@ class DiscoveryController:
         self.monitor_callback: Optional[Callable] = None
         self.feedback_reader: Optional[Any] = None
         self._prompt_context: Dict[str, Any] = {}
+        nominal_budget = float(getattr(self.config.search.database, "nominal_budget", 1e9) or 1e9)
+        self.budget_ledger = BudgetLedger(BudgetConfig(nominal_budget=nominal_budget))
+        output_path = Path(self.output_dir or ".")
+        self._budget_iterations_path = output_path / "iterations.jsonl"
+        self._budget_summary_path = output_path / "summary.json"
 
         # Load evaluator/task description and inject into system message so
         # the LLM knows what problem to solve (especially for from-scratch).
@@ -162,13 +176,21 @@ class DiscoveryController:
 
     async def _call_llm(self, system_message: str, user_message: str, **kwargs) -> LLMResponse:
         """Call the LLM, using agentic mode if enabled (text-only)."""
+        budget_record = kwargs.pop("_budget_record", None)
+        call_role = kwargs.pop("_call_role", None)
         if self.agentic_generator and not kwargs.get("image_output"):
             text = await self.agentic_generator.generate(system_message, user_message)
             if text:
                 return LLMResponse(text=text)
-        return await self.llms.generate(
+        result = await self.llms.generate_with_usage(
             system_message, [{"role": "user", "content": user_message}], **kwargs
         )
+        if budget_record is not None and call_role is not None:
+            self.budget_ledger.add_call(
+                budget_record,
+                call_record_from_response(result, call_role),
+            )
+        return result
 
     # ------------------------------------------------------------------
     # Main discovery loop
@@ -261,6 +283,7 @@ class DiscoveryController:
         if not post_process_result:
             return result
 
+        self._write_budget_summary()
         return self._finalize_discovery()
 
     # ------------------------------------------------------------------
@@ -352,6 +375,7 @@ class DiscoveryController:
         if not post_process_result:
             return last_result
 
+        self._write_budget_summary()
         return self._finalize_discovery()
 
     # ------------------------------------------------------------------
@@ -375,7 +399,9 @@ class DiscoveryController:
     # Single-iteration primitives (shared by all controllers)
     # ------------------------------------------------------------------
 
-    async def _run_from_scratch_iteration(self, iteration: int) -> SerializableResult:
+    async def _run_from_scratch_iteration(
+        self, iteration: int, budget_record=None
+    ) -> SerializableResult:
         """Generate a first solution from scratch when the database is empty."""
         try:
             iteration_start = time.time()
@@ -390,7 +416,12 @@ class DiscoveryController:
 
             llm_generation_time = 0.0
             llm_start = time.time()
-            result = await self._call_llm(prompt["system"], prompt["user"])
+            result = await self._call_llm(
+                prompt["system"],
+                prompt["user"],
+                _budget_record=budget_record,
+                _call_role=CallRole.GENERATION,
+            )
             llm_generation_time = time.time() - llm_start
             llm_response = result.text
             if not llm_response:
@@ -442,9 +473,14 @@ class DiscoveryController:
         retry_times: int = 1,
     ) -> SerializableResult:
         """Run a single generate-evaluate iteration."""
+        budget_record = self.budget_ledger.start_iteration(iteration)
+        budget_record.meta["frontier_id"] = getattr(self.database, "current_island", None)
+        budget_record.meta["global_best_before"] = self._best_score_or_zero()
         try:
             if not self.database.programs:
-                return await self._run_from_scratch_iteration(iteration)
+                result = await self._run_from_scratch_iteration(iteration, budget_record=budget_record)
+                self._finalize_budget_iteration(budget_record, result)
+                return result
 
             raw_parent, raw_context_programs = self.database.sample(
                 num_context_programs=self.num_context_programs
@@ -521,6 +557,7 @@ class DiscoveryController:
                 try:
                     llm_generation_time = 0.0
                     llm_start = time.time()
+                    role = CallRole.GENERATION if retry == 0 else CallRole.RETRY
                     if self.config.language == "image":
                         child_id = str(uuid.uuid4())
                         user_content = build_image_content(
@@ -532,6 +569,8 @@ class DiscoveryController:
                             image_output=True,
                             output_dir=self._get_image_output_dir(),
                             program_id=child_id,
+                            _budget_record=budget_record,
+                            _call_role=role,
                         )
                         llm_response = result.text or ""
                         image_path = result.image_path
@@ -544,25 +583,34 @@ class DiscoveryController:
                             changes_summary = None
                             parse_error = "VLM did not generate an image"
                     else:
-                        result = await self._call_llm(prompt["system"], prompt["user"])
+                        result = await self._call_llm(
+                            prompt["system"],
+                            prompt["user"],
+                            _budget_record=budget_record,
+                            _call_role=role,
+                        )
                         llm_response = result.text
                     llm_generation_time = time.time() - llm_start
                 except Exception as e:
                     logger.error(f"LLM generation failed: {e}")
-                    return SerializableResult(
+                    result = SerializableResult(
                         error=f"LLM generation failed: {str(e)}",
                         iteration=iteration,
                         attempts_used=retry + 1,
                     )
+                    self._finalize_budget_iteration(budget_record, result)
+                    return result
 
                 if self.config.language != "image":
                     # Text/code mode: parse LLM response
                     if llm_response is None:
-                        return SerializableResult(
+                        result = SerializableResult(
                             error="LLM returned None response",
                             iteration=iteration,
                             attempts_used=retry + 1,
                         )
+                        self._finalize_budget_iteration(budget_record, result)
+                        return result
 
                     child_solution, changes_summary, parse_error = self._parse_llm_response(
                         llm_response, parent.solution, iteration, retry + 1, retry_times
@@ -599,13 +647,15 @@ class DiscoveryController:
                         retry_times,
                         parse_error,
                     )
-                    return SerializableResult(
+                    result = SerializableResult(
                         error=f"{parse_error} (after {retry_times} attempts)",
                         iteration=iteration,
                         prompt=prompt,
                         llm_response=llm_response,
                         attempts_used=retry_times,
                     )
+                    self._finalize_budget_iteration(budget_record, result)
+                    return result
 
                 if self.config.language != "image":
                     child_id = str(uuid.uuid4())
@@ -693,7 +743,7 @@ class DiscoveryController:
                         extra_metadata=failed_extra,
                         artifacts=child_eval_result.artifacts,
                     )
-                    return SerializableResult(
+                    result = SerializableResult(
                         error=f"Evaluator failed after {retry_times} attempts: {error_msg}",
                         iteration=iteration,
                         child_program_dict=failed_child_program.to_dict(),
@@ -706,6 +756,8 @@ class DiscoveryController:
                         llm_response=llm_response,
                         attempts_used=retry_times,
                     )
+                    self._finalize_budget_iteration(budget_record, result)
+                    return result
                 break
 
             extra_meta = {}
@@ -726,7 +778,7 @@ class DiscoveryController:
             )
             iteration_time = time.time() - iteration_start
 
-            return SerializableResult(
+            final_result = SerializableResult(
                 child_program_dict=child_program.to_dict(),
                 parent_id=parent.id,
                 other_context_ids=context_program_ids,
@@ -738,9 +790,47 @@ class DiscoveryController:
                 iteration=iteration,
                 attempts_used=retry + 1,
             )
+            self._finalize_budget_iteration(budget_record, final_result)
+            return final_result
         except Exception as e:
             logger.exception(f"Error in iteration {iteration}")
-            return SerializableResult(error=str(e), iteration=iteration, attempts_used=1)
+            result = SerializableResult(error=str(e), iteration=iteration, attempts_used=1)
+            self._finalize_budget_iteration(budget_record, result)
+            return result
+
+    def _best_score_or_zero(self) -> float:
+        best_program = self.database.get_best_program()
+        if best_program is None:
+            return 0.0
+        if hasattr(self.database, "get_program_proxy_score"):
+            score = self.database.get_program_proxy_score(best_program)
+        else:
+            score = (best_program.metrics or {}).get("combined_score", 0.0)
+        return float(score or 0.0)
+
+    def _extract_candidate_score(self, result: SerializableResult) -> Optional[float]:
+        child = result.child_program_dict or {}
+        metrics = child.get("metrics") or {}
+        score = metrics.get("combined_score", metrics.get("score"))
+        try:
+            return float(score) if score is not None else None
+        except (TypeError, ValueError):
+            return None
+
+    def _finalize_budget_iteration(self, budget_record, result: SerializableResult) -> None:
+        budget_record.meta["global_best_after"] = self._best_score_or_zero()
+        budget_record.meta["attempts_used"] = int(result.attempts_used or 1)
+        budget_record.meta["candidate_score"] = self._extract_candidate_score(result)
+        budget_record.meta["meta_triggered"] = False
+        self.budget_ledger.finalize_iteration(budget_record)
+        write_iteration_record(self._budget_iterations_path, budget_record)
+
+    def _write_budget_summary(self) -> None:
+        write_summary(
+            self._budget_summary_path,
+            self.budget_ledger,
+            best_score=self._best_score_or_zero(),
+        )
 
     # ------------------------------------------------------------------
     # Prompt / parsing / program creation helpers
