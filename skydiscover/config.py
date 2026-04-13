@@ -236,6 +236,8 @@ class LLMModelConfig:
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     max_tokens: Optional[int] = None
+    input_price_per_1m: Optional[float] = None
+    output_price_per_1m: Optional[float] = None
 
     # Request parameters
     timeout: Optional[int] = None
@@ -322,6 +324,8 @@ class LLMConfig(LLMModelConfig):
             "temperature": self.temperature,
             "top_p": self.top_p,
             "max_tokens": self.max_tokens,
+            "input_price_per_1m": getattr(self, "input_price_per_1m", None),
+            "output_price_per_1m": getattr(self, "output_price_per_1m", None),
             "timeout": self.timeout,
             "retries": self.retries,
             "retry_delay": self.retry_delay,
