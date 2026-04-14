@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Iterable, Optional
 
 
 def is_oob(total_cost: float, nominal_budget: float) -> bool:
@@ -17,3 +17,25 @@ def best_score_at_budget(points: Iterable[tuple[float, float]], budget: float) -
         if cost <= budget:
             best = score if best is None else max(best, score)
     return best
+
+
+def success_at_target(best_score: Optional[float], target: float) -> float:
+    if best_score is None:
+        return 0.0
+    return 1.0 if float(best_score) >= float(target) else 0.0
+
+
+def cost_to_target(points: Iterable[tuple[float, float]], target: float) -> float | None:
+    for cost, score in points:
+        try:
+            if score is not None and float(score) >= float(target):
+                return float(cost)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def overshoot_ratio(total_cost: float, nominal_budget: float) -> float:
+    if nominal_budget <= 0:
+        return 0.0
+    return max((total_cost - nominal_budget) / nominal_budget, 0.0)

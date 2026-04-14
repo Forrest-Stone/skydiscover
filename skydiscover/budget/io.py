@@ -29,6 +29,14 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         "global_best_after": record.meta.get("global_best_after"),
         "meta_triggered": record.meta.get("meta_triggered", False),
         "attempts_used": record.meta.get("attempts_used", 1),
+        "num_calls": len(record.calls),
+        "total_tokens": prompt_tokens + completion_tokens,
+        "call_roles": [c.role.value for c in record.calls],
+        "call_model_names": [c.model_name for c in record.calls],
+        "call_prompt_tokens": [c.prompt_tokens for c in record.calls],
+        "call_completion_tokens": [c.completion_tokens for c in record.calls],
+        "call_total_tokens": [c.total_tokens for c in record.calls],
+        "call_costs": [c.raw_cost for c in record.calls],
     }
     with path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
@@ -82,4 +90,63 @@ def plot_run_best_score_vs_cost(iterations_path: Path, out_png: Path) -> bool:
     plt.tight_layout()
     plt.savefig(out_png, dpi=180)
     plt.close()
+    return True
+
+
+def plot_run_budget_panels(iterations_path: Path, out_png: Path) -> bool:
+    """Create a compact multi-panel budget report for one run."""
+    try:
+        import matplotlib.pyplot as plt
+    except Exception:
+        return False
+
+    if not iterations_path.exists():
+        return False
+
+    rows = []
+    with iterations_path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+
+    if not rows:
+        return False
+
+    x_iter = [int(r.get("iteration", i)) for i, r in enumerate(rows)]
+    y_iter_cost = [float(r.get("iteration_cost", 0.0) or 0.0) for r in rows]
+    y_cum_cost = [float(r.get("cumulative_cost", 0.0) or 0.0) for r in rows]
+    y_score = [r.get("global_best_after") for r in rows]
+    y_tokens = [int(r.get("total_tokens", 0) or 0) for r in rows]
+
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(2, 2, figsize=(10, 7))
+
+    axes[0, 0].plot(x_iter, y_iter_cost, linewidth=1.5)
+    axes[0, 0].set_title("Iteration cost")
+    axes[0, 0].set_xlabel("Iteration")
+    axes[0, 0].set_ylabel("USD")
+
+    axes[0, 1].plot(x_iter, y_cum_cost, linewidth=1.5)
+    axes[0, 1].set_title("Cumulative cost")
+    axes[0, 1].set_xlabel("Iteration")
+    axes[0, 1].set_ylabel("USD")
+
+    axes[1, 0].plot(y_cum_cost, y_score, linewidth=1.5)
+    axes[1, 0].set_title("Best score vs cumulative cost")
+    axes[1, 0].set_xlabel("Cumulative cost (USD)")
+    axes[1, 0].set_ylabel("Best score")
+
+    axes[1, 1].plot(x_iter, y_tokens, linewidth=1.5)
+    axes[1, 1].set_title("Tokens per iteration")
+    axes[1, 1].set_xlabel("Iteration")
+    axes[1, 1].set_ylabel("Tokens")
+
+    fig.tight_layout()
+    fig.savefig(out_png, dpi=180)
+    plt.close(fig)
     return True

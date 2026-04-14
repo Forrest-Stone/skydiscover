@@ -21,6 +21,7 @@ from skydiscover.budget import (
     BudgetLedger,
     CallRole,
     call_record_from_response,
+    plot_run_budget_panels,
     plot_run_best_score_vs_cost,
     write_iteration_record,
     write_summary,
@@ -825,6 +826,15 @@ class DiscoveryController:
         budget_record.meta["meta_triggered"] = False
         self.budget_ledger.finalize_iteration(budget_record)
         write_iteration_record(self._budget_iterations_path, budget_record)
+        logger.info(
+            "Budget(iter=%s): iter_cost=%.6f, cum_cost=%.6f, tokens=%s, calls=%s, remain_ratio=%.4f",
+            budget_record.iteration,
+            budget_record.iteration_cost,
+            budget_record.cumulative_cost,
+            sum(c.total_tokens for c in budget_record.calls),
+            len(budget_record.calls),
+            budget_record.remaining_budget_ratio,
+        )
 
     def _write_budget_summary(self) -> None:
         summary = self.budget_ledger.summary()
@@ -851,6 +861,15 @@ class DiscoveryController:
             )
         else:
             logger.info("Budget plot skipped (no trace yet or matplotlib unavailable).")
+        panels_plotted = plot_run_budget_panels(
+            self._budget_iterations_path,
+            self._budget_summary_path.parent / "budget_report.png",
+        )
+        if panels_plotted:
+            logger.info(
+                "Budget panel plot saved: %s",
+                self._budget_summary_path.parent / "budget_report.png",
+            )
 
     # ------------------------------------------------------------------
     # Prompt / parsing / program creation helpers
