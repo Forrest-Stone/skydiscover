@@ -634,6 +634,7 @@ _DB_CONFIG_BY_TYPE: Dict[str, type] = {
     "adaevolve": AdaEvolveDatabaseConfig,
     "budget_adaevolve": AdaEvolveDatabaseConfig,
     "budgetevolve": AdaEvolveDatabaseConfig,
+    "costada": AdaEvolveDatabaseConfig,
     "openevolve_native": OpenEvolveNativeDatabaseConfig,
     "gepa_native": GEPANativeDatabaseConfig,
     "claude_code": ClaudeCodeConfig,

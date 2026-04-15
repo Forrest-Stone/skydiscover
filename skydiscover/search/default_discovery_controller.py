@@ -173,6 +173,10 @@ class DiscoveryController:
             from skydiscover.context_builder.budgetevolve import BudgetEvolveContextBuilder
 
             self.context_builder = BudgetEvolveContextBuilder(self.config)
+        elif template == "costada":
+            from skydiscover.context_builder.costada import CostAdaContextBuilder
+
+            self.context_builder = CostAdaContextBuilder(self.config)
         else:
             self.context_builder = DefaultContextBuilder(self.config)
 
