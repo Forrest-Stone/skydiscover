@@ -115,6 +115,11 @@ class BudgetLedger:
             "total_cost": self.cumulative_cost,
             "oob": self.is_oob(),
             "overshoot": self.overshoot(),
+            "overshoot_ratio": (
+                self.overshoot() / self.config.nominal_budget
+                if self.config.nominal_budget > self.config.eps
+                else 0.0
+            ),
             "num_iterations": len(self.records),
             "num_generation_calls": num_generation_calls,
             "num_retry_calls": num_retry_calls,

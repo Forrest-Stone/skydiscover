@@ -51,6 +51,31 @@ def write_summary(path: Path, ledger: BudgetLedger, best_score: float | None = N
         json.dump(summary, f, ensure_ascii=False, indent=2)
 
 
+def load_iterations(path: Path) -> list[Dict[str, Any]]:
+    rows: list[Dict[str, Any]] = []
+    if not path.exists():
+        return rows
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return rows
+
+
+def load_summary(path: Path) -> Dict[str, Any]:
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
 def plot_run_best_score_vs_cost(iterations_path: Path, out_png: Path) -> bool:
     """Plot best-score-vs-cost for a single run.
 

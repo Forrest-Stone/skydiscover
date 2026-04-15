@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from skydiscover.budget.core import CallCostRecord, CallRole, IterationBudgetRecord
+from skydiscover.budget.core import BudgetLedger, CallCostRecord, CallRole, IterationBudgetRecord
 
 
 def call_record_from_response(llm_response: Any, role: CallRole, **meta) -> CallCostRecord:
@@ -27,3 +27,14 @@ def aggregate_tokens(record: IterationBudgetRecord) -> tuple[int, int]:
     prompt_tokens = sum(c.prompt_tokens for c in record.calls)
     completion_tokens = sum(c.completion_tokens for c in record.calls)
     return prompt_tokens, completion_tokens
+
+
+def attach_call_to_iteration(
+    ledger: BudgetLedger,
+    iteration_record: IterationBudgetRecord,
+    llm_response: Any,
+    role: CallRole,
+    **meta,
+) -> None:
+    """Attach one provider response as a call record to an iteration."""
+    ledger.add_call(iteration_record, call_record_from_response(llm_response, role, **meta))
