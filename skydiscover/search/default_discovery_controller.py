@@ -830,6 +830,12 @@ class DiscoveryController:
         budget_record.meta["meta_triggered"] = False
         self.budget_ledger.finalize_iteration(budget_record)
         write_iteration_record(self._budget_iterations_path, budget_record)
+        # Keep summary fresh even if the run exits early/interrupted.
+        write_summary(
+            self._budget_summary_path,
+            self.budget_ledger,
+            best_score=self._best_score_or_zero(),
+        )
         logger.info(
             "Budget(iter=%s): iter_cost=%.6f, cum_cost=%.6f, tokens=%s, calls=%s, remain_ratio=%.4f",
             budget_record.iteration,
@@ -873,6 +879,23 @@ class DiscoveryController:
             logger.info(
                 "Budget panel plot saved: %s",
                 self._budget_summary_path.parent / "budget_report.png",
+            )
+        else:
+            logger.info("Budget panel plot skipped (no trace yet or matplotlib unavailable).")
+
+        if not plotted or not panels_plotted:
+            note_path = self._budget_summary_path.parent / "budget_plot_status.txt"
+            note_path.write_text(
+                (
+                    "One or more budget plots were not generated.\n"
+                    "Common reasons:\n"
+                    "- matplotlib is unavailable in this runtime\n"
+                    "- no valid iteration trace rows were found\n"
+                    "Expected budget artifacts:\n"
+                    "- iterations.jsonl\n"
+                    "- summary.json\n"
+                ),
+                encoding="utf-8",
             )
 
     # ------------------------------------------------------------------

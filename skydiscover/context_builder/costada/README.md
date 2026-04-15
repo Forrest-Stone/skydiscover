@@ -1,34 +1,66 @@
-# CostAda Context Builder
+# CostAda Context Builder (`skydiscover.context_builder.costada`)
 
-`CostAdaContextBuilder` extends `AdaEvolveContextBuilder` and adds BCHD-specific prompt controls.
+This package adapts prompt construction for BCHD/CostAda while reusing AdaEvolve templates.
 
-## What it adds
+---
 
-1. **Budget status block**
-   - Remaining budget ratio
-   - Current spending tier
-   - Spending preference text
+## 1) Purpose
 
-2. **Tier-conditioned verbosity**
-   - `cheap`: minimal guidance (one-line style)
-   - `standard`: compressed guidance
-   - `rich`: full guidance
+`CostAdaContextBuilder` extends `AdaEvolveContextBuilder` and adds budget/tier-aware guidance without rewriting the whole prompt stack.
 
-## Why
+It allows step-level spending decisions to be reflected in prompts.
 
-This keeps prompt construction aligned with BCHD step-level spending:
-- cheaper tiers use compact prompts,
-- richer tiers permit fuller tactic detail.
+---
 
-## Inputs expected from controller
+## 2) Added behavior
 
-The controller should pass in context keys:
+### A) Budget status block
+
+Injected block includes:
+
+- remaining budget ratio
+- current spending tier
+- concise spending preference text
+
+### B) Tier-conditioned verbosity
+
+- `cheap`: minimal guidance (one-line style)
+- `standard`: compressed guidance
+- `rich`: full guidance
+
+This keeps prompt verbosity aligned with compute tier.
+
+---
+
+## 3) Expected controller context keys
+
+Controller should pass:
+
 - `remaining_budget_ratio`
 - `costada_tier`
-- plus regular AdaEvolve guidance keys (`paradigm`, `siblings`, `error_context`, ...)
 
-## Design principle
+plus standard AdaEvolve context keys:
 
-- Reuse AdaEvolve prompt scaffold.
-- Add minimal CostAda-specific block.
-- Avoid duplicating entire template pipelines.
+- `paradigm`
+- `siblings`
+- `error_context`
+- `other_context_programs`
+
+---
+
+## 4) Design constraints
+
+1. Reuse existing AdaEvolve scaffold and templates.
+2. Keep CostAda-specific additions small and explicit.
+3. Avoid duplicating default/adaevolve template pipelines.
+
+---
+
+## 5) Debug tips
+
+If budget/tier text is not visible in prompts:
+
+1. verify `template: costada` in config
+2. verify controller passes `remaining_budget_ratio` and `costada_tier`
+3. confirm `default_discovery_controller` selects `CostAdaContextBuilder`
+
