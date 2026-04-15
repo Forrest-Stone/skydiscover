@@ -13,6 +13,8 @@ from skydiscover.search.adaevolve.database import AdaEvolveDatabase
 from skydiscover.search.budgetevolve.controller import BudgetEvolveController
 from skydiscover.search.budgetevolve.database import BudgetEvolveDatabase
 from skydiscover.search.beam_search.database import BeamSearchDatabase
+from skydiscover.search.costada.controller import CostAdaController
+from skydiscover.search.costada.database import CostAdaDatabase
 
 # Algorithm implementations
 from skydiscover.search.best_of_n.database import BestOfNDatabase
@@ -64,6 +66,8 @@ register_database("budget_adaevolve", BudgetEvolveDatabase)
 register_controller("budget_adaevolve", BudgetEvolveController)
 register_database("budgetevolve", BudgetEvolveDatabase)
 register_controller("budgetevolve", BudgetEvolveController)
+register_database("costada", CostAdaDatabase)
+register_controller("costada", CostAdaController)
 
 # OpenEvolve Native
 register_database("openevolve_native", OpenEvolveNativeDatabase)

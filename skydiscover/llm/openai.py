@@ -55,7 +55,13 @@ def is_openai_reasoning_model(model_name: str, api_base: str) -> bool:
 
 def _is_region_restricted_error(exc: Exception) -> bool:
     text = str(exc).lower()
-    return "not available in your region" in text or "'code': 403" in text
+    return (
+        "not available in your region" in text
+        or "'code': 403" in text
+        or "error code: 403" in text
+        or "unsupported_country_region_territory" in text
+        or "request_forbidden" in text
+    )
 
 
 def _normalize_openrouter_model_name(model_name: str) -> str:
@@ -117,6 +123,8 @@ class OpenAILLM(LLMInterface):
         self.api_base = model_cfg.api_base
         self.api_key = model_cfg.api_key
         self.reasoning_effort = getattr(model_cfg, "reasoning_effort", None)
+        self.input_price_per_1m = getattr(model_cfg, "input_price_per_1m", None)
+        self.output_price_per_1m = getattr(model_cfg, "output_price_per_1m", None)
         self._has_switched_region_fallback = False
         self.default_headers = _resolve_default_headers(self.api_base)
 
@@ -348,11 +356,14 @@ class OpenAILLM(LLMInterface):
                     content = await self._call_api_via_responses(params)
                 usage = getattr(response, "usage", None)
                 prompt_tokens, completion_tokens, raw_usage = self._extract_usage_counts(usage)
+                estimated_cost = self._estimate_cost(prompt_tokens, completion_tokens)
                 return LLMResponse(
                     text=content,
-                    input_tokens=prompt_tokens,
-                    output_tokens=completion_tokens,
-                    raw_usage=raw_usage,
+                    model_name=self.model,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    estimated_cost=estimated_cost,
+                    usage_raw=raw_usage,
                 )
             except asyncio.TimeoutError:
                 if attempt < retries:
@@ -503,6 +514,15 @@ class OpenAILLM(LLMInterface):
         if timeout is None:
             timeout = 300
         return retries, retry_delay, timeout
+
+    def _estimate_cost(self, prompt_tokens: int, completion_tokens: int) -> Optional[float]:
+        """Estimate request cost from configured per-1M token prices."""
+        if self.input_price_per_1m is None or self.output_price_per_1m is None:
+            return None
+        return (
+            (prompt_tokens * float(self.input_price_per_1m))
+            + (completion_tokens * float(self.output_price_per_1m))
+        ) / 1_000_000.0
 
     # ------------------------------------------------------------------
     # Image generation (OpenAI Responses API)
