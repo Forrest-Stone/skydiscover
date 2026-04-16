@@ -53,7 +53,10 @@ search:
     costada_alpha: 0.9
     costada_router_beta: 0.5
     costada_router_gamma: 0.9
-    costada_scheduler_beta: 0.5
+    costada_tier_tau_1: 0.24
+    costada_tier_tau_2: 0.38
+    costada_eta_low: 0.12
+    costada_rich_enable_min_budget: 0.28
     costada_eta_min: 0.15
     costada_meta_h_threshold: 0.01
     costada_meta_window: 8

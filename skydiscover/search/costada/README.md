@@ -99,11 +99,13 @@ Cost-aware UCB routing across frontiers.
 
 ### `tier_scheduler.py`
 
-Contextual-UCB scheduler over tiers.
+Deterministic step-level adaptation policy over tiers.
 
-- `bucketize_state`
+- `compute_intensity`
+- `base_tier_from_intensity`
+- `apply_budget_override`
 - `select`
-- `update`
+- `update` (compatibility no-op)
 
 ### `state.py`
 
@@ -177,4 +179,3 @@ In the output directory, verify:
 2. `summary.json` exists and has `total_cost`, `oob`, `overshoot`
 3. if matplotlib available: `best_score_vs_cost.png`, `budget_report.png`
 4. if plot missing: check `budget_plot_status.txt`
-

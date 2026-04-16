@@ -42,15 +42,14 @@ class CostAwareFrontierRouter:
     def update(
         self,
         frontier_id: int,
-        score_new: float,
-        global_best_prev: float,
+        global_gain_value: float,
         raw_iteration_cost: float,
     ) -> float:
         """Update frontier reward with decayed cost-aware gain.
 
-        reward = max(score_new - global_best_prev, 0) / (1 + raw_iteration_cost)
+        r_t = g_t / (1 + raw_iteration_cost)
         """
-        reward = max(float(score_new) - float(global_best_prev), 0.0) / (
+        reward = max(float(global_gain_value), 0.0) / (
             1.0 + max(float(raw_iteration_cost), 0.0)
         )
         old = float(self.rewards[frontier_id])

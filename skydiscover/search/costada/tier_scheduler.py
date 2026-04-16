@@ -1,79 +1,109 @@
-"""Tier scheduler for step-level spending in CostAda."""
+"""Deterministic step-level spending policy for CostAda.
+
+Final method design:
+- step-level spending is deterministic local adaptation (no bandit/UCB)
+- frontier-level allocation remains bandit/UCB (in router.py)
+"""
 
 from __future__ import annotations
 
 import math
-from collections import defaultdict
-from typing import Dict, Iterable, Tuple
+from dataclasses import dataclass
 
 from skydiscover.search.costada.state import CompactControlState
 
 
+@dataclass
+class TierDecision:
+    """Debug-friendly decision bundle for one tier selection."""
+
+    intensity: float
+    base_tier: str
+    final_tier: str
+    override_reason: str = ""
+
+
 class TierScheduler:
-    """Contextual-UCB scheduler over {cheap, standard, rich} tiers."""
+    """Deterministic mapping: H -> intensity -> tier with budget overrides."""
 
     TIERS = ("cheap", "standard", "rich")
 
-    def __init__(self, beta: float = 0.5):
-        self.beta = float(beta)
-        self._counts: Dict[Tuple[str, str], int] = defaultdict(int)
-        self._totals: Dict[Tuple[str, str], float] = defaultdict(float)
-        self._state_counts: Dict[str, int] = defaultdict(int)
+    def __init__(
+        self,
+        *,
+        intensity_min: float = 0.15,
+        intensity_max: float = 0.5,
+        tau_1: float = 0.24,
+        tau_2: float = 0.38,
+        eta_low: float = 0.12,
+        rich_enable_min_budget: float = 0.28,
+        stagnation_threshold: int = 8,
+        low_signal_threshold: float = 0.01,
+        eps: float = 1e-8,
+    ):
+        self.intensity_min = float(intensity_min)
+        self.intensity_max = float(intensity_max)
+        self.tau_1 = float(tau_1)
+        self.tau_2 = float(tau_2)
+        self.eta_low = float(eta_low)
+        self.rich_enable_min_budget = float(rich_enable_min_budget)
+        self.stagnation_threshold = int(stagnation_threshold)
+        self.low_signal_threshold = float(low_signal_threshold)
+        self.eps = float(eps)
+        self._last_decision: TierDecision | None = None
 
-    def bucketize_state(self, state: CompactControlState) -> str:
-        """Bucketize compact state for contextual bandit lookup."""
-        rho = state.remaining_budget_ratio
-        if rho >= 0.66:
-            rb = "hi"
-        elif rho >= 0.33:
-            rb = "mid"
-        else:
-            rb = "lo"
+    def compute_intensity(self, frontier_signal: float) -> float:
+        """Compute I_t = I_min + (I_max - I_min) / (1 + sqrt(H + eps))."""
+        H = max(float(frontier_signal), 0.0)
+        return self.intensity_min + (self.intensity_max - self.intensity_min) / (
+            1.0 + math.sqrt(H + self.eps)
+        )
 
-        if state.recent_improvement_avg > 0.02:
-            ib = "gain_hi"
-        elif state.recent_improvement_avg > 0.0:
-            ib = "gain_mid"
-        else:
-            ib = "gain_lo"
+    def base_tier_from_intensity(self, intensity: float) -> str:
+        """Map continuous intensity to discrete base tier."""
+        if intensity < self.tau_1:
+            return "cheap"
+        if intensity < self.tau_2:
+            return "standard"
+        return "rich"
 
-        if state.stagnation_steps >= 8:
-            sb = "stag_hi"
-        elif state.stagnation_steps >= 3:
-            sb = "stag_mid"
-        else:
-            sb = "stag_lo"
+    def apply_budget_override(self, state: CompactControlState, base_tier: str) -> tuple[str, str]:
+        """Apply budget-aware deterministic overrides.
 
-        hb = "H_hi" if state.frontier_signal > 0.01 else "H_lo"
-        return f"{rb}|{ib}|{sb}|{hb}"
+        Rules:
+        - if remaining budget <= eta_low: force cheap
+        - else if budget sufficient and frontier stagnant and signal low: allow rich
+        - otherwise keep base tier
+        """
+        rho = float(state.remaining_budget_ratio)
+        stagnant = int(state.stagnation_steps) >= self.stagnation_threshold
+        low_signal = float(state.frontier_signal) <= self.low_signal_threshold
 
-    def select(self, state: CompactControlState, feasible_tiers: Iterable[str] | None = None) -> str:
-        """Select a tier via contextual UCB."""
-        bucket = self.bucketize_state(state)
-        tiers = [t for t in (feasible_tiers or self.TIERS) if t in self.TIERS]
-        if not tiers:
-            tiers = ["cheap"]
+        if rho <= self.eta_low:
+            return "cheap", "low_budget_force_cheap"
 
-        self._state_counts[bucket] += 1
-        n_state = self._state_counts[bucket]
-        logn = math.log(n_state + 1.0)
+        if rho >= self.rich_enable_min_budget and stagnant and low_signal:
+            return "rich", "stagnation_rich_override"
 
-        best_tier = tiers[0]
-        best_score = float("-inf")
-        for tier in tiers:
-            key = (bucket, tier)
-            n = self._counts[key]
-            mean = self._totals[key] / n if n > 0 else 0.0
-            bonus = self.beta * math.sqrt(logn / (n + 1.0))
-            score = mean + bonus
-            if score > best_score:
-                best_score = score
-                best_tier = tier
-        return best_tier
+        return base_tier, ""
+
+    def select(self, state: CompactControlState) -> str:
+        """Deterministically select a tier from compact state."""
+        intensity = self.compute_intensity(state.frontier_signal)
+        base_tier = self.base_tier_from_intensity(intensity)
+        final_tier, reason = self.apply_budget_override(state, base_tier)
+        self._last_decision = TierDecision(
+            intensity=float(intensity),
+            base_tier=base_tier,
+            final_tier=final_tier,
+            override_reason=reason,
+        )
+        return final_tier
 
     def update(self, state: CompactControlState, chosen_tier: str, realized_utility: float) -> None:
-        """Update contextual statistics with realized utility."""
-        bucket = self.bucketize_state(state)
-        key = (bucket, chosen_tier)
-        self._counts[key] += 1
-        self._totals[key] += float(realized_utility)
+        """Compatibility no-op: deterministic policy has no bandit table updates."""
+        _ = (state, chosen_tier, realized_utility)
+
+    def last_decision(self) -> TierDecision | None:
+        """Return the most recent decision metadata (for debugging/logging)."""
+        return self._last_decision

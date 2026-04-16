@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import math
 import time
 from collections import deque
 from typing import Dict, List, Optional
@@ -28,7 +27,12 @@ logger = logging.getLogger(__name__)
 
 
 class CostAdaController(AdaEvolveController):
-    """Budget-calibrated hierarchical controller (BCHD / CostAda)."""
+    """Budget-calibrated hierarchical controller (BCHD / CostAda).
+
+    Final design split:
+    - step-level spending: deterministic local adaptation from H_t
+    - frontier-level allocation: UCB/bandit in CostAwareFrontierRouter
+    """
 
     def __init__(self, controller_input: DiscoveryControllerInput):
         super().__init__(controller_input)
@@ -40,15 +44,22 @@ class CostAdaController(AdaEvolveController):
             beta=float(getattr(db_cfg, "costada_router_beta", 0.5)),
             gamma=float(getattr(db_cfg, "costada_router_gamma", 0.9)),
         )
-        self.tier_scheduler = TierScheduler(beta=float(getattr(db_cfg, "costada_scheduler_beta", 0.5)))
+        self.tier_scheduler = TierScheduler(
+            intensity_min=float(getattr(db_cfg, "intensity_min", 0.15)),
+            intensity_max=float(getattr(db_cfg, "intensity_max", 0.5)),
+            tau_1=float(getattr(db_cfg, "costada_tier_tau_1", 0.24)),
+            tau_2=float(getattr(db_cfg, "costada_tier_tau_2", 0.38)),
+            eta_low=float(getattr(db_cfg, "costada_eta_low", 0.12)),
+            rich_enable_min_budget=float(getattr(db_cfg, "costada_rich_enable_min_budget", 0.28)),
+            stagnation_threshold=int(getattr(db_cfg, "costada_stagnation_steps", 8)),
+            low_signal_threshold=float(getattr(db_cfg, "costada_meta_h_threshold", 0.01)),
+        )
         self.meta_eta_min = float(getattr(db_cfg, "costada_eta_min", 0.15))
         self.meta_h_threshold = float(getattr(db_cfg, "costada_meta_h_threshold", 0.01))
         self.meta_gain_eps = float(getattr(db_cfg, "costada_significant_gain_eps", 1e-6))
         self.meta_stagnation_steps = int(getattr(db_cfg, "costada_stagnation_steps", 8))
         self.meta_window = int(getattr(db_cfg, "costada_meta_window", 8))
         self.improvement_window = int(getattr(db_cfg, "costada_improvement_window", 8))
-        self.intensity_min = float(getattr(db_cfg, "intensity_min", 0.15))
-        self.intensity_max = float(getattr(db_cfg, "intensity_max", 0.5))
 
         num_islands = int(getattr(self.database, "num_islands", 1) or 1)
         self.frontier_states: Dict[int, FrontierState] = {
@@ -121,15 +132,8 @@ class CostAdaController(AdaEvolveController):
         return compact
 
     def _frontier_intensity(self, frontier_signal: float) -> float:
-        """Map frontier signal H to exploration intensity.
-
-        I_t = I_min + (I_max - I_min) / (1 + sqrt(H + eps))
-        """
-        eps = 1e-8
-        H = max(float(frontier_signal), 0.0)
-        return self.intensity_min + (self.intensity_max - self.intensity_min) / (
-            1.0 + math.sqrt(H + eps)
-        )
+        """Map frontier signal H to exploration intensity via deterministic scheduler."""
+        return self.tier_scheduler.compute_intensity(frontier_signal)
 
     async def _run_iteration(self, iteration: int, checkpoint_callback) -> None:
         """Execute one CostAda iteration with unified BCHD signal updates."""
@@ -185,8 +189,7 @@ class CostAdaController(AdaEvolveController):
 
         realized_router_reward = self.router.update(
             frontier_id=frontier_id,
-            score_new=score_new,
-            global_best_prev=global_best_prev,
+            global_gain_value=g_global,
             raw_iteration_cost=raw_iteration_cost,
         )
         frontier_state.routing_reward = self.router.get_reward(frontier_id)
