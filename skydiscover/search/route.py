@@ -18,6 +18,8 @@ from skydiscover.search.costada.database import CostAdaDatabase
 
 # Algorithm implementations
 from skydiscover.search.best_of_n.database import BestOfNDatabase
+from skydiscover.search.claude_code.controller import ClaudeCodeController
+from skydiscover.search.claude_code.database import ClaudeCodeDatabase
 from skydiscover.search.default_discovery_controller import (
     DiscoveryController,
     DiscoveryControllerInput,
@@ -79,3 +81,7 @@ register_database("evox_meta", SearchStrategyDatabase)
 # GEPA Native: guided evolution with acceptance gating and merge
 register_database("gepa_native", GEPANativeDatabase)
 register_controller("gepa_native", GEPANativeController)
+
+# Claude Code: single-agent baseline running Claude CLI in a container
+register_database("claude_code", ClaudeCodeDatabase)
+register_controller("claude_code", ClaudeCodeController)
