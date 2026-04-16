@@ -209,7 +209,8 @@ class CostAdaController(AdaEvolveController):
         budget_record.meta["global_gain"] = float(g_global)
         budget_record.meta["utility"] = float(util)
         budget_record.meta["frontier_signal"] = float(frontier_state.H)
-        budget_record.meta["router_reward"] = float(realized_router_reward)
+        budget_record.meta["routing_reward"] = float(realized_router_reward)
+        budget_record.meta["router_reward"] = float(realized_router_reward)  # backward-compatible alias
         budget_record.meta["meta_triggered"] = bool(meta_triggered)
 
         # Keep default summary/trace pipeline from phase-1.
