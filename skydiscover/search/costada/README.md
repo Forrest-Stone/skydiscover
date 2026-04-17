@@ -151,7 +151,7 @@ and fills CostAda-specific iteration fields (when available):
 - `global_gain`
 - `utility`
 - `frontier_signal`
-- `router_reward`
+- `routing_reward` (and backward-compatible alias `router_reward`)
 - `meta_triggered`
 
 These can be aggregated by `scripts/plot_budget_curves.py`.

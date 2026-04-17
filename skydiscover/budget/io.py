@@ -32,6 +32,11 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         "global_gain": record.meta.get("global_gain"),
         "utility": record.meta.get("utility"),
         "frontier_signal": record.meta.get("frontier_signal"),
+        "routing_reward": (
+            record.meta.get("routing_reward")
+            if record.meta.get("routing_reward") is not None
+            else record.meta.get("router_reward")
+        ),
         "router_reward": record.meta.get("router_reward"),
         "meta_triggered": record.meta.get("meta_triggered", False),
         "attempts_used": record.meta.get("attempts_used", 1),
