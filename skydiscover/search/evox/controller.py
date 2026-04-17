@@ -167,6 +167,9 @@ class CoEvolutionController(DiscoveryController):
         if self._pending_search_result:
             await self._finalize_pending_search()
 
+        # Persist run-level budget summary (phase-1 instrumentation output)
+        self._write_budget_summary()
+
         logger.info(f"[SOLUTION EVOLUTION] Evolution completed: {self.database.name}")
         return self.database.get_best_program()
 

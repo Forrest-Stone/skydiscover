@@ -236,6 +236,8 @@ class LLMModelConfig:
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     max_tokens: Optional[int] = None
+    input_price_per_1m: Optional[float] = 0.72
+    output_price_per_1m: Optional[float] = 2.3
 
     # Request parameters
     timeout: Optional[int] = None
@@ -322,6 +324,8 @@ class LLMConfig(LLMModelConfig):
             "temperature": self.temperature,
             "top_p": self.top_p,
             "max_tokens": self.max_tokens,
+            "input_price_per_1m": getattr(self, "input_price_per_1m", None),
+            "output_price_per_1m": getattr(self, "output_price_per_1m", None),
             "timeout": self.timeout,
             "retries": self.retries,
             "retry_delay": self.retry_delay,
@@ -617,6 +621,7 @@ _DB_CONFIG_BY_TYPE: Dict[str, type] = {
     "adaevolve": AdaEvolveDatabaseConfig,
     "budget_adaevolve": AdaEvolveDatabaseConfig,
     "budgetevolve": AdaEvolveDatabaseConfig,
+    "costada": AdaEvolveDatabaseConfig,
     "openevolve_native": OpenEvolveNativeDatabaseConfig,
     "gepa_native": GEPANativeDatabaseConfig,
 }
@@ -1056,7 +1061,19 @@ def apply_overrides(
         config.search.type = search
         new_db_cls = _DB_CONFIG_BY_TYPE.get(search)
         if new_db_cls and not isinstance(config.search.database, new_db_cls):
+            # Preserve user-provided database knobs when switching search type
+            # via CLI flag. This keeps compatible fields (and extra attrs) from
+            # the previous database object instead of silently resetting to
+            # defaults.
+            previous_db = config.search.database
             config.search.database = new_db_cls()
+            if previous_db is not None:
+                for key, value in vars(previous_db).items():
+                    try:
+                        setattr(config.search.database, key, value)
+                    except Exception:
+                        # Ignore read-only/incompatible attrs and keep defaults.
+                        continue
 
     # For EvoX, CLI model/api-base overrides should apply to the co-evolved
     # search-strategy side as well. Otherwise it falls back to
