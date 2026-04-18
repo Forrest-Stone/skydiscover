@@ -37,6 +37,7 @@ _SEARCH_CHOICES = [
     "shinkaevolve",
     "gepa",
     "gepa_native",
+    "claude_code",
 ]
 
 
