@@ -10,10 +10,16 @@ import logging
 
 from skydiscover.search.adaevolve.controller import AdaEvolveController, BudgetAdaEvolveController
 from skydiscover.search.adaevolve.database import AdaEvolveDatabase
+from skydiscover.search.budgetevolve.controller import BudgetEvolveController
+from skydiscover.search.budgetevolve.database import BudgetEvolveDatabase
 from skydiscover.search.beam_search.database import BeamSearchDatabase
+from skydiscover.search.costada.controller import CostAdaController
+from skydiscover.search.costada.database import CostAdaDatabase
 
 # Algorithm implementations
 from skydiscover.search.best_of_n.database import BestOfNDatabase
+from skydiscover.search.claude_code.controller import ClaudeCodeController
+from skydiscover.search.claude_code.database import ClaudeCodeDatabase
 from skydiscover.search.default_discovery_controller import (
     DiscoveryController,
     DiscoveryControllerInput,
@@ -58,8 +64,12 @@ register_database("topk", TopKDatabase)
 # AdaEvolve
 register_database("adaevolve", AdaEvolveDatabase)
 register_controller("adaevolve", AdaEvolveController)
-register_database("budget_adaevolve", AdaEvolveDatabase)
-register_controller("budget_adaevolve", BudgetAdaEvolveController)
+register_database("budget_adaevolve", BudgetEvolveDatabase)
+register_controller("budget_adaevolve", BudgetEvolveController)
+register_database("budgetevolve", BudgetEvolveDatabase)
+register_controller("budgetevolve", BudgetEvolveController)
+register_database("costada", CostAdaDatabase)
+register_controller("costada", CostAdaController)
 
 # OpenEvolve Native
 register_database("openevolve_native", OpenEvolveNativeDatabase)
@@ -71,3 +81,7 @@ register_database("evox_meta", SearchStrategyDatabase)
 # GEPA Native: guided evolution with acceptance gating and merge
 register_database("gepa_native", GEPANativeDatabase)
 register_controller("gepa_native", GEPANativeController)
+
+# Claude Code: single-agent baseline running Claude CLI in a container
+register_database("claude_code", ClaudeCodeDatabase)
+register_controller("claude_code", ClaudeCodeController)

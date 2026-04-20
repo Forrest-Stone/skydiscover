@@ -44,7 +44,7 @@ llm:
 
 # Search configuration
 search:
-  type: "budget_adaevolve"
+  type: "budgetevolve"
   num_context_programs: 4
   database:
     # Population settings
@@ -125,7 +125,7 @@ search:
 
 # Prompt configuration
 prompt:
-  template: "budget_adaevolve"
+  template: "budgetevolve"
   system_message: |
     <REPLACE WITH YOUR PROBLEM-SPECIFIC SYSTEM MESSAGE>
 

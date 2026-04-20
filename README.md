@@ -36,17 +36,52 @@ SkyDiscover natively supports [Harbor](https://harborframework.com/)-format benc
 
 ## 🏆 Benchmark Performance
 
-Across ~200 optimization benchmarks, AdaEvolve and EvoX achieve the strongest open-source results — matching or exceeding AlphaEvolve and human SOTA, and outperforming OpenEvolve, GEPA, and ShinkaEvolve under identical generation budgets.
+Across ~200 optimization benchmarks, AdaEvolve and EvoX achieve the strongest open-source results: matching or exceeding AlphaEvolve and human SOTA, and outperforming OpenEvolve, GEPA, and ShinkaEvolve under identical generation budgets.
 
 - **Frontier-CS (172 problems)**: ~34% median score improvement over OpenEvolve, GEPA, and ShinkaEvolve  
-- **Math + Systems Optimization (12 tasks)**: Matches or exceeds AlphaEvolve and human-designed SOTA on 6/6 systems and 6/8 math tasks
+- **Math + Systems Optimization (14 tasks evaluated)**: Matches or exceeds AlphaEvolve and human-designed SOTA on 6/6 systems and 6/8 math tasks
 - **Real-world systems impact**: 41% lower cross-cloud transfer cost, 14% better GPU load balance for MoE serving, and 29% lower KV-cache pressure via GPU model placement
-
-For a detailed breakdown of results for each algorithm, see the respective papers.
 
 <p align="center">
   <img src="assets/benchmarks.png" width="900" alt="SkyDiscover benchmarks">
 </p>
+
+<details>
+<summary><b>📊 Complete results of AdaEvolve and EvoX (100 iterations)</b></summary>
+
+> AdaEvolve and EvoX are **complementary**: AdaEvolve adapts search *parameters* for fast early gains; EvoX evolves the search *strategy itself* for stronger long-horizon gains. Both are built on SkyDiscover.
+
+<p align="center">
+  <img src="assets/comparison.png" width="900" alt="Main results for systems and math problems">
+</p>
+
+</details>
+
+<details>
+<summary><b>📈 Scaling behavior of AdaEvolve and EvoX</b></summary>
+
+The scaling behavior of AdaEvolve and EvoX shows a **complementary crossover**. AdaEvolve's per-iteration parameter adaptation yields fast early gains in low-budget runs (T≤50), while EvoX's demand-driven strategy evolution unlocks step-change improvements in longer runs (T≥50).
+
+<p align="center">
+  <img src="assets/scaling_comparison.png" width="900" alt="Scaling behavior of AdaEvolve vs EvoX across 500 iterations">
+  <br><em>Best-so-far score vs. iteration for Signal Processing, Heilbronn Convex, Prism, and Cloudcast (500 iterations, GPT-5).</em>
+</p>
+
+</details>
+
+<details>
+<summary><b>🔗 Evolving AdaEvolve's policy with EvoX (coming soon)</b></summary>
+
+The two methods are **composable**: EvoX can evolve using AdaEvolve as its starting strategy, achieving the best results on 3 out of 4 benchmarks (100 iterations, GPT-5). This combined mode will be available in SkyDiscover soon.
+
+| Benchmark | AdaEvolve | EvoX (Random Init) | EvoX (AdaEvolve Init) |
+|:--|--:|--:|--:|
+| Signal Proc. (↑) | 0.718 | 0.721 | **0.760** |
+| Heilbronn Cvx. (↑) | 0.0290 | 0.0270 | **0.0291** |
+| Cloudcast (↓) | 640.5 | 637.1 | **623.4** |
+| Prism (↑) | 26.37 | **30.52** | 26.27 |
+
+</details>
 
 <details>
 <summary><b>Task breakdown across math, systems, and programming challenges</b></summary>
@@ -100,8 +135,14 @@ uv run skydiscover-run benchmarks/math/circle_packing/initial_program.py \
   --search adaevolve \
   --iterations 100
 
+uv run skydiscover-run benchmarks/math/circle_packing/initial_program.py \
+  benchmarks/math/circle_packing/evaluator.py \
+  --config benchmarks/math/circle_packing/config.yaml \
+  --search budgetevolve \
+  --iterations 100
+
 # Or run on your own problem
-# algo can be "evox", "adaevolve", "openevolve", "gepa", "shinkaevolve"
+# algo can be "evox", "adaevolve", "budgetevolve", "openevolve", "gepa", "shinkaevolve"
 uv run skydiscover-run initial_program.py evaluator.py \
   --search <algo> \
   --model gpt-5 \
@@ -129,7 +170,7 @@ from skydiscover import run_discovery
 result = run_discovery(
     initial_program="initial_program.py",
     evaluator="evaluator.py",
-    search=[algo], # algo can be "adaevolve", "evox", "openevolve", "gepa", "shinkaevolve"
+    search=[algo], # algo can be "adaevolve", "budgetevolve", "evox", "openevolve", "gepa", "shinkaevolve"
     model="gpt-5",
     iterations=100,
 )
@@ -190,9 +231,12 @@ If no markers are present, the entire file is treated as mutatable.
 
 ## 🧬 Pick an Algorithm
 
+See [Benchmark Performance](#-benchmark-performance) for a detailed comparison of AdaEvolve and EvoX against other algorithms.
+
 | Algorithm | Flag | Description |
 |:---|:---|:---|
 | ⭐&nbsp;**AdaEvolve** | `--search adaevolve` | Multi-island adaptive search with UCB, migration, and paradigm breakthroughs |
+| 💰&nbsp;**BudgetEvolve** | `--search budgetevolve` | Budget-aware AdaEvolve variant with token/cost accounting and tiered generation control |
 | 🧠&nbsp;**EvoX** | `--search evox` | Self-evolving paradigm that co-adapts solution generation and experience management |
 | 📊&nbsp;**Top-K** | `--search topk` | Selects top-K solutions to refine |
 | 🔍&nbsp;**Beam&nbsp;Search** | `--search beam_search` | Breadth-first expansion of a beam of top solutions |
@@ -230,7 +274,7 @@ max_iterations: 100
 llm:
   models: [{ name: "gemini/gemini-3-pro-preview", weight: 1.0 }]
 search:
-  type: "adaevolve"                  # or "evox", "topk", "beam_search", "best_of_n"
+  type: "adaevolve"                  # or "budgetevolve", "evox", "topk", "beam_search", "best_of_n"
 prompt:
   system_message: |
     You are an expert at optimizing algorithms.

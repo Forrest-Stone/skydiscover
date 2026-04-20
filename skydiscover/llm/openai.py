@@ -299,11 +299,14 @@ class OpenAILLM(LLMInterface):
                     content = await self._call_api_via_responses(params)
                 usage = getattr(response, "usage", None)
                 prompt_tokens, completion_tokens, raw_usage = self._extract_usage_counts(usage)
+                estimated_cost = self._estimate_cost(prompt_tokens, completion_tokens)
                 return LLMResponse(
                     text=content,
-                    input_tokens=prompt_tokens,
-                    output_tokens=completion_tokens,
-                    raw_usage=raw_usage,
+                    model_name=self.model,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    estimated_cost=estimated_cost,
+                    usage_raw=raw_usage,
                 )
             except asyncio.TimeoutError:
                 if attempt < retries:
@@ -452,6 +455,15 @@ class OpenAILLM(LLMInterface):
         if timeout is None:
             timeout = 300
         return retries, retry_delay, timeout
+
+    def _estimate_cost(self, prompt_tokens: int, completion_tokens: int) -> Optional[float]:
+        """Estimate request cost from configured per-1M token prices."""
+        if self.input_price_per_1m is None or self.output_price_per_1m is None:
+            return None
+        return (
+            (prompt_tokens * float(self.input_price_per_1m))
+            + (completion_tokens * float(self.output_price_per_1m))
+        ) / 1_000_000.0
 
     # ------------------------------------------------------------------
     # Image generation (OpenAI Responses API)

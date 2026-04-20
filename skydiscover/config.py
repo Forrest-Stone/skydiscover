@@ -236,6 +236,8 @@ class LLMModelConfig:
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     max_tokens: Optional[int] = None
+    input_price_per_1m: Optional[float] = None
+    output_price_per_1m: Optional[float] = None
 
     # Request parameters
     timeout: Optional[int] = None
@@ -322,6 +324,8 @@ class LLMConfig(LLMModelConfig):
             "temperature": self.temperature,
             "top_p": self.top_p,
             "max_tokens": self.max_tokens,
+            "input_price_per_1m": getattr(self, "input_price_per_1m", None),
+            "output_price_per_1m": getattr(self, "output_price_per_1m", None),
             "timeout": self.timeout,
             "retries": self.retries,
             "retry_delay": self.retry_delay,
@@ -423,6 +427,12 @@ class EvaluatorConfig:
     # Evaluation strategies
     cascade_evaluation: bool = True
     cascade_thresholds: List[float] = field(default_factory=lambda: [0.3, 0.6])
+
+    # When True, the evaluator source code (or instruction.md for Harbor
+    # tasks) is prepended to the LLM system message so the model can see
+    # exactly how solutions are scored.  Disabled by default to avoid
+    # leaking implementation details that may introduce noise.
+    inject_evaluator_context: bool = False
 
     # LLM-as-a-judge: when True, an LLMJudge scores programs alongside the
     # evaluator and appends llm_* metrics to the result.
@@ -582,6 +592,19 @@ class OpenEvolveNativeDatabaseConfig(DatabaseConfig):
 
 
 @dataclass
+class ClaudeCodeConfig(DatabaseConfig):
+    """Configuration for the Claude Code baseline.
+
+    Claude Code runs autonomously inside a Docker container, iterating on
+    the solution using the evaluator directly.  max_turns maps to the
+    --max-turns flag passed to the claude CLI.
+    """
+
+    max_turns: int = 50
+    docker_image: str = "skydiscover-claude-code:latest"
+
+
+@dataclass
 class GEPANativeDatabaseConfig(DatabaseConfig):
     """Configuration for GEPA Native search database.
 
@@ -610,8 +633,11 @@ _DB_CONFIG_BY_TYPE: Dict[str, type] = {
     "topk": DatabaseConfig,
     "adaevolve": AdaEvolveDatabaseConfig,
     "budget_adaevolve": AdaEvolveDatabaseConfig,
+    "budgetevolve": AdaEvolveDatabaseConfig,
+    "costada": AdaEvolveDatabaseConfig,
     "openevolve_native": OpenEvolveNativeDatabaseConfig,
     "gepa_native": GEPANativeDatabaseConfig,
+    "claude_code": ClaudeCodeConfig,
 }
 
 
@@ -840,6 +866,7 @@ class Config:
                 "max_retries": self.evaluator.max_retries,
                 "cascade_evaluation": self.evaluator.cascade_evaluation,
                 "cascade_thresholds": self.evaluator.cascade_thresholds,
+                "inject_evaluator_context": self.evaluator.inject_evaluator_context,
                 "llm_as_judge": self.evaluator.llm_as_judge,
             },
             # Agentic generation
@@ -1048,7 +1075,37 @@ def apply_overrides(
         config.search.type = search
         new_db_cls = _DB_CONFIG_BY_TYPE.get(search)
         if new_db_cls and not isinstance(config.search.database, new_db_cls):
+            # Preserve user-provided database knobs when switching search type
+            # via CLI flag. This keeps compatible fields (and extra attrs) from
+            # the previous database object instead of silently resetting to
+            # defaults.
+            previous_db = config.search.database
             config.search.database = new_db_cls()
+            if previous_db is not None:
+                for key, value in vars(previous_db).items():
+                    try:
+                        setattr(config.search.database, key, value)
+                    except Exception:
+                        # Ignore read-only/incompatible attrs and keep defaults.
+                        continue
+
+    # For EvoX, CLI model/api-base overrides should apply to the co-evolved
+    # search-strategy side as well. Otherwise it falls back to
+    # `skydiscover/search/evox/config/search.yaml` defaults (e.g. gpt-5-mini).
+    if hasattr(config, "search") and config.search.type == "evox" and (model or api_base):
+        config.search.share_llm = True
+
+    # Keep monitor summary model aligned with runtime override unless user already
+    # set a custom summary model explicitly in config.
+    if hasattr(config, "monitor") and model:
+        if getattr(config.monitor, "summary_model", None) == "gpt-5-mini":
+            first_model = config.llm.models[0].name if config.llm.models else None
+            if first_model:
+                config.monitor.summary_model = first_model
+        if not getattr(config.monitor, "summary_api_key", None):
+            config.monitor.summary_api_key = config.llm.api_key
+        if getattr(config.monitor, "summary_api_base", None) == _PROVIDERS["openai"][0]:
+            config.monitor.summary_api_base = config.llm.api_base
 
     # For EvoX, CLI model/api-base overrides should apply to the co-evolved
     # search-strategy side as well. Otherwise it falls back to
