@@ -1,0 +1,49 @@
+model_pricing:
+  # Edit prices in this single file to control cost accounting defaults.
+  # Units: USD per 1M tokens.
+
+  gpt-5:
+    input_price_per_1m: 0.72
+    output_price_per_1m: 2.30
+
+  gpt-5-mini:
+    input_price_per_1m: 0.25
+    output_price_per_1m: 1.00
+
+  # OpenRouter / Zhipu GLM-5 example (adjust to your real provider billing).
+  z-ai/glm-5:
+    input_price_per_1m: 0.50
+    output_price_per_1m: 1.50
+
+# Centralized budget defaults (authoritative).
+budget_defaults:
+  nominal_budget: 1.0
+  budget_enabled: true
+  budget_strict_stop: true
+  budget_accounting_mode: provider_usage
+  token_budget_total: 500000
+  cost_budget_total: 0.0
+  budget_bins: [0.2, 0.5, 0.8]
+  cheap_max_output_tokens: 512
+  standard_max_output_tokens: 1024
+  rich_max_output_tokens: 2048
+
+# Optional profiles for different budget regimes.
+# Select one by setting:
+#   - search.database.budget_profile in task config, or
+#   - SKYDISCOVER_BUDGET_PROFILE env var.
+budget_profiles:
+  low_budget:
+    nominal_budget: 0.3
+    token_budget_total: 150000
+    budget_bins: [0.1, 0.3, 0.6]
+    cheap_max_output_tokens: 384
+    standard_max_output_tokens: 768
+    rich_max_output_tokens: 1280
+  high_budget:
+    nominal_budget: 2.0
+    token_budget_total: 1200000
+    budget_bins: [0.3, 0.6, 0.9]
+    cheap_max_output_tokens: 768
+    standard_max_output_tokens: 1536
+    rich_max_output_tokens: 3072
