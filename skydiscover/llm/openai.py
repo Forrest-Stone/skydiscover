@@ -173,34 +173,6 @@ class OpenAILLM(LLMInterface):
             logger.info(f"{provider} LLM: {self.model}")
             logger._initialized_models.add(self.model)
 
-    def _maybe_switch_region_fallback_model(self, exc: Exception) -> bool:
-        """Switch to an OpenRouter fallback model once on region-restricted 403 errors."""
-        base = (self.api_base or "").lower()
-        if self._has_switched_region_fallback or "openrouter" not in base:
-            return False
-        if not _is_region_restricted_error(exc):
-            return False
-
-        fallback = (
-            os.environ.get("OPENROUTER_REGION_FALLBACK_MODEL")
-            or os.environ.get("OPENROUTER_FALLBACK_MODEL")
-            or "deepseek/deepseek-chat"
-        )
-        fallback = _normalize_openrouter_model_name(fallback.strip())
-        if not fallback or fallback == self.model:
-            return False
-
-        original = self.model
-        self.model = fallback
-        self._has_switched_region_fallback = True
-        logger.warning(
-            "Region-restricted model detected (%s). Switching OpenRouter model from %s to %s.",
-            exc,
-            original,
-            fallback,
-        )
-        return True
-
     async def generate(
         self, system_message: str, messages: List[Dict[str, Any]], **kwargs
     ) -> LLMResponse:
@@ -301,8 +273,6 @@ class OpenAILLM(LLMInterface):
                 else:
                     raise
             except Exception as e:
-                if self._maybe_switch_region_fallback_model(e):
-                    continue
                 if attempt < retries:
                     logger.warning(f"Error attempt {attempt + 1}/{retries + 1}: {e}, retrying...")
                     await asyncio.sleep(retry_delay)
@@ -372,8 +342,6 @@ class OpenAILLM(LLMInterface):
                 else:
                     raise
             except Exception as e:
-                if self._maybe_switch_region_fallback_model(e):
-                    continue
                 if attempt < retries:
                     logger.warning(f"Error attempt {attempt + 1}/{retries + 1}: {e}, retrying...")
                     await asyncio.sleep(retry_delay)
