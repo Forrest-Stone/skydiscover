@@ -52,7 +52,7 @@ adaevolve_budget:
 
 # BudgetEvolve budget knobs.
 # Note: both `budgetevolve` and legacy alias `budget_adaevolve` map here.
-budgetevolve_budget:
+budgetevolve:
   budget_enabled: true
   budget_strict_stop: true
   budget_accounting_mode: provider_usage

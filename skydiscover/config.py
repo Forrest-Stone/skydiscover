@@ -144,7 +144,7 @@ def _load_budget_defaults_config() -> Dict[str, Any]:
         "budget_profiles": data.get("budget_profiles", {}) or {},
         "costada_budget": data.get("costada_budget", {}) or {},
         "adaevolve_budget": data.get("adaevolve_budget", {}) or {},
-        "budgetevolve_budget": data.get("budgetevolve_budget", {}) or {},
+        "budgetevolve": data.get("budgetevolve", {}) or {},
         "evox_budget": data.get("evox_budget", {}) or {},
     }
 
@@ -168,8 +168,8 @@ def _apply_budget_defaults(config: "Config") -> None:
     method_section_key = {
         "costada": "costada_budget",
         "adaevolve": "adaevolve_budget",
-        "budget_adaevolve": "budgetevolve_budget",
-        "budgetevolve": "budgetevolve_budget",
+        "budget_adaevolve": "budgetevolve",
+        "budgetevolve": "budgetevolve",
         "evox": "evox_budget",
     }.get(search_type, "")
     method_defaults = budget_cfg.get(method_section_key, {}) if method_section_key else {}
