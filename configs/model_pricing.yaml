@@ -45,6 +45,11 @@ costada_budget:
   costada_stagnation_steps: 8
   costada_significant_gain_eps: 1.0e-6
 
+# AdaEvolve phase-1 budget instrumentation only (no budget-constrained behavior):
+# use a very large nominal budget so original search logic is effectively unchanged.
+adaevolve_budget:
+  nominal_budget: 1000000000.0
+
 # BudgetAdaEvolve-specific budget knobs.
 budget_adaevolve_budget:
   budget_enabled: true
@@ -76,3 +81,8 @@ budgetevolve_budget:
   budget_ucb_beta: 0.5
   budget_meta_threshold: 0.25
   budget_significant_gain_eps: 1.0e-6
+
+# EvoX phase-1 budget instrumentation only (no budget-constrained behavior):
+# use a very large nominal budget so original search logic is effectively unchanged.
+evox_budget:
+  nominal_budget: 1000000000.0
