@@ -15,9 +15,44 @@ model_pricing:
     input_price_per_1m: 0.50
     output_price_per_1m: 1.50
 
-# Centralized budget defaults (authoritative).
+# Shared budget defaults (applied to all search types).
 budget_defaults:
   nominal_budget: 1.0
+
+# Optional profile overlay for different regimes.
+# Select by:
+#   - search.database.budget_profile in task config, or
+#   - SKYDISCOVER_BUDGET_PROFILE env var.
+budget_profiles:
+  low_budget:
+    nominal_budget: 0.3
+  high_budget:
+    nominal_budget: 2.0
+
+# CostAda/BCHD-specific budget/control knobs.
+costada_budget:
+  cheap_max_output_tokens: 512
+  standard_max_output_tokens: 1024
+  rich_max_output_tokens: 2048
+  costada_tier_tau_1: 0.24
+  costada_tier_tau_2: 0.38
+  costada_eta_low: 0.12
+  costada_rich_enable_min_budget: 0.28
+  costada_eta_min: 0.15
+  costada_meta_h_threshold: 0.01
+  costada_meta_window: 8
+  costada_improvement_window: 8
+  costada_stagnation_steps: 8
+  costada_significant_gain_eps: 1.0e-6
+
+# AdaEvolve phase-1 budget instrumentation only (no budget-constrained behavior):
+# use a very large nominal budget so original search logic is effectively unchanged.
+adaevolve_budget:
+  nominal_budget: 1000000000.0
+
+# BudgetEvolve budget knobs.
+# Note: unified naming uses only `budgetevolve`.
+budgetevolve:
   budget_enabled: true
   budget_strict_stop: true
   budget_accounting_mode: provider_usage
@@ -27,23 +62,12 @@ budget_defaults:
   cheap_max_output_tokens: 512
   standard_max_output_tokens: 1024
   rich_max_output_tokens: 2048
+  budget_lambda: 1.0e-4
+  budget_ucb_beta: 0.5
+  budget_meta_threshold: 0.25
+  budget_significant_gain_eps: 1.0e-6
 
-# Optional profiles for different budget regimes.
-# Select one by setting:
-#   - search.database.budget_profile in task config, or
-#   - SKYDISCOVER_BUDGET_PROFILE env var.
-budget_profiles:
-  low_budget:
-    nominal_budget: 0.3
-    token_budget_total: 150000
-    budget_bins: [0.1, 0.3, 0.6]
-    cheap_max_output_tokens: 384
-    standard_max_output_tokens: 768
-    rich_max_output_tokens: 1280
-  high_budget:
-    nominal_budget: 2.0
-    token_budget_total: 1200000
-    budget_bins: [0.3, 0.6, 0.9]
-    cheap_max_output_tokens: 768
-    standard_max_output_tokens: 1536
-    rich_max_output_tokens: 3072
+# EvoX phase-1 budget instrumentation only (no budget-constrained behavior):
+# use a very large nominal budget so original search logic is effectively unchanged.
+evox_budget:
+  nominal_budget: 1000000000.0

@@ -749,14 +749,14 @@ class AdaEvolveController(DiscoveryController):
         )
 
 
-class BudgetAdaEvolveController(AdaEvolveController):
+class BudgetEvolveCompatController(AdaEvolveController):
     """AdaEvolve controller with explicit budget-aware action scheduling."""
 
     def __init__(self, controller_input: DiscoveryControllerInput):
         super().__init__(controller_input)
-        from skydiscover.context_builder.adaevolve import BudgetAdaEvolveContextBuilder
+        from skydiscover.context_builder.adaevolve import BudgetEvolveCompatContextBuilder
 
-        self.context_builder = BudgetAdaEvolveContextBuilder(self.config)
+        self.context_builder = BudgetEvolveCompatContextBuilder(self.config)
         db_cfg = self.config.search.database
         self.budget_enabled = bool(getattr(db_cfg, "budget_enabled", False))
         self.budget_ledger = BudgetLedger(

@@ -8,7 +8,7 @@ this module wires up implementations and provides ``get_discovery_controller``.
 
 import logging
 
-from skydiscover.search.adaevolve.controller import AdaEvolveController, BudgetAdaEvolveController
+from skydiscover.search.adaevolve.controller import AdaEvolveController
 from skydiscover.search.adaevolve.database import AdaEvolveDatabase
 from skydiscover.search.budgetevolve.controller import BudgetEvolveController
 from skydiscover.search.budgetevolve.database import BudgetEvolveDatabase
@@ -64,8 +64,6 @@ register_database("topk", TopKDatabase)
 # AdaEvolve
 register_database("adaevolve", AdaEvolveDatabase)
 register_controller("adaevolve", AdaEvolveController)
-register_database("budget_adaevolve", BudgetEvolveDatabase)
-register_controller("budget_adaevolve", BudgetEvolveController)
 register_database("budgetevolve", BudgetEvolveDatabase)
 register_controller("budgetevolve", BudgetEvolveController)
 register_database("costada", CostAdaDatabase)

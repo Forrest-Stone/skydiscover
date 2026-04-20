@@ -71,7 +71,6 @@ def infer_method(run_dir: Path) -> str:
         "adaevolve",
         "evox",
         "budgetevolve",
-        "budget_adaevolve",
         "topk",
         "best_of_n",
     ]

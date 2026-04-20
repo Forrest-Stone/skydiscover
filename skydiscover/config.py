@@ -142,6 +142,10 @@ def _load_budget_defaults_config() -> Dict[str, Any]:
     return {
         "budget_defaults": data.get("budget_defaults", {}) or {},
         "budget_profiles": data.get("budget_profiles", {}) or {},
+        "costada_budget": data.get("costada_budget", {}) or {},
+        "adaevolve_budget": data.get("adaevolve_budget", {}) or {},
+        "budgetevolve": data.get("budgetevolve", {}) or {},
+        "evox_budget": data.get("evox_budget", {}) or {},
     }
 
 
@@ -160,6 +164,14 @@ def _apply_budget_defaults(config: "Config") -> None:
     db = config.search.database
     base_defaults = budget_cfg.get("budget_defaults", {})
     profiles = budget_cfg.get("budget_profiles", {})
+    search_type = str(getattr(config.search, "type", "") or "").strip().lower()
+    method_section_key = {
+        "costada": "costada_budget",
+        "adaevolve": "adaevolve_budget",
+        "budgetevolve": "budgetevolve",
+        "evox": "evox_budget",
+    }.get(search_type, "")
+    method_defaults = budget_cfg.get(method_section_key, {}) if method_section_key else {}
     profile_name = (
         str(getattr(db, "budget_profile", "") or os.environ.get("SKYDISCOVER_BUDGET_PROFILE", "")).strip()
     )
@@ -170,10 +182,10 @@ def _apply_budget_defaults(config: "Config") -> None:
         merged.update(base_defaults)
     if isinstance(profile_overrides, dict):
         merged.update(profile_overrides)
+    if isinstance(method_defaults, dict):
+        merged.update(method_defaults)
 
     for key, value in merged.items():
-        if not hasattr(db, key):
-            continue
         # Global central config is authoritative.
         setattr(db, key, value)
 
@@ -764,7 +776,6 @@ _DB_CONFIG_BY_TYPE: Dict[str, type] = {
     "best_of_n": BestOfNDatabaseConfig,
     "topk": DatabaseConfig,
     "adaevolve": AdaEvolveDatabaseConfig,
-    "budget_adaevolve": AdaEvolveDatabaseConfig,
     "budgetevolve": AdaEvolveDatabaseConfig,
     "costada": AdaEvolveDatabaseConfig,
     "openevolve_native": OpenEvolveNativeDatabaseConfig,
@@ -1286,6 +1297,9 @@ def apply_overrides(
                     except Exception:
                         # Ignore read-only/incompatible attrs and keep defaults.
                         continue
+        # Switching search type can replace database instance; re-apply
+        # centralized budget defaults so CostAda nominal budget is not lost.
+        _apply_budget_defaults(config)
 
     # For EvoX, CLI model/api-base overrides should apply to the co-evolved
     # search-strategy side as well. Otherwise it falls back to

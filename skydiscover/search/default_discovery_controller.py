@@ -172,7 +172,7 @@ class DiscoveryController:
             self.context_builder = EvoxContextBuilder(self.config)
             template_name = "search_evolution_user_message"
             self.context_builder.set_templates(user_template=template_name)
-        elif template in {"budget_adaevolve", "budgetevolve"}:
+        elif template == "budgetevolve":
             from skydiscover.context_builder.budgetevolve import BudgetEvolveContextBuilder
 
             self.context_builder = BudgetEvolveContextBuilder(self.config)
@@ -840,7 +840,7 @@ class DiscoveryController:
             best_score=self._best_score_or_zero(),
         )
         logger.info(
-            "Budget(iter=%s): iter_cost=%.6f, cum_cost=%.6f, tokens=%s, calls=%s, remain_ratio=%.4f",
+            "Budget(iter=%s): iter_cost=%.6f, cum_cost=%.6f, tokens=%s, calls=%s, remain_ratio=%.6f",
             budget_record.iteration,
             budget_record.iteration_cost,
             budget_record.cumulative_cost,
