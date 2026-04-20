@@ -53,30 +53,6 @@ def is_openai_reasoning_model(model_name: str, api_base: str) -> bool:
     return is_openai_api and model_name.lower().startswith(REASONING_MODEL_PREFIXES)
 
 
-def _is_region_restricted_error(exc: Exception) -> bool:
-    text = str(exc).lower()
-    return (
-        "not available in your region" in text
-        or "'code': 403" in text
-        or "error code: 403" in text
-        or "unsupported_country_region_territory" in text
-        or "request_forbidden" in text
-    )
-
-
-def _normalize_openrouter_model_name(model_name: str) -> str:
-    if "/" in model_name:
-        return model_name
-    lowered = model_name.lower()
-    if lowered.startswith(("gpt-", "o1", "o3", "o4")):
-        return f"openai/{model_name}"
-    if lowered.startswith("claude-"):
-        return f"anthropic/{model_name}"
-    if lowered.startswith("gemini-"):
-        return f"google/{model_name}"
-    return model_name
-
-
 def _parse_default_headers_json(env_name: str) -> Dict[str, str]:
     raw = os.environ.get(env_name)
     if not raw:
@@ -123,9 +99,6 @@ class OpenAILLM(LLMInterface):
         self.api_base = model_cfg.api_base
         self.api_key = model_cfg.api_key
         self.reasoning_effort = getattr(model_cfg, "reasoning_effort", None)
-        self.input_price_per_1m = getattr(model_cfg, "input_price_per_1m", None)
-        self.output_price_per_1m = getattr(model_cfg, "output_price_per_1m", None)
-        self._has_switched_region_fallback = False
         self.default_headers = _resolve_default_headers(self.api_base)
 
         max_retries = self.retries if self.retries is not None else 0
@@ -172,34 +145,6 @@ class OpenAILLM(LLMInterface):
                 provider = "OpenAI"
             logger.info(f"{provider} LLM: {self.model}")
             logger._initialized_models.add(self.model)
-
-    def _maybe_switch_region_fallback_model(self, exc: Exception) -> bool:
-        """Switch to an OpenRouter fallback model once on region-restricted 403 errors."""
-        base = (self.api_base or "").lower()
-        if self._has_switched_region_fallback or "openrouter" not in base:
-            return False
-        if not _is_region_restricted_error(exc):
-            return False
-
-        fallback = (
-            os.environ.get("OPENROUTER_REGION_FALLBACK_MODEL")
-            or os.environ.get("OPENROUTER_FALLBACK_MODEL")
-            or "deepseek/deepseek-chat"
-        )
-        fallback = _normalize_openrouter_model_name(fallback.strip())
-        if not fallback or fallback == self.model:
-            return False
-
-        original = self.model
-        self.model = fallback
-        self._has_switched_region_fallback = True
-        logger.warning(
-            "Region-restricted model detected (%s). Switching OpenRouter model from %s to %s.",
-            exc,
-            original,
-            fallback,
-        )
-        return True
 
     async def generate(
         self, system_message: str, messages: List[Dict[str, Any]], **kwargs
@@ -301,8 +246,6 @@ class OpenAILLM(LLMInterface):
                 else:
                     raise
             except Exception as e:
-                if self._maybe_switch_region_fallback_model(e):
-                    continue
                 if attempt < retries:
                     logger.warning(f"Error attempt {attempt + 1}/{retries + 1}: {e}, retrying...")
                     await asyncio.sleep(retry_delay)
@@ -372,8 +315,6 @@ class OpenAILLM(LLMInterface):
                 else:
                     raise
             except Exception as e:
-                if self._maybe_switch_region_fallback_model(e):
-                    continue
                 if attempt < retries:
                     logger.warning(f"Error attempt {attempt + 1}/{retries + 1}: {e}, retrying...")
                     await asyncio.sleep(retry_delay)
