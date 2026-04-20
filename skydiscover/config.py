@@ -120,6 +120,64 @@ def _load_model_pricing_table() -> Dict[str, Dict[str, float]]:
     return normalized
 
 
+def _load_budget_defaults_config() -> Dict[str, Any]:
+    """Load optional budget defaults/profiles from model_pricing YAML."""
+    pricing_path = os.environ.get("SKYDISCOVER_MODEL_PRICING_FILE")
+    if pricing_path:
+        candidate = Path(pricing_path)
+    else:
+        candidate = Path(__file__).resolve().parent.parent / "configs" / "model_pricing.yaml"
+
+    if not candidate.exists():
+        return {}
+
+    try:
+        data = yaml.safe_load(candidate.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        logger.warning("Failed to read budget defaults from '%s': %s", candidate, exc)
+        return {}
+
+    if not isinstance(data, dict):
+        return {}
+    return {
+        "budget_defaults": data.get("budget_defaults", {}) or {},
+        "budget_profiles": data.get("budget_profiles", {}) or {},
+    }
+
+
+def _apply_budget_defaults(config: "Config") -> None:
+    """Apply central budget defaults/profile to search.database.
+
+    Central defaults/profile are the source of truth.
+    """
+    if not hasattr(config, "search") or not hasattr(config.search, "database"):
+        return
+
+    budget_cfg = _load_budget_defaults_config()
+    if not budget_cfg:
+        return
+
+    db = config.search.database
+    base_defaults = budget_cfg.get("budget_defaults", {})
+    profiles = budget_cfg.get("budget_profiles", {})
+    profile_name = (
+        str(getattr(db, "budget_profile", "") or os.environ.get("SKYDISCOVER_BUDGET_PROFILE", "")).strip()
+    )
+    profile_overrides = profiles.get(profile_name, {}) if profile_name else {}
+
+    merged: Dict[str, Any] = {}
+    if isinstance(base_defaults, dict):
+        merged.update(base_defaults)
+    if isinstance(profile_overrides, dict):
+        merged.update(profile_overrides)
+
+    for key, value in merged.items():
+        if not hasattr(db, key):
+            continue
+        # Global central config is authoritative.
+        setattr(db, key, value)
+
+
 def _load_local_default_api_key() -> Optional[str]:
     """Load API key from a single in-code/env fallback when provider env vars are not set.
 
@@ -1014,6 +1072,10 @@ def load_config(config_path: Optional[Union[str, Path]] = None) -> Config:
 
     # Make the system message available to the individual models, in case it is not provided from the prompt sampler
     config.llm.update_model_params({"system_message": config.context_builder.system_message})
+
+    # Apply centralized budget defaults/profile (single source config), while
+    # keeping explicit per-run YAML values unchanged.
+    _apply_budget_defaults(config)
 
     # Bridge provider env vars so that downstream configs (e.g. evox search.yaml)
     # can resolve ${OPENAI_API_KEY} from the environment.
