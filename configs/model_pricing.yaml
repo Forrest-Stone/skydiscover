@@ -50,23 +50,8 @@ costada_budget:
 adaevolve_budget:
   nominal_budget: 1000000000.0
 
-# BudgetAdaEvolve-specific budget knobs.
-budget_adaevolve_budget:
-  budget_enabled: true
-  budget_strict_stop: true
-  budget_accounting_mode: provider_usage
-  token_budget_total: 500000
-  cost_budget_total: 0.0
-  budget_bins: [0.2, 0.5, 0.8]
-  cheap_max_output_tokens: 512
-  standard_max_output_tokens: 1024
-  rich_max_output_tokens: 2048
-  budget_lambda: 1.0e-4
-  budget_ucb_beta: 0.5
-  budget_meta_threshold: 0.25
-  budget_significant_gain_eps: 1.0e-6
-
-# BudgetEvolve-specific budget knobs (same defaults for now).
+# BudgetEvolve budget knobs.
+# Note: both `budgetevolve` and legacy alias `budget_adaevolve` map here.
 budgetevolve_budget:
   budget_enabled: true
   budget_strict_stop: true
