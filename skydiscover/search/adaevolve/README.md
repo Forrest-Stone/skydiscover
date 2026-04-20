@@ -100,7 +100,7 @@ Runtime loop (conceptual):
 adaevolve/
 ├── controller.py
 │   ├── AdaEvolveController            # Original
-│   └── BudgetAdaEvolveController      # Budget-aware control loop
+│   └── BudgetEvolveController      # Budget-aware control loop
 ├── database.py                        # sample(..., family, tier, budget_bin, ...)
 ├── adaptation.py
 │   ├── AdaptiveState / MultiDimensionalAdapter   # Original adaptive core
@@ -119,7 +119,7 @@ adaevolve/
 ```bash
 uv run skydiscover-run initial_program.py evaluator.py \
   --config configs/adaevolve.yaml \
-  --search budget_adaevolve \
+  --search budgetevolve \
   --iterations 100
 ```
 
@@ -130,7 +130,7 @@ export OPENROUTER_API_KEY=...
 uv run skydiscover-run initial_program.py evaluator.py \
   --config configs/adaevolve.yaml \
   --model openrouter/openai/gpt-5-mini \
-  --search budget_adaevolve \
+  --search budgetevolve \
   --iterations 100
 ```
 
@@ -143,7 +143,7 @@ result = run_discovery(
     initial_program="initial_program.py",
     evaluator="evaluator.py",
     config="configs/adaevolve.yaml",
-    search="budget_adaevolve",
+    search="budgetevolve",
     model="gpt-5",
     iterations=100,
 )
@@ -155,7 +155,7 @@ result = run_discovery(
 
 ```yaml
 search:
-  type: "budget_adaevolve"
+  type: "budgetevolve"
   database:
     # enable budget-aware control
     budget_enabled: true
@@ -188,7 +188,7 @@ Budget mode can be selected with:
 
 ```yaml
 prompt:
-  template: "budget_adaevolve"
+  template: "budgetevolve"
 ```
 
 This enables the budget-aware context builder that injects `## BUDGET STATUS`

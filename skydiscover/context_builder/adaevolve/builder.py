@@ -493,7 +493,7 @@ class AdaEvolveContextBuilder(DefaultContextBuilder):
         )
 
 
-class BudgetAdaEvolveContextBuilder(AdaEvolveContextBuilder):
+class BudgetEvolveCompatContextBuilder(AdaEvolveContextBuilder):
     """AdaEvolve context builder with budget-aware guidance and tier-aware truncation."""
 
     def _format_budget_guidance(self, context: Dict[str, Any]) -> str:

@@ -51,7 +51,7 @@ adaevolve_budget:
   nominal_budget: 1000000000.0
 
 # BudgetEvolve budget knobs.
-# Note: both `budgetevolve` and legacy alias `budget_adaevolve` map here.
+# Note: unified naming uses only `budgetevolve`.
 budgetevolve:
   budget_enabled: true
   budget_strict_stop: true

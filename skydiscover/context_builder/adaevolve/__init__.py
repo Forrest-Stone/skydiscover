@@ -2,6 +2,6 @@
 AdaEvolve context builder: adaptive search with paradigm breakthrough guidance.
 """
 
-from .builder import AdaEvolveContextBuilder, BudgetAdaEvolveContextBuilder
+from .builder import AdaEvolveContextBuilder, BudgetEvolveCompatContextBuilder
 
-__all__ = ["AdaEvolveContextBuilder", "BudgetAdaEvolveContextBuilder"]
+__all__ = ["AdaEvolveContextBuilder", "BudgetEvolveCompatContextBuilder"]

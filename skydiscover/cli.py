@@ -28,7 +28,6 @@ _SEARCH_CHOICES = [
     "adaevolve",
     "costada",
     "budgetevolve",
-    "budget_adaevolve",
     "best_of_n",
     "beam_search",
     "topk",

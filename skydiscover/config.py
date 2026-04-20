@@ -168,7 +168,6 @@ def _apply_budget_defaults(config: "Config") -> None:
     method_section_key = {
         "costada": "costada_budget",
         "adaevolve": "adaevolve_budget",
-        "budget_adaevolve": "budgetevolve",
         "budgetevolve": "budgetevolve",
         "evox": "evox_budget",
     }.get(search_type, "")
@@ -764,7 +763,6 @@ _DB_CONFIG_BY_TYPE: Dict[str, type] = {
     "best_of_n": BestOfNDatabaseConfig,
     "topk": DatabaseConfig,
     "adaevolve": AdaEvolveDatabaseConfig,
-    "budget_adaevolve": AdaEvolveDatabaseConfig,
     "budgetevolve": AdaEvolveDatabaseConfig,
     "costada": AdaEvolveDatabaseConfig,
     "openevolve_native": OpenEvolveNativeDatabaseConfig,
