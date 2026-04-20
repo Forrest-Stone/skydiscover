@@ -22,6 +22,31 @@ from datasets import load_dataset
 dataset_size = {"full": None, "lite": 500, "tiny": 200, "test": 50}
 
 
+def _resolve_openai_compatible_env():
+    """Resolve api_key/api_base for OpenAI-compatible clients.
+
+    Supports OPENROUTER-only setups without requiring OPENAI_API_KEY.
+    """
+    openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    openrouter_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+    api_key = openai_key or openrouter_key
+    if openrouter_key and not openai_key:
+        api_base = (
+            os.environ.get("OPENROUTER_API_BASE")
+            or os.environ.get("OPENROUTER_BASE_URL")
+            or "https://openrouter.ai/api/v1"
+        )
+    else:
+        api_base = (
+            os.environ.get("OPENAI_API_BASE")
+            or os.environ.get("OPENAI_BASE_URL")
+            or os.environ.get("OPENROUTER_API_BASE")
+            or os.environ.get("OPENROUTER_BASE_URL")
+            or None
+        )
+    return api_key, api_base or "https://api.openai.com/v1"
+
+
 class Benchmark(ABC):
     def __init__(self, dataset_mode="lite"):
         # dataset for training and validation
@@ -299,11 +324,12 @@ The following has been provided as feedback about the current function of the sy
     condense_prompt = CONDENSE_PROMPT
     for question, feedback in feedbacks:
         condense_prompt += f'\nFeedback for "{question}":\n' + feedback
+    api_key, api_base = _resolve_openai_compatible_env()
     response = completion(
         model="openai/gpt-5-mini",
         messages=[{"role": "user", "content": condense_prompt}],
-        api_key=os.environ.get("OPENAI_API_KEY"),
-        api_base=os.environ.get("OPENAI_API_BASE", "https://api.openai.com/v1"),
+        api_key=api_key,
+        api_base=api_base,
     )
     return response.choices[0].message.content
 
@@ -322,11 +348,12 @@ def create_lm(lm_config: dict):
     return dspy.LM(**config, **fixed_config)
 
 
+_runtime_api_key, _runtime_api_base = _resolve_openai_compatible_env()
 lm_for_optimizer = create_lm({
     "model": "openai/gpt-5-mini",
     "temperature": 1,
-    "api_key": os.environ.get("OPENAI_API_KEY"),
-    "api_base": os.environ.get("OPENAI_API_BASE", "https://api.openai.com/v1"),
+    "api_key": _runtime_api_key,
+    "api_base": _runtime_api_base,
 })
 adapter = dspy.settings.adapter  # if "qwen" not in lm_name else XMLAdapter()
 dspy.configure(lm=lm_for_optimizer, adapter=adapter)

@@ -53,24 +53,6 @@ def is_openai_reasoning_model(model_name: str, api_base: str) -> bool:
     return is_openai_api and model_name.lower().startswith(REASONING_MODEL_PREFIXES)
 
 
-def _is_region_restricted_error(exc: Exception) -> bool:
-    text = str(exc).lower()
-    return "not available in your region" in text or "'code': 403" in text
-
-
-def _normalize_openrouter_model_name(model_name: str) -> str:
-    if "/" in model_name:
-        return model_name
-    lowered = model_name.lower()
-    if lowered.startswith(("gpt-", "o1", "o3", "o4")):
-        return f"openai/{model_name}"
-    if lowered.startswith("claude-"):
-        return f"anthropic/{model_name}"
-    if lowered.startswith("gemini-"):
-        return f"google/{model_name}"
-    return model_name
-
-
 def _parse_default_headers_json(env_name: str) -> Dict[str, str]:
     raw = os.environ.get(env_name)
     if not raw:
@@ -117,7 +99,6 @@ class OpenAILLM(LLMInterface):
         self.api_base = model_cfg.api_base
         self.api_key = model_cfg.api_key
         self.reasoning_effort = getattr(model_cfg, "reasoning_effort", None)
-        self._has_switched_region_fallback = False
         self.default_headers = _resolve_default_headers(self.api_base)
 
         max_retries = self.retries if self.retries is not None else 0
@@ -164,34 +145,6 @@ class OpenAILLM(LLMInterface):
                 provider = "OpenAI"
             logger.info(f"{provider} LLM: {self.model}")
             logger._initialized_models.add(self.model)
-
-    def _maybe_switch_region_fallback_model(self, exc: Exception) -> bool:
-        """Switch to an OpenRouter fallback model once on region-restricted 403 errors."""
-        base = (self.api_base or "").lower()
-        if self._has_switched_region_fallback or "openrouter" not in base:
-            return False
-        if not _is_region_restricted_error(exc):
-            return False
-
-        fallback = (
-            os.environ.get("OPENROUTER_REGION_FALLBACK_MODEL")
-            or os.environ.get("OPENROUTER_FALLBACK_MODEL")
-            or "deepseek/deepseek-chat"
-        )
-        fallback = _normalize_openrouter_model_name(fallback.strip())
-        if not fallback or fallback == self.model:
-            return False
-
-        original = self.model
-        self.model = fallback
-        self._has_switched_region_fallback = True
-        logger.warning(
-            "Region-restricted model detected (%s). Switching OpenRouter model from %s to %s.",
-            exc,
-            original,
-            fallback,
-        )
-        return True
 
     async def generate(
         self, system_message: str, messages: List[Dict[str, Any]], **kwargs
@@ -293,8 +246,6 @@ class OpenAILLM(LLMInterface):
                 else:
                     raise
             except Exception as e:
-                if self._maybe_switch_region_fallback_model(e):
-                    continue
                 if attempt < retries:
                     logger.warning(f"Error attempt {attempt + 1}/{retries + 1}: {e}, retrying...")
                     await asyncio.sleep(retry_delay)
@@ -343,7 +294,9 @@ class OpenAILLM(LLMInterface):
                 response = await asyncio.wait_for(
                     self._call_api_full_response(params), timeout=timeout
                 )
-                content = response.choices[0].message.content or ""
+                content = self._extract_chat_text(response)
+                if not content:
+                    content = await self._call_api_via_responses(params)
                 usage = getattr(response, "usage", None)
                 prompt_tokens, completion_tokens, raw_usage = self._extract_usage_counts(usage)
                 return LLMResponse(
@@ -359,8 +312,6 @@ class OpenAILLM(LLMInterface):
                 else:
                     raise
             except Exception as e:
-                if self._maybe_switch_region_fallback_model(e):
-                    continue
                 if attempt < retries:
                     logger.warning(f"Error attempt {attempt + 1}/{retries + 1}: {e}, retrying...")
                     await asyncio.sleep(retry_delay)
@@ -373,7 +324,11 @@ class OpenAILLM(LLMInterface):
             response = await loop.run_in_executor(
                 None, lambda: self.client.chat.completions.create(**params)
             )
-            return response.choices[0].message.content
+            text = self._extract_chat_text(response)
+            if text:
+                return text
+            logger.debug("Empty/unsupported chat response content; trying Responses API fallback")
+            return await self._call_api_via_responses(params)
         except (openai.BadRequestError, openai.APIStatusError) as exc:
             # Some Azure deployments only expose the Responses API.
             # Fall back transparently when Chat Completions is unsupported.
@@ -381,15 +336,27 @@ class OpenAILLM(LLMInterface):
                 raise
             logger.info("Chat Completions unsupported; falling back to Responses API")
             return await self._call_api_via_responses(params)
+        except (TypeError, KeyError, IndexError, AttributeError) as exc:
+            logger.debug("Unexpected chat response shape; falling back to Responses API: %s", exc)
+            return await self._call_api_via_responses(params)
 
     async def _call_api_via_responses(self, params: Dict[str, Any]) -> str:
         """Translate a Chat-Completions-style *params* dict into a Responses API
         call and return the assistant text."""
         messages = params.get("messages", [])
-        input_items = self._convert_to_responses_input(
-            [m for m in messages if m.get("role") != "system"]
+        if not isinstance(messages, list):
+            messages = []
+        input_items = convert_messages_to_responses_input(
+            [m for m in messages if isinstance(m, dict) and m.get("role") != "system"]
         )
-        system_msg = next((m["content"] for m in messages if m.get("role") == "system"), None)
+        system_msg = next(
+            (
+                m.get("content")
+                for m in messages
+                if isinstance(m, dict) and m.get("role") == "system"
+            ),
+            None,
+        )
         resp_params: Dict[str, Any] = {
             "model": params.get("model", self.model),
             "input": input_items,
@@ -409,24 +376,69 @@ class OpenAILLM(LLMInterface):
         response = await loop.run_in_executor(
             None, lambda: self.client.responses.create(**resp_params)
         )
-        text, _ = self._extract_responses_output(response)
+        text, _, _ = extract_responses_output(response)
         return text or ""
 
     async def _call_api_full_response(self, params: Dict[str, Any]):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
 
-    async def _call_api_full_response(self, params: Dict[str, Any]):
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
+    @staticmethod
+    def _extract_chat_text(response: Any) -> str:
+        """Extract text from OpenAI-compatible chat response object/dict safely."""
+        # SDK object style
+        choices = getattr(response, "choices", None)
+        if choices:
+            first = choices[0]
+            message = getattr(first, "message", None)
+            if message is not None:
+                content = getattr(message, "content", None)
+                if isinstance(content, str):
+                    return content
+                if isinstance(content, list):
+                    text_parts = []
+                    for item in content:
+                        if isinstance(item, dict):
+                            txt = item.get("text")
+                            if txt:
+                                text_parts.append(txt)
+                        else:
+                            txt = getattr(item, "text", None)
+                            if txt:
+                                text_parts.append(txt)
+                    if text_parts:
+                        return "".join(text_parts)
+            text = getattr(first, "text", None)
+            if isinstance(text, str):
+                return text
 
-    async def _call_api_full_response(self, params: Dict[str, Any]):
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
+        # Dict style
+        if isinstance(response, dict):
+            choices = response.get("choices") or []
+            if choices:
+                first = choices[0] or {}
+                message = first.get("message") or {}
+                content = message.get("content")
+                if isinstance(content, str):
+                    return content
+                if isinstance(content, list):
+                    text_parts = [c.get("text", "") for c in content if isinstance(c, dict)]
+                    if text_parts:
+                        return "".join(text_parts)
+                text = first.get("text")
+                if isinstance(text, str):
+                    return text
 
-    async def _call_api_full_response(self, params: Dict[str, Any]):
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
+        # Responses API-like fallback fields
+        output_text = getattr(response, "output_text", None)
+        if isinstance(output_text, str) and output_text:
+            return output_text
+        if isinstance(response, dict):
+            output_text = response.get("output_text")
+            if isinstance(output_text, str) and output_text:
+                return output_text
+
+        return ""
 
     def _resolve_retry_options(self, **kwargs) -> Tuple[int, int, int]:
         """Resolve retry/timeout options from kwargs, falling back to instance defaults."""
