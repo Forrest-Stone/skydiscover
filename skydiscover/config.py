@@ -76,6 +76,50 @@ _OPENROUTER_UPSTREAM_BY_PREFIX: Dict[str, str] = {
 }
 
 
+def _load_model_pricing_table() -> Dict[str, Dict[str, float]]:
+    """Load optional model pricing defaults from a single YAML file.
+
+    Priority:
+      1) SKYDISCOVER_MODEL_PRICING_FILE
+      2) <repo_root>/configs/model_pricing.yaml
+    """
+    pricing_path = os.environ.get("SKYDISCOVER_MODEL_PRICING_FILE")
+    if pricing_path:
+        candidate = Path(pricing_path)
+    else:
+        candidate = Path(__file__).resolve().parent.parent / "configs" / "model_pricing.yaml"
+
+    if not candidate.exists():
+        return {}
+
+    try:
+        data = yaml.safe_load(candidate.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        logger.warning("Failed to read model pricing file '%s': %s", candidate, exc)
+        return {}
+
+    table = data.get("model_pricing") if isinstance(data, dict) else None
+    if not isinstance(table, dict):
+        return {}
+
+    normalized: Dict[str, Dict[str, float]] = {}
+    for k, v in table.items():
+        if not isinstance(k, str) or not isinstance(v, dict):
+            continue
+        in_p = v.get("input_price_per_1m")
+        out_p = v.get("output_price_per_1m")
+        if in_p is None or out_p is None:
+            continue
+        try:
+            normalized[k.strip().lower()] = {
+                "input_price_per_1m": float(in_p),
+                "output_price_per_1m": float(out_p),
+            }
+        except (TypeError, ValueError):
+            continue
+    return normalized
+
+
 def _load_local_default_api_key() -> Optional[str]:
     """Load API key from a single in-code/env fallback when provider env vars are not set.
 
@@ -332,6 +376,7 @@ class LLMConfig(LLMModelConfig):
             "reasoning_effort": self.reasoning_effort,
         }
         self.update_model_params(shared_config)
+        self.apply_pricing_defaults()
 
     def update_model_params(self, args: Dict[str, Any], overwrite: bool = False) -> None:
         """Update model parameters for all models (including guide_models)."""
@@ -340,6 +385,35 @@ class LLMConfig(LLMModelConfig):
             for key, value in args.items():
                 if overwrite or getattr(model, key, None) is None:
                     setattr(model, key, value)
+
+    def apply_pricing_defaults(self) -> None:
+        """Fill missing model pricing from central pricing table, if configured."""
+        table = _load_model_pricing_table()
+        if not table:
+            return
+
+        all_models = self.models + self.evaluator_models + self.guide_models
+        for model in all_models:
+            model_name = (getattr(model, "name", "") or "").strip().lower()
+            if not model_name:
+                continue
+            candidates = [model_name]
+            if "/" in model_name:
+                candidates.append(model_name.split("/", 1)[1])
+            candidates = list(dict.fromkeys(candidates))
+
+            match = None
+            for key in candidates:
+                if key in table:
+                    match = table[key]
+                    break
+            if not match:
+                continue
+
+            if getattr(model, "input_price_per_1m", None) is None:
+                model.input_price_per_1m = match["input_price_per_1m"]
+            if getattr(model, "output_price_per_1m", None) is None:
+                model.output_price_per_1m = match["output_price_per_1m"]
 
 
 @dataclass
@@ -1000,6 +1074,17 @@ def apply_overrides(
 ) -> None:
     """Apply runtime overrides (model, api_base, etc.) to a loaded Config in place."""
     if model:
+        # Preserve pricing metadata from existing config models when --model
+        # overrides the model names, so budget accounting does not silently
+        # drop to zero-cost due to missing per-token prices.
+        existing_models = list(getattr(config.llm, "models", []) or [])
+        fallback_input_price = (
+            getattr(existing_models[0], "input_price_per_1m", None) if existing_models else None
+        )
+        fallback_output_price = (
+            getattr(existing_models[0], "output_price_per_1m", None) if existing_models else None
+        )
+
         # Parse the model string into a list of model specifications
         specs = [s.strip() for s in model.split(",")]
         models: List[LLMModelConfig] = []
@@ -1017,6 +1102,8 @@ def apply_overrides(
                     name=_normalize_model_name_for_api_base(model_name, effective_base),
                     api_base=effective_base,
                     api_key=resolved_key,
+                    input_price_per_1m=fallback_input_price,
+                    output_price_per_1m=fallback_output_price,
                 )
             )
 
@@ -1025,11 +1112,26 @@ def apply_overrides(
             config.llm.api_key = models[0].api_key
         config.llm.models = models
         config.llm.evaluator_models = [
-            LLMModelConfig(name=m.name, api_base=m.api_base, api_key=m.api_key) for m in models
+            LLMModelConfig(
+                name=m.name,
+                api_base=m.api_base,
+                api_key=m.api_key,
+                input_price_per_1m=m.input_price_per_1m,
+                output_price_per_1m=m.output_price_per_1m,
+            )
+            for m in models
         ]
         config.llm.guide_models = [
-            LLMModelConfig(name=m.name, api_base=m.api_base, api_key=m.api_key) for m in models
+            LLMModelConfig(
+                name=m.name,
+                api_base=m.api_base,
+                api_key=m.api_key,
+                input_price_per_1m=m.input_price_per_1m,
+                output_price_per_1m=m.output_price_per_1m,
+            )
+            for m in models
         ]
+        config.llm.apply_pricing_defaults()
     elif api_base:
         config.llm.api_base = api_base
         config.llm.update_model_params({"api_base": api_base}, overwrite=True)
@@ -1088,24 +1190,6 @@ def apply_overrides(
                     except Exception:
                         # Ignore read-only/incompatible attrs and keep defaults.
                         continue
-
-    # For EvoX, CLI model/api-base overrides should apply to the co-evolved
-    # search-strategy side as well. Otherwise it falls back to
-    # `skydiscover/search/evox/config/search.yaml` defaults (e.g. gpt-5-mini).
-    if hasattr(config, "search") and config.search.type == "evox" and (model or api_base):
-        config.search.share_llm = True
-
-    # Keep monitor summary model aligned with runtime override unless user already
-    # set a custom summary model explicitly in config.
-    if hasattr(config, "monitor") and model:
-        if getattr(config.monitor, "summary_model", None) == "gpt-5-mini":
-            first_model = config.llm.models[0].name if config.llm.models else None
-            if first_model:
-                config.monitor.summary_model = first_model
-        if not getattr(config.monitor, "summary_api_key", None):
-            config.monitor.summary_api_key = config.llm.api_key
-        if getattr(config.monitor, "summary_api_base", None) == _PROVIDERS["openai"][0]:
-            config.monitor.summary_api_base = config.llm.api_base
 
     # For EvoX, CLI model/api-base overrides should apply to the co-evolved
     # search-strategy side as well. Otherwise it falls back to

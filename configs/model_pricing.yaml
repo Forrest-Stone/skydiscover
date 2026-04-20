@@ -1,0 +1,16 @@
+model_pricing:
+  # Edit prices in this single file to control cost accounting defaults.
+  # Units: USD per 1M tokens.
+
+  gpt-5:
+    input_price_per_1m: 0.72
+    output_price_per_1m: 2.30
+
+  gpt-5-mini:
+    input_price_per_1m: 0.25
+    output_price_per_1m: 1.00
+
+  # OpenRouter / Zhipu GLM-5 example (adjust to your real provider billing).
+  z-ai/glm-5:
+    input_price_per_1m: 0.50
+    output_price_per_1m: 1.50

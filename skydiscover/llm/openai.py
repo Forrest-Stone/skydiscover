@@ -12,7 +12,7 @@ from urllib.parse import parse_qs, urlparse
 
 import openai
 
-from skydiscover.config import LLMModelConfig
+from skydiscover.config import LLMModelConfig, _load_model_pricing_table
 from skydiscover.llm.base import LLMInterface, LLMResponse
 from skydiscover.llm.responses_utils import (
     convert_messages_to_responses_input,
@@ -51,6 +51,30 @@ def is_openai_reasoning_model(model_name: str, api_base: str) -> bool:
         or ".openai.azure.com" in api_base_lower
     )
     return is_openai_api and model_name.lower().startswith(REASONING_MODEL_PREFIXES)
+
+
+def _is_region_restricted_error(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return (
+        "not available in your region" in text
+        or "'code': 403" in text
+        or "error code: 403" in text
+        or "unsupported_country_region_territory" in text
+        or "request_forbidden" in text
+    )
+
+
+def _normalize_openrouter_model_name(model_name: str) -> str:
+    if "/" in model_name:
+        return model_name
+    lowered = model_name.lower()
+    if lowered.startswith(("gpt-", "o1", "o3", "o4")):
+        return f"openai/{model_name}"
+    if lowered.startswith("claude-"):
+        return f"anthropic/{model_name}"
+    if lowered.startswith("gemini-"):
+        return f"google/{model_name}"
+    return model_name
 
 
 def _parse_default_headers_json(env_name: str) -> Dict[str, str]:
@@ -99,6 +123,9 @@ class OpenAILLM(LLMInterface):
         self.api_base = model_cfg.api_base
         self.api_key = model_cfg.api_key
         self.reasoning_effort = getattr(model_cfg, "reasoning_effort", None)
+        self.input_price_per_1m = getattr(model_cfg, "input_price_per_1m", None)
+        self.output_price_per_1m = getattr(model_cfg, "output_price_per_1m", None)
+        self._has_switched_region_fallback = False
         self.default_headers = _resolve_default_headers(self.api_base)
 
         max_retries = self.retries if self.retries is not None else 0
@@ -457,12 +484,42 @@ class OpenAILLM(LLMInterface):
         return retries, retry_delay, timeout
 
     def _estimate_cost(self, prompt_tokens: int, completion_tokens: int) -> Optional[float]:
-        """Estimate request cost from configured per-1M token prices."""
-        if self.input_price_per_1m is None or self.output_price_per_1m is None:
-            return None
+        """Estimate request cost from configured per-1M token prices.
+
+        Strict billing behavior: if pricing is unavailable for the active model,
+        raise an error instead of silently skipping cost accounting.
+        """
+        input_price = getattr(self, "input_price_per_1m", None)
+        output_price = getattr(self, "output_price_per_1m", None)
+
+        if input_price is None or output_price is None:
+            table = _load_model_pricing_table()
+            model_name = str(getattr(self, "model", "") or "").strip().lower()
+            candidates = [model_name]
+            if "/" in model_name:
+                candidates.append(model_name.split("/", 1)[1])
+            candidates = list(dict.fromkeys(candidates))
+            for key in candidates:
+                row = table.get(key) if table else None
+                if row:
+                    input_price = row.get("input_price_per_1m")
+                    output_price = row.get("output_price_per_1m")
+                    break
+
+        if input_price is None or output_price is None:
+            raise ValueError(
+                "Missing model pricing for strict cost accounting. "
+                f"model='{getattr(self, 'model', 'unknown')}'. "
+                "Please set per-model prices in configs/model_pricing.yaml "
+                "or via SKYDISCOVER_MODEL_PRICING_FILE."
+            )
+
+        # Persist resolved fallback prices for subsequent calls.
+        self.input_price_per_1m = float(input_price)
+        self.output_price_per_1m = float(output_price)
         return (
-            (prompt_tokens * float(self.input_price_per_1m))
-            + (completion_tokens * float(self.output_price_per_1m))
+            (prompt_tokens * float(input_price))
+            + (completion_tokens * float(output_price))
         ) / 1_000_000.0
 
     # ------------------------------------------------------------------
