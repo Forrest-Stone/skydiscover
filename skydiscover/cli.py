@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 _SEARCH_CHOICES = [
     "evox",
     "adaevolve",
+    "costada",
     "budgetevolve",
-    "budget_adaevolve",
     "best_of_n",
     "beam_search",
     "topk",
