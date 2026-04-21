@@ -65,8 +65,8 @@ search:
     budget_meta_threshold: 0.25
 
     # Per-token cost for the method-local token ledger (USD/token)
-    input_token_cost: 0.00000072
-    output_token_cost: 0.00000230
+    input_token_cost: 0.5
+    output_token_cost: 1.5
 
     # Action tiers
     cheap_max_output_tokens: 512

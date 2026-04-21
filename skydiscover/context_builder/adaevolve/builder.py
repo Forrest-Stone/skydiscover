@@ -45,7 +45,8 @@ class AdaEvolveContextBuilder(DefaultContextBuilder):
 
     def __init__(self, config: Config):
         super().__init__(config)
-        default_templates = str(Path(__file__).parent.parent / "default" / "templates")
+        default_templates = str(
+            Path(__file__).parent.parent / "default" / "templates")
         adaevolve_templates = str(Path(__file__).parent / "templates")
         self.template_manager = TemplateManager(
             default_templates, adaevolve_templates, self.context_config.template_dir
@@ -62,14 +63,16 @@ class AdaEvolveContextBuilder(DefaultContextBuilder):
         higher_is_better = getattr(db_config, "higher_is_better", None) or {}
         descriptions = []
         for objective in getattr(db_config, "pareto_objectives", None) or []:
-            direction = "maximize" if higher_is_better.get(objective, True) else "minimize"
+            direction = "maximize" if higher_is_better.get(
+                objective, True) else "minimize"
             descriptions.append(f"{objective} ({direction})")
         return descriptions
 
     def _metric_to_maximization_value(self, metric_name: str, value: Any) -> Optional[float]:
         from skydiscover.utils.metrics import normalize_metric_value
 
-        higher_is_better = getattr(self._db_config(), "higher_is_better", None) or {}
+        higher_is_better = getattr(
+            self._db_config(), "higher_is_better", None) or {}
         return normalize_metric_value(metric_name, value, higher_is_better)
 
     _PROGRESS_SCORE_MISSING = float("-inf")
@@ -81,17 +84,20 @@ class AdaEvolveContextBuilder(DefaultContextBuilder):
         so that callers can distinguish "no data" from "score is zero".
         """
         db_config = self._db_config()
-        pareto_objectives = getattr(db_config, "pareto_objectives", None) or None
+        pareto_objectives = getattr(
+            db_config, "pareto_objectives", None) or None
         return compute_proxy_score(
             metrics,
             fitness_key=getattr(db_config, "fitness_key", None),
             pareto_objectives=pareto_objectives,
-            higher_is_better=getattr(db_config, "higher_is_better", None) or {},
+            higher_is_better=getattr(
+                db_config, "higher_is_better", None) or {},
         )
 
     def _task_objective_text(self) -> str:
         subject = (
-            "prompt" if (self.config.language or "").lower() in ("text", "prompt") else "program"
+            "prompt" if (self.config.language or "").lower() in (
+                "text", "prompt") else "program"
         )
         if not self._is_multiobjective_enabled():
             return f"Suggest improvements to the {subject} that will improve its COMBINED_SCORE."
@@ -218,7 +224,8 @@ class AdaEvolveContextBuilder(DefaultContextBuilder):
 
         # 3. Sibling context
         if siblings:
-            sibling_section = self._format_sibling_context(siblings, parent_program)
+            sibling_section = self._format_sibling_context(
+                siblings, parent_program)
             if sibling_section:
                 sections.append(sibling_section)
 
@@ -242,12 +249,14 @@ class AdaEvolveContextBuilder(DefaultContextBuilder):
             return super()._identify_improvement_areas(current_program, metrics, previous_programs)
 
         improvement_areas = [
-            "Focus on Pareto trade-offs across: " + ", ".join(self._objective_descriptions())
+            "Focus on Pareto trade-offs across: " +
+            ", ".join(self._objective_descriptions())
         ]
 
         current_score = self._get_progress_score(metrics)
         if previous_programs:
-            prev_metrics = prog_attr(previous_programs[-1], "metrics", {}) or {}
+            prev_metrics = prog_attr(
+                previous_programs[-1], "metrics", {}) or {}
             prev_score = self._get_progress_score(prev_metrics)
             # Only show delta text when both scores are valid (not missing).
             missing = self._PROGRESS_SCORE_MISSING
@@ -261,9 +270,11 @@ class AdaEvolveContextBuilder(DefaultContextBuilder):
                         f"Pareto proxy declined: {prev_score:.4f} -> {current_score:.4f}. Revisit recent trade-offs."
                     )
                 else:
-                    improvement_areas.append(f"Pareto proxy unchanged at {current_score:.4f}")
+                    improvement_areas.append(
+                        f"Pareto proxy unchanged at {current_score:.4f}")
             elif current_score != missing:
-                improvement_areas.append(f"Pareto proxy at {current_score:.4f} (first measurement)")
+                improvement_areas.append(
+                    f"Pareto proxy at {current_score:.4f} (first measurement)")
 
         threshold = self.context_config.suggest_simplification_after_chars
         if threshold and len(current_program) > threshold:
@@ -372,14 +383,16 @@ class AdaEvolveContextBuilder(DefaultContextBuilder):
         if not siblings:
             return None
 
-        parent_fitness = self._get_progress_score(getattr(parent_program, "metrics", {}))
+        parent_fitness = self._get_progress_score(
+            getattr(parent_program, "metrics", {}))
         missing = self._PROGRESS_SCORE_MISSING
 
         improved, regressed, unchanged = 0, 0, 0
         entries: List[str] = []
 
         for i, child in enumerate(siblings, 1):
-            child_fitness = self._get_progress_score(getattr(child, "metrics", {}))
+            child_fitness = self._get_progress_score(
+                getattr(child, "metrics", {}))
 
             if parent_fitness == missing or child_fitness == missing:
                 entries.append(f"  {i}. (metrics unavailable) [UNKNOWN]")
@@ -421,16 +434,19 @@ class AdaEvolveContextBuilder(DefaultContextBuilder):
             return "No previous attempts yet."
 
         try:
-            previous_attempt_template = self.template_manager.get_template("previous_attempt")
+            previous_attempt_template = self.template_manager.get_template(
+                "previous_attempt")
         except (ValueError, KeyError):
             previous_attempt_template = "### Attempt {attempt_number}\n- Changes: {changes}\n- Metrics: {performance}\n- Outcome: {outcome}"
 
         previous_programs = sorted(
             previous_programs,
-            key=lambda program: self._get_progress_score(prog_attr(program, "metrics", {}) or {}),
+            key=lambda program: self._get_progress_score(
+                prog_attr(program, "metrics", {}) or {}),
             reverse=True,
         )
-        selected = previous_programs[: min(num_previous_attempts, len(previous_programs))]
+        selected = previous_programs[: min(
+            num_previous_attempts, len(previous_programs))]
 
         lines = []
         for i, program in enumerate(reversed(selected)):
@@ -448,7 +464,8 @@ class AdaEvolveContextBuilder(DefaultContextBuilder):
                         performance_parts.append(f"{name}: {value}")
                 else:
                     performance_parts.append(f"{name}: {value}")
-            performance_str = ", ".join(performance_parts) if performance_parts else "No metrics"
+            performance_str = ", ".join(
+                performance_parts) if performance_parts else "No metrics"
 
             parent_metrics = metadata.get("parent_metrics", {})
             outcome = self._determine_outcome(metrics, parent_metrics)
@@ -493,7 +510,7 @@ class AdaEvolveContextBuilder(DefaultContextBuilder):
         )
 
 
-class BudgetEvolveCompatContextBuilder(AdaEvolveContextBuilder):
+class BudgetAdaEvolveContextBuilder(AdaEvolveContextBuilder):
     """AdaEvolve context builder with budget-aware guidance and tier-aware truncation."""
 
     def _format_budget_guidance(self, context: Dict[str, Any]) -> str:
