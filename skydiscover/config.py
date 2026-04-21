@@ -185,8 +185,12 @@ def _apply_budget_defaults(config: "Config") -> None:
     if isinstance(method_defaults, dict):
         merged.update(method_defaults)
 
+    # Respect user-provided extra keys from task config (e.g. nominal_budget: 0.5).
+    # For dataclass-declared fields we keep centralized defaults as before.
+    declared_fields = {f.name for f in fields(type(db))}
     for key, value in merged.items():
-        # Global central config is authoritative.
+        if key not in declared_fields and hasattr(db, key):
+            continue
         setattr(db, key, value)
 
 

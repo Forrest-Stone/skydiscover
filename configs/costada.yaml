@@ -51,6 +51,10 @@ search:
     max_error_retries: 2
 
     # Shared budget (phase-1)
+    # You can override nominal budget per run, e.g. 0.5 or 1.2:
+    #   nominal_budget: 0.5
+    # or select a profile from configs/model_pricing.yaml:
+    #   budget_profile: "budget_0_5"   # or "budget_1_2"
     nominal_budget: 1.0
 
     # BCHD/CostAda controller hyperparameters

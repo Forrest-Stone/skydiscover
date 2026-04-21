@@ -26,6 +26,10 @@ budget_defaults:
 budget_profiles:
   low_budget:
     nominal_budget: 0.3
+  budget_0_5:
+    nominal_budget: 0.5
+  budget_1_2:
+    nominal_budget: 1.2
   high_budget:
     nominal_budget: 2.0
 
