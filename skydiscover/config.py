@@ -76,6 +76,120 @@ _OPENROUTER_UPSTREAM_BY_PREFIX: Dict[str, str] = {
 }
 
 
+def _load_model_pricing_table() -> Dict[str, Dict[str, float]]:
+    """Load optional model pricing defaults from a single YAML file.
+
+    Priority:
+      1) SKYDISCOVER_MODEL_PRICING_FILE
+      2) <repo_root>/configs/model_pricing.yaml
+    """
+    pricing_path = os.environ.get("SKYDISCOVER_MODEL_PRICING_FILE")
+    if pricing_path:
+        candidate = Path(pricing_path)
+    else:
+        candidate = Path(__file__).resolve().parent.parent / "configs" / "model_pricing.yaml"
+
+    if not candidate.exists():
+        return {}
+
+    try:
+        data = yaml.safe_load(candidate.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        logger.warning("Failed to read model pricing file '%s': %s", candidate, exc)
+        return {}
+
+    table = data.get("model_pricing") if isinstance(data, dict) else None
+    if not isinstance(table, dict):
+        return {}
+
+    normalized: Dict[str, Dict[str, float]] = {}
+    for k, v in table.items():
+        if not isinstance(k, str) or not isinstance(v, dict):
+            continue
+        in_p = v.get("input_price_per_1m")
+        out_p = v.get("output_price_per_1m")
+        if in_p is None or out_p is None:
+            continue
+        try:
+            normalized[k.strip().lower()] = {
+                "input_price_per_1m": float(in_p),
+                "output_price_per_1m": float(out_p),
+            }
+        except (TypeError, ValueError):
+            continue
+    return normalized
+
+
+def _load_budget_defaults_config() -> Dict[str, Any]:
+    """Load optional budget defaults/profiles from model_pricing YAML."""
+    pricing_path = os.environ.get("SKYDISCOVER_MODEL_PRICING_FILE")
+    if pricing_path:
+        candidate = Path(pricing_path)
+    else:
+        candidate = Path(__file__).resolve().parent.parent / "configs" / "model_pricing.yaml"
+
+    if not candidate.exists():
+        return {}
+
+    try:
+        data = yaml.safe_load(candidate.read_text(encoding="utf-8")) or {}
+    except Exception as exc:
+        logger.warning("Failed to read budget defaults from '%s': %s", candidate, exc)
+        return {}
+
+    if not isinstance(data, dict):
+        return {}
+    return {
+        "budget_defaults": data.get("budget_defaults", {}) or {},
+        "budget_profiles": data.get("budget_profiles", {}) or {},
+        "costada_budget": data.get("costada_budget", {}) or {},
+        "adaevolve_budget": data.get("adaevolve_budget", {}) or {},
+        "budgetevolve": data.get("budgetevolve", {}) or {},
+        "evox_budget": data.get("evox_budget", {}) or {},
+    }
+
+
+def _apply_budget_defaults(config: "Config") -> None:
+    """Apply central budget defaults/profile to search.database.
+
+    Central defaults/profile are the source of truth.
+    """
+    if not hasattr(config, "search") or not hasattr(config.search, "database"):
+        return
+
+    budget_cfg = _load_budget_defaults_config()
+    if not budget_cfg:
+        return
+
+    db = config.search.database
+    base_defaults = budget_cfg.get("budget_defaults", {})
+    profiles = budget_cfg.get("budget_profiles", {})
+    search_type = str(getattr(config.search, "type", "") or "").strip().lower()
+    method_section_key = {
+        "costada": "costada_budget",
+        "adaevolve": "adaevolve_budget",
+        "budgetevolve": "budgetevolve",
+        "evox": "evox_budget",
+    }.get(search_type, "")
+    method_defaults = budget_cfg.get(method_section_key, {}) if method_section_key else {}
+    profile_name = (
+        str(getattr(db, "budget_profile", "") or os.environ.get("SKYDISCOVER_BUDGET_PROFILE", "")).strip()
+    )
+    profile_overrides = profiles.get(profile_name, {}) if profile_name else {}
+
+    merged: Dict[str, Any] = {}
+    if isinstance(base_defaults, dict):
+        merged.update(base_defaults)
+    if isinstance(profile_overrides, dict):
+        merged.update(profile_overrides)
+    if isinstance(method_defaults, dict):
+        merged.update(method_defaults)
+
+    for key, value in merged.items():
+        # Global central config is authoritative.
+        setattr(db, key, value)
+
+
 def _load_local_default_api_key() -> Optional[str]:
     """Load API key from a single in-code/env fallback when provider env vars are not set.
 
@@ -236,6 +350,8 @@ class LLMModelConfig:
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     max_tokens: Optional[int] = None
+    input_price_per_1m: Optional[float] = None
+    output_price_per_1m: Optional[float] = None
 
     # Request parameters
     timeout: Optional[int] = None
@@ -322,12 +438,15 @@ class LLMConfig(LLMModelConfig):
             "temperature": self.temperature,
             "top_p": self.top_p,
             "max_tokens": self.max_tokens,
+            "input_price_per_1m": getattr(self, "input_price_per_1m", None),
+            "output_price_per_1m": getattr(self, "output_price_per_1m", None),
             "timeout": self.timeout,
             "retries": self.retries,
             "retry_delay": self.retry_delay,
             "reasoning_effort": self.reasoning_effort,
         }
         self.update_model_params(shared_config)
+        self.apply_pricing_defaults()
 
     def update_model_params(self, args: Dict[str, Any], overwrite: bool = False) -> None:
         """Update model parameters for all models (including guide_models)."""
@@ -336,6 +455,35 @@ class LLMConfig(LLMModelConfig):
             for key, value in args.items():
                 if overwrite or getattr(model, key, None) is None:
                     setattr(model, key, value)
+
+    def apply_pricing_defaults(self) -> None:
+        """Fill missing model pricing from central pricing table, if configured."""
+        table = _load_model_pricing_table()
+        if not table:
+            return
+
+        all_models = self.models + self.evaluator_models + self.guide_models
+        for model in all_models:
+            model_name = (getattr(model, "name", "") or "").strip().lower()
+            if not model_name:
+                continue
+            candidates = [model_name]
+            if "/" in model_name:
+                candidates.append(model_name.split("/", 1)[1])
+            candidates = list(dict.fromkeys(candidates))
+
+            match = None
+            for key in candidates:
+                if key in table:
+                    match = table[key]
+                    break
+            if not match:
+                continue
+
+            if getattr(model, "input_price_per_1m", None) is None:
+                model.input_price_per_1m = match["input_price_per_1m"]
+            if getattr(model, "output_price_per_1m", None) is None:
+                model.output_price_per_1m = match["output_price_per_1m"]
 
 
 @dataclass
@@ -615,8 +763,8 @@ _DB_CONFIG_BY_TYPE: Dict[str, type] = {
     "best_of_n": BestOfNDatabaseConfig,
     "topk": DatabaseConfig,
     "adaevolve": AdaEvolveDatabaseConfig,
-    "budget_adaevolve": AdaEvolveDatabaseConfig,
     "budgetevolve": AdaEvolveDatabaseConfig,
+    "costada": AdaEvolveDatabaseConfig,
     "openevolve_native": OpenEvolveNativeDatabaseConfig,
     "gepa_native": GEPANativeDatabaseConfig,
 }
@@ -922,6 +1070,10 @@ def load_config(config_path: Optional[Union[str, Path]] = None) -> Config:
     # Make the system message available to the individual models, in case it is not provided from the prompt sampler
     config.llm.update_model_params({"system_message": config.context_builder.system_message})
 
+    # Apply centralized budget defaults/profile (single source config), while
+    # keeping explicit per-run YAML values unchanged.
+    _apply_budget_defaults(config)
+
     # Bridge provider env vars so that downstream configs (e.g. evox search.yaml)
     # can resolve ${OPENAI_API_KEY} from the environment.
     bridge_provider_env(config)
@@ -981,6 +1133,17 @@ def apply_overrides(
 ) -> None:
     """Apply runtime overrides (model, api_base, etc.) to a loaded Config in place."""
     if model:
+        # Preserve pricing metadata from existing config models when --model
+        # overrides the model names, so budget accounting does not silently
+        # drop to zero-cost due to missing per-token prices.
+        existing_models = list(getattr(config.llm, "models", []) or [])
+        fallback_input_price = (
+            getattr(existing_models[0], "input_price_per_1m", None) if existing_models else None
+        )
+        fallback_output_price = (
+            getattr(existing_models[0], "output_price_per_1m", None) if existing_models else None
+        )
+
         # Parse the model string into a list of model specifications
         specs = [s.strip() for s in model.split(",")]
         models: List[LLMModelConfig] = []
@@ -998,6 +1161,8 @@ def apply_overrides(
                     name=_normalize_model_name_for_api_base(model_name, effective_base),
                     api_base=effective_base,
                     api_key=resolved_key,
+                    input_price_per_1m=fallback_input_price,
+                    output_price_per_1m=fallback_output_price,
                 )
             )
 
@@ -1006,11 +1171,26 @@ def apply_overrides(
             config.llm.api_key = models[0].api_key
         config.llm.models = models
         config.llm.evaluator_models = [
-            LLMModelConfig(name=m.name, api_base=m.api_base, api_key=m.api_key) for m in models
+            LLMModelConfig(
+                name=m.name,
+                api_base=m.api_base,
+                api_key=m.api_key,
+                input_price_per_1m=m.input_price_per_1m,
+                output_price_per_1m=m.output_price_per_1m,
+            )
+            for m in models
         ]
         config.llm.guide_models = [
-            LLMModelConfig(name=m.name, api_base=m.api_base, api_key=m.api_key) for m in models
+            LLMModelConfig(
+                name=m.name,
+                api_base=m.api_base,
+                api_key=m.api_key,
+                input_price_per_1m=m.input_price_per_1m,
+                output_price_per_1m=m.output_price_per_1m,
+            )
+            for m in models
         ]
+        config.llm.apply_pricing_defaults()
     elif api_base:
         config.llm.api_base = api_base
         config.llm.update_model_params({"api_base": api_base}, overwrite=True)
@@ -1056,7 +1236,22 @@ def apply_overrides(
         config.search.type = search
         new_db_cls = _DB_CONFIG_BY_TYPE.get(search)
         if new_db_cls and not isinstance(config.search.database, new_db_cls):
+            # Preserve user-provided database knobs when switching search type
+            # via CLI flag. This keeps compatible fields (and extra attrs) from
+            # the previous database object instead of silently resetting to
+            # defaults.
+            previous_db = config.search.database
             config.search.database = new_db_cls()
+            if previous_db is not None:
+                for key, value in vars(previous_db).items():
+                    try:
+                        setattr(config.search.database, key, value)
+                    except Exception:
+                        # Ignore read-only/incompatible attrs and keep defaults.
+                        continue
+        # Switching search type can replace database instance; re-apply
+        # centralized budget defaults so CostAda nominal budget is not lost.
+        _apply_budget_defaults(config)
 
     # For EvoX, CLI model/api-base overrides should apply to the co-evolved
     # search-strategy side as well. Otherwise it falls back to

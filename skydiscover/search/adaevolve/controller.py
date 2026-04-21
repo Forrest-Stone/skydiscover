@@ -26,6 +26,7 @@ from skydiscover.context_builder.adaevolve import AdaEvolveContextBuilder
 from skydiscover.context_builder.default import DefaultContextBuilder
 from skydiscover.evaluation.llm_judge import LLMJudge
 from skydiscover.llm.llm_pool import LLMPool
+from skydiscover.budget import CallRole, call_record_from_response
 from skydiscover.search.adaevolve.paradigm import ParadigmGenerator
 from skydiscover.search.adaevolve.adaptation import (
     BudgetAction,
@@ -270,6 +271,7 @@ class AdaEvolveController(DiscoveryController):
         # Log final summary and stats file location
         if self._iteration_stats_log_path:
             logger.info(f"AdaEvolve iteration stats saved to: {self._iteration_stats_log_path}")
+        self._write_budget_summary()
 
         return self.database.get_best_program()
 
@@ -308,13 +310,16 @@ class AdaEvolveController(DiscoveryController):
     async def _run_iteration(self, iteration: int, checkpoint_callback) -> None:
         """Execute one evolution iteration."""
         iteration_start_time = time.time()
+        budget_record = self.budget_ledger.start_iteration(iteration)
+        budget_record.meta["frontier_id"] = getattr(self.database, "current_island", None)
+        budget_record.meta["global_best_before"] = self._best_score_or_zero()
 
         # Check for global paradigm stagnation
         # Use database flag directly to stay in sync after checkpoint load
         if self.database.use_paradigm_breakthrough and self.database.is_paradigm_stagnating():
-            await self._generate_paradigms_if_needed()
+            await self._generate_paradigms_if_needed(budget_record=budget_record)
 
-        result = await self._run_normal_step(iteration)
+        result = await self._run_normal_step(iteration, budget_record=budget_record)
 
         iteration_time = time.time() - iteration_start_time
 
@@ -344,8 +349,9 @@ class AdaEvolveController(DiscoveryController):
                 eval_time=result.eval_time,
                 error=None,
             )
+        self._finalize_budget_iteration(budget_record, result)
 
-    async def _generate_paradigms_if_needed(self) -> None:
+    async def _generate_paradigms_if_needed(self, budget_record=None) -> None:
         """Generate new paradigms if stagnating and none active."""
         if self.paradigm_generator is None:
             return
@@ -376,6 +382,11 @@ class AdaEvolveController(DiscoveryController):
             current_best_score=best_score,
             previously_tried_ideas=previously_tried,
             evaluator_feedback=evaluator_feedback,
+            llm_response_callback=lambda response: self.budget_ledger.add_call(
+                budget_record, call_record_from_response(response, CallRole.GUIDE)
+            )
+            if budget_record is not None
+            else None,
         )
 
         if paradigms:
@@ -384,13 +395,19 @@ class AdaEvolveController(DiscoveryController):
         else:
             logger.warning("Failed to generate paradigms")
 
-    async def _run_normal_step(self, iteration: int) -> SerializableResult:
+    async def _run_normal_step(self, iteration: int, budget_record=None) -> SerializableResult:
         """Run a normal iteration with optional retry."""
         last_error = None
         attempts = 1 + (self.max_retries if self.enable_retry else 0)
 
         for attempt in range(attempts):
-            result = await self._generate_child(iteration, error_context=last_error)
+            role = CallRole.GENERATION if attempt == 0 else CallRole.RETRY
+            result = await self._generate_child(
+                iteration,
+                error_context=last_error,
+                call_role=role,
+                budget_record=budget_record,
+            )
             if not result.error:
                 return result
             last_error = result.error
@@ -476,11 +493,15 @@ class AdaEvolveController(DiscoveryController):
         iteration: int,
         error_context: Optional[str] = None,
         force_exploration: bool = False,
+        call_role: CallRole = CallRole.GENERATION,
+        budget_record=None,
     ) -> SerializableResult:
         """Generate and evaluate a single child program."""
         try:
             if not self.database.programs:
-                return await self._run_from_scratch_iteration(iteration)
+                return await self._run_from_scratch_iteration(
+                    iteration, budget_record=budget_record
+                )
 
             # Ensure all islands are seeded (needed after from-scratch bootstrap)
             self._ensure_all_islands_seeded()
@@ -580,6 +601,8 @@ class AdaEvolveController(DiscoveryController):
                 parent,
                 prompt,
                 iteration,
+                call_role=call_role,
+                budget_record=budget_record,
                 parent_info=parent_info,
                 context_info=context_info,
                 context_program_ids=context_program_ids,
@@ -599,6 +622,8 @@ class AdaEvolveController(DiscoveryController):
         parent: Program,
         prompt: Dict[str, str],
         iteration: int,
+        call_role: CallRole = CallRole.GENERATION,
+        budget_record=None,
         parent_info: Optional[tuple] = None,
         context_info: Optional[List[tuple]] = None,
         context_program_ids: Optional[List[str]] = None,
@@ -626,6 +651,8 @@ class AdaEvolveController(DiscoveryController):
                     image_output=True,
                     output_dir=self._get_image_output_dir(),
                     program_id=child_id,
+                    _budget_record=budget_record,
+                    _call_role=call_role,
                 )
                 response = result.text or ""
                 image_path = result.image_path
@@ -634,7 +661,12 @@ class AdaEvolveController(DiscoveryController):
                         error="VLM did not generate an image", iteration=iteration
                     )
             else:
-                result = await self._call_llm(prompt["system"], prompt["user"])
+                result = await self._call_llm(
+                    prompt["system"],
+                    prompt["user"],
+                    _budget_record=budget_record,
+                    _call_role=call_role,
+                )
                 response = result.text
             llm_generation_time = time.time() - llm_start
         except Exception as e:
@@ -717,14 +749,14 @@ class AdaEvolveController(DiscoveryController):
         )
 
 
-class BudgetAdaEvolveController(AdaEvolveController):
+class BudgetEvolveCompatController(AdaEvolveController):
     """AdaEvolve controller with explicit budget-aware action scheduling."""
 
     def __init__(self, controller_input: DiscoveryControllerInput):
         super().__init__(controller_input)
-        from skydiscover.context_builder.adaevolve import BudgetAdaEvolveContextBuilder
+        from skydiscover.context_builder.adaevolve import BudgetEvolveCompatContextBuilder
 
-        self.context_builder = BudgetAdaEvolveContextBuilder(self.config)
+        self.context_builder = BudgetEvolveCompatContextBuilder(self.config)
         db_cfg = self.config.search.database
         self.budget_enabled = bool(getattr(db_cfg, "budget_enabled", False))
         self.budget_ledger = BudgetLedger(
@@ -933,6 +965,8 @@ class BudgetAdaEvolveController(AdaEvolveController):
         iteration: int,
         error_context: Optional[str] = None,
         force_exploration: bool = False,
+        call_role: CallRole = CallRole.GENERATION,
+        budget_record=None,
     ) -> SerializableResult:
         if not self.budget_enabled:
             return await super()._generate_child(iteration, error_context, force_exploration)
