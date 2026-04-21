@@ -11,6 +11,7 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional
 
+from skydiscover.budget import CallRole, call_record_from_response
 from skydiscover.context_builder.budgetevolve import BudgetEvolveContextBuilder
 from skydiscover.search.adaevolve.controller import AdaEvolveController
 from skydiscover.search.adaevolve.paradigm import ParadigmGenerator as BaseParadigmGenerator
@@ -22,7 +23,7 @@ from skydiscover.utils.code_utils import apply_diff, extract_diffs, format_diff_
 from .adaptation import (
     BudgetAction,
     BudgetActionScheduler,
-    BudgetLedger,
+    BudgetLedger as TokenBudgetLedger,
     BudgetState,
     BudgetStateBuilder,
     UsageRecord,
@@ -40,7 +41,9 @@ class BudgetEvolveController(AdaEvolveController):
 
         db_cfg = self.config.search.database
         self.budget_enabled = bool(getattr(db_cfg, "budget_enabled", False))
-        self.budget_ledger = BudgetLedger(
+        # Keep shared USD-based budget ledger from DiscoveryController untouched.
+        # BudgetEvolve keeps an additional token-budget ledger for method-local control.
+        self.token_budget_ledger = TokenBudgetLedger(
             total_budget=getattr(db_cfg, "token_budget_total", 500000),
             strict_stop=getattr(db_cfg, "budget_strict_stop", True),
             cost_budget_total=getattr(db_cfg, "cost_budget_total", 0.0),
@@ -73,6 +76,24 @@ class BudgetEvolveController(AdaEvolveController):
                 fitness_key=getattr(db_cfg, "fitness_key", None),
             )
 
+    async def _call_llm(self, system_message: str, user_message: str, **kwargs):
+        """Keep shared budget logging and additionally track token-budget spend."""
+        call_role = kwargs.get("_call_role")
+        result = await super()._call_llm(system_message, user_message, **kwargs)
+        if self.budget_enabled and call_role in (CallRole.GENERATION, CallRole.RETRY):
+            in_tokens = int(getattr(result, "input_tokens", 0) or 0)
+            out_tokens = int(getattr(result, "output_tokens", 0) or 0)
+            if in_tokens > 0 or out_tokens > 0:
+                self.token_budget_ledger.update(
+                    UsageRecord(
+                        input_tokens=in_tokens,
+                        output_tokens=out_tokens,
+                        total_tokens=in_tokens + out_tokens,
+                        raw_usage=getattr(result, "raw_usage", None),
+                    )
+                )
+        return result
+
     def _estimate_prompt_tokens(self, prompt: Dict[str, str]) -> int:
         return max(1, int((prompt.get("system", "") + prompt.get("user", "")).__len__() / 4))
 
@@ -82,9 +103,12 @@ class BudgetEvolveController(AdaEvolveController):
     def _budget_exhausted(self) -> bool:
         if not self.budget_enabled:
             return False
-        if self.budget_ledger.remaining_tokens <= 0:
+        if self.token_budget_ledger.remaining_tokens <= 0:
             return True
-        if self.budget_ledger.cost_budget_total > 0 and self.budget_ledger.remaining_cost <= 0:
+        if (
+            self.token_budget_ledger.cost_budget_total > 0
+            and self.token_budget_ledger.remaining_cost <= 0
+        ):
             return True
         return False
 
@@ -95,7 +119,7 @@ class BudgetEvolveController(AdaEvolveController):
         return sum(self._recent_frontier_gains[-n:]) / n
 
     def _burn_rate(self, iteration: int) -> float:
-        return float(self.budget_ledger.spent_tokens) / max(1, iteration)
+        return float(self.token_budget_ledger.spent_tokens) / max(1, iteration)
 
     def _downgrade_action(self, action: BudgetAction) -> BudgetAction:
         db = self.config.search.database
@@ -126,11 +150,12 @@ class BudgetEvolveController(AdaEvolveController):
                 self.database.end_iteration(iteration)
 
         self.database.log_status()
+        self._write_budget_summary()
         return self.database.get_best_program()
 
-    async def _generate_paradigms_if_needed(self) -> None:
+    async def _generate_paradigms_if_needed(self, budget_record=None) -> None:
         if not self.budget_enabled:
-            return await super()._generate_paradigms_if_needed()
+            return await super()._generate_paradigms_if_needed(budget_record=budget_record)
         if self.paradigm_generator is None:
             return
 
@@ -138,10 +163,10 @@ class BudgetEvolveController(AdaEvolveController):
         if tracker is None or self.database.has_active_paradigm():
             return
         if not tracker.should_trigger_budgeted(
-            remaining_ratio=self.budget_ledger.remaining_ratio,
+            remaining_ratio=self.token_budget_ledger.remaining_ratio,
             meta_budget_threshold=getattr(self.config.search.database, "budget_meta_threshold", 0.25),
             estimated_meta_cost=2048,
-            remaining_tokens=self.budget_ledger.remaining_tokens,
+            remaining_tokens=self.token_budget_ledger.remaining_tokens,
             recent_meta_success_rate=None,
         ):
             return
@@ -153,28 +178,56 @@ class BudgetEvolveController(AdaEvolveController):
             previously_tried_ideas=self.database.get_previously_tried_ideas(),
             evaluator_feedback=(best_program.artifacts or {}).get("feedback") if best_program else None,
             mode="summary",
+            llm_response_callback=lambda response: self._on_guide_response(response, budget_record),
         )
         if paradigms:
             self.database.set_paradigms(paradigms)
+
+    def _on_guide_response(self, response, budget_record) -> None:
+        """Record guide-call cost in shared ledger and token ledger."""
+        if budget_record is not None:
+            self.budget_ledger.add_call(
+                budget_record,
+                call_record_from_response(response, CallRole.GUIDE),
+            )
+        in_tokens = int(getattr(response, "input_tokens", 0) or 0)
+        out_tokens = int(getattr(response, "output_tokens", 0) or 0)
+        if in_tokens > 0 or out_tokens > 0:
+            self.token_budget_ledger.update(
+                UsageRecord(
+                    input_tokens=in_tokens,
+                    output_tokens=out_tokens,
+                    total_tokens=in_tokens + out_tokens,
+                    raw_usage=getattr(response, "raw_usage", None),
+                )
+            )
 
     async def _generate_child(
         self,
         iteration: int,
         error_context: Optional[str] = None,
         force_exploration: bool = False,
+        call_role=CallRole.GENERATION,
+        budget_record=None,
     ) -> SerializableResult:
         if not self.budget_enabled:
-            return await super()._generate_child(iteration, error_context, force_exploration)
+            return await super()._generate_child(
+                iteration=iteration,
+                error_context=error_context,
+                force_exploration=force_exploration,
+                call_role=call_role,
+                budget_record=budget_record,
+            )
 
         if not self.database.programs:
-            return await self._run_from_scratch_iteration(iteration)
+            return await self._run_from_scratch_iteration(iteration, budget_record=budget_record)
 
         island_id = self.database.current_island
         intensity = self.database.adapter.get_search_intensity(island_id) if self.database.use_adaptive_search else self.database.fixed_intensity
         state = self.budget_state_builder.build(
             island_id=island_id,
             intensity=intensity,
-            ledger=self.budget_ledger,
+            ledger=self.token_budget_ledger,
             recent_gain_ma=self._recent_gain_ma(),
             no_improve_steps=self._no_improve_steps,
             burn_rate=self._burn_rate(iteration),
@@ -200,8 +253,8 @@ class BudgetEvolveController(AdaEvolveController):
             "other_context_programs": context_programs_dict,
             "error_context": error_context,
             "budget_enabled": True,
-            "spent_tokens": self.budget_ledger.spent_tokens,
-            "spent_cost": self.budget_ledger.spent_cost,
+            "spent_tokens": self.token_budget_ledger.spent_tokens,
+            "spent_cost": self.token_budget_ledger.spent_cost,
             "remaining_budget_ratio": state.remaining_ratio,
             "budget_bin": state.budget_bin,
             "budget_action_family": action.family,
@@ -210,18 +263,22 @@ class BudgetEvolveController(AdaEvolveController):
         prompt = self.context_builder.build_prompt(parent_dict, context)
 
         est_in = self._estimate_prompt_tokens(prompt)
-        if not self.budget_ledger.feasible(est_in, action.max_output_tokens):
+        if not self.token_budget_ledger.feasible(est_in, action.max_output_tokens):
             action = self._downgrade_action(action)
             context["budget_action_tier"] = action.tier
             prompt = self.context_builder.build_prompt(parent_dict, context)
-            if not self.budget_ledger.feasible(self._estimate_prompt_tokens(prompt), action.max_output_tokens):
+            if not self.token_budget_ledger.feasible(
+                self._estimate_prompt_tokens(prompt), action.max_output_tokens
+            ):
                 return SerializableResult(error="Budget exhausted before generation", iteration=iteration)
 
         llm_start = time.time()
-        llm_result = await self.llms.generate_with_usage(
+        llm_result = await self._call_llm(
             prompt["system"],
-            [{"role": "user", "content": prompt["user"]}],
+            prompt["user"],
             max_tokens=action.max_output_tokens,
+            _budget_record=budget_record,
+            _call_role=call_role,
         )
         llm_generation_time = time.time() - llm_start
         response = llm_result.text or ""
@@ -236,7 +293,6 @@ class BudgetEvolveController(AdaEvolveController):
             total_tokens=in_tokens + out_tokens,
             raw_usage=llm_result.raw_usage,
         )
-        self.budget_ledger.update(self._current_usage)
 
         if self.config.diff_based_generation:
             diffs = extract_diffs(response)
@@ -280,14 +336,20 @@ class BudgetEvolveController(AdaEvolveController):
             "input_tokens": self._current_usage.input_tokens,
             "output_tokens": self._current_usage.output_tokens,
             "total_tokens": self._current_usage.total_tokens,
-            "spent_tokens_after": self.budget_ledger.spent_tokens,
-            "spent_cost_after": self.budget_ledger.spent_cost,
-            "remaining_ratio_after": self.budget_ledger.remaining_ratio,
+            "spent_tokens_after": self.token_budget_ledger.spent_tokens,
+            "spent_cost_after": self.token_budget_ledger.spent_cost,
+            "remaining_ratio_after": self.token_budget_ledger.remaining_ratio,
             "action_family": action.family,
             "action_tier": action.tier,
             "frontier_gain": frontier_gain,
             "roi": frontier_gain / max(1, self._current_usage.total_tokens),
         }
+        if budget_record is not None:
+            budget_record.meta["budget_bin"] = state.budget_bin
+            budget_record.meta["action_family"] = action.family
+            budget_record.meta["action_tier"] = action.tier
+            budget_record.meta["frontier_gain"] = frontier_gain
+            budget_record.meta["remaining_budget_ratio"] = state.remaining_ratio
 
         return SerializableResult(
             child_program_dict=child_dict,
