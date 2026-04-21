@@ -87,7 +87,12 @@ prompt:
   system_message: |
     <REPLACE WITH YOUR PROBLEM-SPECIFIC SYSTEM MESSAGE>
 
-    Optimize for evaluator score under search-side budget constraints.
+    Describe:
+    - What the algorithm/function should do
+    - Input/output format
+    - Optimization objective and metrics
+    - Constraints
+    - Techniques to explore
 
 evaluator:
   timeout: 360
