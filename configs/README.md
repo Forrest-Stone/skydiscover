@@ -10,6 +10,8 @@ All settings are YAML. Environment variables can be referenced with `${VAR}` syn
 |------|--------|-------------|
 | **default.yaml** | Top-K | Minimal starting template — good for first experiments |
 | **adaevolve.yaml** | AdaEvolve | Full multi-island config with adaptive intensity, migration, paradigm breakthroughs, and ablation flags |
+| **budgetevolve.yaml** | BudgetEvolve | Independent budget-aware controller over AdaEvolve scaffold (token/cost state-action control) |
+| **costada.yaml** | CostAda | BCHD controller with deterministic tier scheduling + frontier-level UCB routing |
 | **evox.yaml** | EvoX | Co-evolving solution generation and search strategies |
 | **openevolve_native.yaml** | OpenEvolve Native | Native port of OpenEvolve's island-based MAP-Elites search with ring migration |
 | **llm_judge.yaml** | - | Demonstrates LLM-as-a-judge evaluation (uses gpt-4o-mini for both generation and judging) |
@@ -63,6 +65,25 @@ llm:
 | Ollama / vLLM | `ollama/llama3`, `vllm/my-model` | — |
 
 If `OPENAI_API_KEY` is unset but `OPENROUTER_API_KEY` is set, OpenAI-style models (such as `gpt-5`) will automatically use OpenRouter as the API base.
+
+**OpenRouter-only setup (single key for multiple upstream model families):**
+
+```bash
+export OPENROUTER_API_KEY="<your_openrouter_key>"
+export OPENROUTER_API_BASE="https://openrouter.ai/api/v1"
+# Optional bridge for OpenAI-compatible paths:
+export OPENAI_API_KEY="$OPENROUTER_API_KEY"
+export OPENAI_API_BASE="$OPENROUTER_API_BASE"
+```
+
+**Proxy (useful in Hong Kong/region-constrained networks):**
+
+```bash
+# Provider-scoped proxy (preferred for OpenRouter traffic)
+export OPENROUTER_HTTP_PROXY="http://127.0.0.1:7890"
+# or global fallback
+export HTTPS_PROXY="http://127.0.0.1:7890"
+```
 
 **Cloudflare AI Gateway (OpenAI-compatible):**
 

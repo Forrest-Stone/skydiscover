@@ -205,6 +205,8 @@ class CostAdaController(AdaEvolveController):
             and self._avg_recent_H() < self.meta_h_threshold
         )
 
+        budget_record.meta["recent_improvement_avg"] = float(self._recent_improvement_avg())
+        budget_record.meta["stagnation_steps"] = int(frontier_state.stagnation_steps)
         budget_record.meta["local_gain"] = float(d_local)
         budget_record.meta["global_gain"] = float(g_global)
         budget_record.meta["utility"] = float(util)
