@@ -3,11 +3,15 @@
 BudgetEvolve keeps original `adaevolve` untouched and implements budget-aware
 control as a separate search method.
 
+This implementation preserves the pre-`31d1d28` BudgetEvolve method logic and
+adds shared budget-trace compatibility so runs emit the same `iterations.jsonl`
+/ `summary.json` cost records used by `costada`, `adaevolve`, and `evox`.
+
 ## Run
 
 ```bash
 uv run skydiscover-run initial_program.py evaluator.py \
-  --config configs/adaevolve.yaml \
+  --config configs/budgetevolve.yaml \
   --search budgetevolve \
   --iterations 100
 ```

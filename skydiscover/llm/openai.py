@@ -91,8 +91,21 @@ def _parse_default_headers_json(env_name: str) -> Dict[str, str]:
         return {}
     headers: Dict[str, str] = {}
     for k, v in parsed.items():
-        if isinstance(k, str) and isinstance(v, str):
-            headers[k] = v
+        if not (isinstance(k, str) and isinstance(v, str)):
+            continue
+        # HTTP header names/values must be ASCII-safe in common client stacks.
+        # Skip invalid entries instead of failing the entire request path.
+        try:
+            k.encode("ascii")
+            v.encode("ascii")
+        except UnicodeEncodeError:
+            logger.warning(
+                "Ignoring non-ASCII default header in %s: key=%r",
+                env_name,
+                k,
+            )
+            continue
+        headers[k] = v
     return headers
 
 
@@ -109,6 +122,30 @@ def _resolve_default_headers(api_base: Optional[str]) -> Optional[Dict[str, str]
     return headers or None
 
 
+def _normalize_api_key(raw_api_key: Optional[str]) -> Optional[str]:
+    """Normalize and validate API key to avoid opaque codec errors."""
+    if raw_api_key is None:
+        return None
+    key = str(raw_api_key).strip()
+    if not key:
+        return key
+    try:
+        key.encode("ascii")
+    except UnicodeEncodeError as exc:
+        sanitized = "".join(ch for ch in key if ord(ch) < 128).strip()
+        if sanitized:
+            logger.warning(
+                "API key contains non-ASCII characters; sanitized to ASCII-only content. "
+                "If authentication fails, re-copy the key from provider dashboard."
+            )
+            return sanitized
+        raise ValueError(
+            "API key contains non-ASCII characters and cannot be sanitized. "
+            "Please re-copy the key and avoid Chinese punctuation/whitespace."
+        ) from exc
+    return key
+
+
 class OpenAILLM(LLMInterface):
     """LLM backend using OpenAI-compatible APIs (Chat Completions + Responses)."""
 
@@ -121,7 +158,7 @@ class OpenAILLM(LLMInterface):
         self.retries = model_cfg.retries
         self.retry_delay = model_cfg.retry_delay
         self.api_base = model_cfg.api_base
-        self.api_key = model_cfg.api_key
+        self.api_key = _normalize_api_key(model_cfg.api_key)
         self.reasoning_effort = getattr(model_cfg, "reasoning_effort", None)
         self.input_price_per_1m = getattr(model_cfg, "input_price_per_1m", None)
         self.output_price_per_1m = getattr(model_cfg, "output_price_per_1m", None)
@@ -172,6 +209,46 @@ class OpenAILLM(LLMInterface):
                 provider = "OpenAI"
             logger.info(f"{provider} LLM: {self.model}")
             logger._initialized_models.add(self.model)
+
+    def _try_region_fallback(self) -> bool:
+        """Switch to OpenRouter endpoint on region-restriction errors."""
+        if self._has_switched_region_fallback:
+            return False
+
+        openrouter_key = os.environ.get("OPENROUTER_API_KEY") or self.api_key
+        if not openrouter_key:
+            return False
+
+        openrouter_base = (
+            os.environ.get("OPENROUTER_API_BASE")
+            or os.environ.get("OPENROUTER_BASE_URL")
+            or "https://openrouter.ai/api/v1"
+        )
+        model_name = str(self.model or "")
+        if model_name.startswith("openrouter/"):
+            model_name = model_name.split("/", 1)[1]
+        model_name = _normalize_openrouter_model_name(model_name)
+
+        logger.warning(
+            "Region restriction detected; retrying via OpenRouter fallback "
+            "(base=%s, model=%s).",
+            openrouter_base,
+            model_name,
+        )
+        max_retries = self.retries if self.retries is not None else 0
+        self.api_base = openrouter_base
+        self.api_key = _normalize_api_key(openrouter_key)
+        self.model = model_name
+        self.default_headers = _resolve_default_headers(self.api_base)
+        self.client = openai.OpenAI(
+            api_key=self.api_key,
+            base_url=self.api_base,
+            timeout=self.timeout,
+            max_retries=max_retries,
+            default_headers=self.default_headers,
+        )
+        self._has_switched_region_fallback = True
+        return True
 
     async def generate(
         self, system_message: str, messages: List[Dict[str, Any]], **kwargs
@@ -273,6 +350,8 @@ class OpenAILLM(LLMInterface):
                 else:
                     raise
             except Exception as e:
+                if _is_region_restricted_error(e) and self._try_region_fallback():
+                    continue
                 if attempt < retries:
                     logger.warning(f"Error attempt {attempt + 1}/{retries + 1}: {e}, retrying...")
                     await asyncio.sleep(retry_delay)
@@ -342,6 +421,8 @@ class OpenAILLM(LLMInterface):
                 else:
                     raise
             except Exception as e:
+                if _is_region_restricted_error(e) and self._try_region_fallback():
+                    continue
                 if attempt < retries:
                     logger.warning(f"Error attempt {attempt + 1}/{retries + 1}: {e}, retrying...")
                     await asyncio.sleep(retry_delay)
