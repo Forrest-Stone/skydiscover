@@ -62,15 +62,18 @@ class BudgetLedger:
         return input_tokens * self.input_token_cost + output_tokens * self.output_token_cost
 
     def feasible(self, est_input_tokens: int, reserve_output_tokens: int) -> bool:
-        token_ok = self.spent_tokens + est_input_tokens + reserve_output_tokens <= self.total_budget
+        token_ok = self.spent_tokens + est_input_tokens + \
+            reserve_output_tokens <= self.total_budget
         if self.cost_budget_total <= 0:
             return token_ok
         return self.spent_cost + self.estimate_cost(est_input_tokens, reserve_output_tokens) <= self.cost_budget_total
 
     def update(self, usage: UsageRecord) -> None:
-        total = usage.total_tokens or (usage.input_tokens + usage.output_tokens)
+        total = usage.total_tokens or (
+            usage.input_tokens + usage.output_tokens)
         self.spent_tokens += max(0, int(total))
-        self.spent_cost += self.estimate_cost(usage.input_tokens, usage.output_tokens)
+        self.spent_cost += self.estimate_cost(
+            usage.input_tokens, usage.output_tokens)
 
 
 @dataclass
@@ -99,7 +102,8 @@ class BudgetStateBuilder:
         self.config = config
 
     def _budget_bin(self, remaining_ratio: float) -> str:
-        bins = list(getattr(self.config.search.database, "budget_bins", [0.2, 0.5, 0.8]))
+        bins = list(getattr(self.config.search.database,
+                    "budget_bins", [0.2, 0.5, 0.8]))
         while len(bins) < 3:
             bins.append(1.0)
         b1, b2, b3 = bins[:3]
@@ -112,7 +116,8 @@ class BudgetStateBuilder:
         return "high"
 
     def _progress_regime(self, recent_gain_ma: float, no_improve_steps: int) -> str:
-        eps = getattr(self.config.search.database, "budget_significant_gain_eps", 1e-6)
+        eps = getattr(self.config.search.database,
+                      "budget_significant_gain_eps", 1e-6)
         if recent_gain_ma > 10 * eps:
             return "breakthrough"
         if no_improve_steps > 0 and recent_gain_ma <= eps:
@@ -137,7 +142,8 @@ class BudgetStateBuilder:
             spent_cost=ledger.spent_cost,
             recent_frontier_gain_ma=recent_gain_ma,
             no_improve_steps=no_improve_steps,
-            progress_regime=self._progress_regime(recent_gain_ma, no_improve_steps),
+            progress_regime=self._progress_regime(
+                recent_gain_ma, no_improve_steps),
             budget_bin=self._budget_bin(rr),
             burn_rate=burn_rate,
         )
@@ -148,17 +154,20 @@ class BudgetActionScheduler:
 
     def __init__(self, config):
         self.config = config
-        self.stats = defaultdict(lambda: {"n": 0, "gain_sum": 0.0, "cost_sum": 0.0})
+        self.stats = defaultdict(
+            lambda: {"n": 0, "gain_sum": 0.0, "cost_sum": 0.0})
         db = config.search.database
         self.actions = [
             BudgetAction("refine", "cheap", db.cheap_max_output_tokens),
             BudgetAction("refine", "standard", db.standard_max_output_tokens),
             BudgetAction("refine", "rich", db.rich_max_output_tokens),
             BudgetAction("structural", "cheap", db.cheap_max_output_tokens),
-            BudgetAction("structural", "standard", db.standard_max_output_tokens),
+            BudgetAction("structural", "standard",
+                         db.standard_max_output_tokens),
             BudgetAction("structural", "rich", db.rich_max_output_tokens),
             BudgetAction("tactic_guided", "cheap", db.cheap_max_output_tokens),
-            BudgetAction("tactic_guided", "standard", db.standard_max_output_tokens),
+            BudgetAction("tactic_guided", "standard",
+                         db.standard_max_output_tokens),
             BudgetAction("tactic_guided", "rich", db.rich_max_output_tokens),
         ]
 
@@ -169,7 +178,8 @@ class BudgetActionScheduler:
         key = self._bucket_key(state)
         total_n = sum(self.stats[(key, a)]["n"] for a in self.actions) + 1
         lam = float(getattr(self.config.search.database, "budget_lambda", 1e-4))
-        beta = float(getattr(self.config.search.database, "budget_ucb_beta", 0.5))
+        beta = float(
+            getattr(self.config.search.database, "budget_ucb_beta", 0.5))
         best_a, best_u = self.actions[0], float("-inf")
 
         for action in self.actions:

@@ -164,7 +164,8 @@ class BudgetEvolveController(AdaEvolveController):
             return
         if not tracker.should_trigger_budgeted(
             remaining_ratio=self.token_budget_ledger.remaining_ratio,
-            meta_budget_threshold=getattr(self.config.search.database, "budget_meta_threshold", 0.25),
+            meta_budget_threshold=getattr(
+                self.config.search.database, "budget_meta_threshold", 0.25),
             estimated_meta_cost=2048,
             remaining_tokens=self.token_budget_ledger.remaining_tokens,
             recent_meta_success_rate=None,
@@ -174,11 +175,14 @@ class BudgetEvolveController(AdaEvolveController):
         best_program = self.database.get_best_program()
         paradigms = await self.paradigm_generator.generate(
             current_program_solution=best_program.solution if best_program else "",
-            current_best_score=self.database.get_program_proxy_score(best_program),
+            current_best_score=self.database.get_program_proxy_score(
+                best_program),
             previously_tried_ideas=self.database.get_previously_tried_ideas(),
-            evaluator_feedback=(best_program.artifacts or {}).get("feedback") if best_program else None,
+            evaluator_feedback=(best_program.artifacts or {}).get(
+                "feedback") if best_program else None,
             mode="summary",
-            llm_response_callback=lambda response: self._on_guide_response(response, budget_record),
+            llm_response_callback=lambda response: self._on_guide_response(
+                response, budget_record),
         )
         if paradigms:
             self.database.set_paradigms(paradigms)
@@ -223,7 +227,8 @@ class BudgetEvolveController(AdaEvolveController):
             return await self._run_from_scratch_iteration(iteration, budget_record=budget_record)
 
         island_id = self.database.current_island
-        intensity = self.database.adapter.get_search_intensity(island_id) if self.database.use_adaptive_search else self.database.fixed_intensity
+        intensity = self.database.adapter.get_search_intensity(
+            island_id) if self.database.use_adaptive_search else self.database.fixed_intensity
         state = self.budget_state_builder.build(
             island_id=island_id,
             intensity=intensity,
@@ -285,8 +290,10 @@ class BudgetEvolveController(AdaEvolveController):
         if not response:
             return SerializableResult(error="Empty LLM response", iteration=iteration)
 
-        in_tokens = llm_result.input_tokens or self._estimate_prompt_tokens(prompt)
-        out_tokens = llm_result.output_tokens or self._estimate_text_tokens(response)
+        in_tokens = llm_result.input_tokens or self._estimate_prompt_tokens(
+            prompt)
+        out_tokens = llm_result.output_tokens or self._estimate_text_tokens(
+            response)
         self._current_usage = UsageRecord(
             input_tokens=in_tokens,
             output_tokens=out_tokens,
@@ -296,7 +303,8 @@ class BudgetEvolveController(AdaEvolveController):
 
         if self.config.diff_based_generation:
             diffs = extract_diffs(response)
-            child_solution = apply_diff(parent.solution, response) if diffs else parse_full_rewrite(response, self.config.language)
+            child_solution = apply_diff(parent.solution, response) if diffs else parse_full_rewrite(
+                response, self.config.language)
             changes = format_diff_summary(diffs) if diffs else "Full rewrite"
         else:
             child_solution = parse_full_rewrite(response, self.config.language)
@@ -323,7 +331,8 @@ class BudgetEvolveController(AdaEvolveController):
         )
 
         new_score = self.database.get_program_proxy_score(child)
-        prev_best = self.database.get_program_proxy_score(self.database.get_best_program())
+        prev_best = self.database.get_program_proxy_score(
+            self.database.get_best_program())
         frontier_gain = max(0.0, float(new_score) - float(prev_best))
         self._current_frontier_gain = frontier_gain
         self._recent_frontier_gains.append(frontier_gain)

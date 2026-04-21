@@ -21,10 +21,12 @@ class BudgetEvolveDatabase(AdaEvolveDatabase):
 
             self.paradigm_tracker = ParadigmTracker(
                 window_size=getattr(config, "paradigm_window_size", 30),
-                improvement_threshold=getattr(config, "paradigm_improvement_threshold", 0.05),
+                improvement_threshold=getattr(
+                    config, "paradigm_improvement_threshold", 0.05),
                 max_paradigm_uses=getattr(config, "paradigm_max_uses", 5),
                 max_tried_paradigms=getattr(config, "paradigm_max_tried", 10),
-                num_paradigms_to_generate=getattr(config, "paradigm_num_to_generate", 3),
+                num_paradigms_to_generate=getattr(
+                    config, "paradigm_num_to_generate", 3),
             )
 
     def sample(
@@ -71,7 +73,8 @@ class BudgetEvolveDatabase(AdaEvolveDatabase):
             raise ValueError(f"Cannot sample: island {island_idx} is empty")
 
         if intensity is None:
-            intensity = self.adapter.get_search_intensity(island_idx) if self.use_adaptive_search else self.fixed_intensity
+            intensity = self.adapter.get_search_intensity(
+                island_idx) if self.use_adaptive_search else self.fixed_intensity
         if force_exploration:
             intensity = self.intensity_max
 
@@ -97,8 +100,10 @@ class BudgetEvolveDatabase(AdaEvolveDatabase):
 
         local_count = max(1, int(num * self.local_context_program_ratio))
         global_count = num - local_count
-        local_context_programs = archive.sample_other_context_programs(parent, local_count)
-        global_context_programs = self._sample_global_top(parent.id, global_count)
+        local_context_programs = archive.sample_other_context_programs(
+            parent, local_count)
+        global_context_programs = self._sample_global_top(
+            parent.id, global_count)
         other_context_programs = local_context_programs + global_context_programs
 
         self._last_sampling_mode = mode
