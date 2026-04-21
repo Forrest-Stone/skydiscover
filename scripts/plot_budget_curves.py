@@ -487,6 +487,34 @@ def plot_meta_trigger_rate(agg_rows: List[Dict], out_png: Path) -> bool:
     return True
 
 
+def plot_metric_vs_budget(agg_rows: List[Dict], metric_key: str, title: str, out_png: Path) -> bool:
+    """Generic plot helper for budget-sliced aggregated metrics."""
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    by_method: Dict[str, List[Tuple[float, float]]] = defaultdict(list)
+    for row in agg_rows:
+        v = row.get(metric_key)
+        if v == "" or v is None:
+            continue
+        by_method[row["method"]].append((float(row["budget"]), float(v)))
+    if not by_method:
+        return False
+
+    plt.figure(figsize=(7, 5))
+    for method, pts in by_method.items():
+        pts.sort(key=lambda x: x[0])
+        plt.plot([p[0] for p in pts], [p[1] for p in pts], marker="o", label=method)
+    plt.xlabel("Budget")
+    plt.ylabel(metric_key)
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
 def compute_speedup_vs_baseline(
     per_run_rows: List[Dict], baselines: List[str], target: Optional[float]
 ) -> List[Dict]:
@@ -634,9 +662,15 @@ def main() -> None:
     write_csv(speedup_rows, out_dir / "speedup_vs_baseline.csv")
 
     p1 = plot_best_score_vs_cost(runs, out_dir / "best_score_vs_cost.png")
+    p1_alias = plot_best_score_vs_cost(runs, out_dir / "best_vs_cost.png")
     p2 = plot_success_vs_budget(agg_rows, out_dir / "success_vs_budget.png")
     p3 = plot_cost_to_target(agg_rows, out_dir / "cost_to_target.png")
     p4 = plot_budget_adherence(agg_rows, out_dir / "budget_adherence.png")
+    p4_alias = plot_metric_vs_budget(agg_rows, "OOBRate", "OOB rate vs budget", out_dir / "oob_vs_budget.png")
+    p8 = plot_metric_vs_budget(
+        agg_rows, "OvershootRatio", "Overshoot ratio vs budget", out_dir / "overshoot_ratio_vs_budget.png"
+    )
+    p9 = plot_metric_vs_budget(agg_rows, "AvgCost", "Average cost vs budget", out_dir / "avg_cost_vs_budget.png")
     p5 = plot_tier_usage(runs, out_dir / "tier_usage.png")
     p6 = plot_meta_trigger_rate(agg_rows, out_dir / "meta_trigger_rate.png")
     p7 = plot_speedup_vs_baseline(speedup_rows, out_dir / "speedup_vs_baseline.png")
@@ -646,17 +680,25 @@ def main() -> None:
     print(f"Wrote: {out_dir / 'per_run_metrics.csv'}")
     print(f"Wrote: {out_dir / 'aggregate_metrics.csv'}")
     print(f"Wrote: {out_dir / 'speedup_vs_baseline.csv'}")
-    if not any([p1, p2, p3, p4, p5, p6, p7]):
+    if not any([p1, p1_alias, p2, p3, p4, p4_alias, p5, p6, p7, p8, p9]):
         print("Skipped plotting (matplotlib unavailable).")
     else:
         if p1:
             print(f"Wrote: {out_dir / 'best_score_vs_cost.png'}")
+        if p1_alias:
+            print(f"Wrote: {out_dir / 'best_vs_cost.png'}")
         if p2:
             print(f"Wrote: {out_dir / 'success_vs_budget.png'}")
         if p3:
             print(f"Wrote: {out_dir / 'cost_to_target.png'}")
         if p4:
             print(f"Wrote: {out_dir / 'budget_adherence.png'}")
+        if p4_alias:
+            print(f"Wrote: {out_dir / 'oob_vs_budget.png'}")
+        if p8:
+            print(f"Wrote: {out_dir / 'overshoot_ratio_vs_budget.png'}")
+        if p9:
+            print(f"Wrote: {out_dir / 'avg_cost_vs_budget.png'}")
         if p5:
             print(f"Wrote: {out_dir / 'tier_usage.png'}")
         if p6:

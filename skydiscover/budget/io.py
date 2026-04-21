@@ -28,10 +28,16 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         "global_best_before": record.meta.get("global_best_before"),
         "global_best_after": record.meta.get("global_best_after"),
         "tier": record.meta.get("tier"),
+        "recent_improvement_avg": record.meta.get("recent_improvement_avg"),
+        "stagnation_steps": record.meta.get("stagnation_steps"),
         "local_gain": record.meta.get("local_gain"),
         "global_gain": record.meta.get("global_gain"),
         "utility": record.meta.get("utility"),
         "frontier_signal": record.meta.get("frontier_signal"),
+        "budget_bin": record.meta.get("budget_bin"),
+        "action_family": record.meta.get("action_family"),
+        "action_tier": record.meta.get("action_tier"),
+        "frontier_gain": record.meta.get("frontier_gain"),
         "routing_reward": (
             record.meta.get("routing_reward")
             if record.meta.get("routing_reward") is not None
