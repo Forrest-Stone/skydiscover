@@ -122,6 +122,23 @@ def _resolve_default_headers(api_base: Optional[str]) -> Optional[Dict[str, str]
     return headers or None
 
 
+def _normalize_api_key(raw_api_key: Optional[str]) -> Optional[str]:
+    """Normalize and validate API key to avoid opaque codec errors."""
+    if raw_api_key is None:
+        return None
+    key = str(raw_api_key).strip()
+    if not key:
+        return key
+    try:
+        key.encode("ascii")
+    except UnicodeEncodeError as exc:
+        raise ValueError(
+            "API key contains non-ASCII characters. "
+            "Please re-copy the key and avoid Chinese punctuation/whitespace."
+        ) from exc
+    return key
+
+
 class OpenAILLM(LLMInterface):
     """LLM backend using OpenAI-compatible APIs (Chat Completions + Responses)."""
 
@@ -134,7 +151,7 @@ class OpenAILLM(LLMInterface):
         self.retries = model_cfg.retries
         self.retry_delay = model_cfg.retry_delay
         self.api_base = model_cfg.api_base
-        self.api_key = model_cfg.api_key
+        self.api_key = _normalize_api_key(model_cfg.api_key)
         self.reasoning_effort = getattr(model_cfg, "reasoning_effort", None)
         self.input_price_per_1m = getattr(model_cfg, "input_price_per_1m", None)
         self.output_price_per_1m = getattr(model_cfg, "output_price_per_1m", None)
