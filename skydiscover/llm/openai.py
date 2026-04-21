@@ -10,6 +10,7 @@ import uuid as _uuid
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
+import httpx
 import openai
 
 from skydiscover.config import LLMModelConfig, _load_model_pricing_table
@@ -122,6 +123,31 @@ def _resolve_default_headers(api_base: Optional[str]) -> Optional[Dict[str, str]
     return headers or None
 
 
+def _resolve_proxy_for_api_base(api_base: Optional[str]) -> Optional[str]:
+    """Resolve proxy URL from provider-scoped env vars, then global fallbacks."""
+    base = (api_base or "").lower()
+    candidates: List[str] = []
+    if "openrouter.ai" in base:
+        candidates.extend(["OPENROUTER_HTTP_PROXY", "OPENROUTER_HTTPS_PROXY"])
+    elif "api.anthropic.com" in base:
+        candidates.extend(["ANTHROPIC_HTTP_PROXY", "ANTHROPIC_HTTPS_PROXY"])
+    elif "api.openai.com" in base or ".openai.azure.com" in base:
+        candidates.extend(["OPENAI_HTTP_PROXY", "OPENAI_HTTPS_PROXY"])
+    candidates.extend(
+        [
+            "SKYDISCOVER_HTTP_PROXY",
+            "SKYDISCOVER_HTTPS_PROXY",
+            "HTTPS_PROXY",
+            "HTTP_PROXY",
+        ]
+    )
+    for env_name in candidates:
+        value = os.environ.get(env_name)
+        if value:
+            return value.strip()
+    return None
+
+
 def _normalize_api_key(raw_api_key: Optional[str]) -> Optional[str]:
     """Normalize and validate API key to avoid opaque codec errors."""
     if raw_api_key is None:
@@ -164,6 +190,10 @@ class OpenAILLM(LLMInterface):
         self.output_price_per_1m = getattr(model_cfg, "output_price_per_1m", None)
         self._has_switched_region_fallback = False
         self.default_headers = _resolve_default_headers(self.api_base)
+        self.proxy_url = _resolve_proxy_for_api_base(self.api_base)
+        self.http_client = (
+            httpx.Client(proxy=self.proxy_url, timeout=self.timeout) if self.proxy_url else None
+        )
 
         max_retries = self.retries if self.retries is not None else 0
         is_azure = self.api_base and ".openai.azure.com" in self.api_base.lower()
@@ -181,6 +211,7 @@ class OpenAILLM(LLMInterface):
                 timeout=self.timeout,
                 max_retries=max_retries,
                 default_headers=self.default_headers,
+                http_client=self.http_client,
             )
         else:
             self.client = openai.OpenAI(
@@ -189,6 +220,7 @@ class OpenAILLM(LLMInterface):
                 timeout=self.timeout,
                 max_retries=max_retries,
                 default_headers=self.default_headers,
+                http_client=self.http_client,
             )
 
         if not hasattr(logger, "_initialized_models"):
@@ -240,12 +272,17 @@ class OpenAILLM(LLMInterface):
         self.api_key = _normalize_api_key(openrouter_key)
         self.model = model_name
         self.default_headers = _resolve_default_headers(self.api_base)
+        self.proxy_url = _resolve_proxy_for_api_base(self.api_base)
+        self.http_client = (
+            httpx.Client(proxy=self.proxy_url, timeout=self.timeout) if self.proxy_url else None
+        )
         self.client = openai.OpenAI(
             api_key=self.api_key,
             base_url=self.api_base,
             timeout=self.timeout,
             max_retries=max_retries,
             default_headers=self.default_headers,
+            http_client=self.http_client,
         )
         self._has_switched_region_fallback = True
         return True

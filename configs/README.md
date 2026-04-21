@@ -66,6 +66,25 @@ llm:
 
 If `OPENAI_API_KEY` is unset but `OPENROUTER_API_KEY` is set, OpenAI-style models (such as `gpt-5`) will automatically use OpenRouter as the API base.
 
+**OpenRouter-only setup (single key for multiple upstream model families):**
+
+```bash
+export OPENROUTER_API_KEY="<your_openrouter_key>"
+export OPENROUTER_API_BASE="https://openrouter.ai/api/v1"
+# Optional bridge for OpenAI-compatible paths:
+export OPENAI_API_KEY="$OPENROUTER_API_KEY"
+export OPENAI_API_BASE="$OPENROUTER_API_BASE"
+```
+
+**Proxy (useful in Hong Kong/region-constrained networks):**
+
+```bash
+# Provider-scoped proxy (preferred for OpenRouter traffic)
+export OPENROUTER_HTTP_PROXY="http://127.0.0.1:7890"
+# or global fallback
+export HTTPS_PROXY="http://127.0.0.1:7890"
+```
+
 **Cloudflare AI Gateway (OpenAI-compatible):**
 
 ```bash
