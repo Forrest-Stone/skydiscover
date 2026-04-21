@@ -28,6 +28,8 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         "global_best_before": record.meta.get("global_best_before"),
         "global_best_after": record.meta.get("global_best_after"),
         "tier": record.meta.get("tier"),
+        "recent_improvement_avg": record.meta.get("recent_improvement_avg"),
+        "stagnation_steps": record.meta.get("stagnation_steps"),
         "local_gain": record.meta.get("local_gain"),
         "global_gain": record.meta.get("global_gain"),
         "utility": record.meta.get("utility"),
