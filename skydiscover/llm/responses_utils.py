@@ -92,26 +92,49 @@ def extract_responses_output(
     image_b64: Optional[str] = None
     tool_calls: List[Dict[str, Any]] = []
 
-    output_items = getattr(response, "output", None) or []
+    output_items = getattr(response, "output", None)
+    if output_items is None and isinstance(response, dict):
+        output_items = response.get("output")
+    output_items = output_items or []
     for item in output_items:
-        item_type = getattr(item, "type", None)
+        if isinstance(item, dict):
+            item_type = item.get("type")
+        else:
+            item_type = getattr(item, "type", None)
         if item_type == "message":
-            content_parts = getattr(item, "content", None) or []
+            if isinstance(item, dict):
+                content_parts = item.get("content") or []
+            else:
+                content_parts = getattr(item, "content", None) or []
             for part in content_parts:
-                if hasattr(part, "text") and part.text is not None:
+                if isinstance(part, dict):
+                    text = part.get("text")
+                    if text is None:
+                        text = part.get("output_text")
+                    if text:
+                        text_parts.append(str(text))
+                elif hasattr(part, "text") and part.text is not None:
                     text_parts.append(part.text)
         elif item_type == "image_generation_call":
-            result = getattr(item, "result", None)
+            result = item.get("result") if isinstance(item, dict) else getattr(item, "result", None)
             if result:
                 image_b64 = result
         elif item_type == "function_call":
+            if isinstance(item, dict):
+                call_id = item.get("call_id", "")
+                name = item.get("name", "")
+                arguments = item.get("arguments", "{}")
+            else:
+                call_id = getattr(item, "call_id", "")
+                name = getattr(item, "name", "")
+                arguments = getattr(item, "arguments", "{}")
             tool_calls.append(
                 {
-                    "id": getattr(item, "call_id", ""),
+                    "id": call_id,
                     "type": "function",
                     "function": {
-                        "name": getattr(item, "name", ""),
-                        "arguments": getattr(item, "arguments", "{}"),
+                        "name": name,
+                        "arguments": arguments,
                     },
                 }
             )

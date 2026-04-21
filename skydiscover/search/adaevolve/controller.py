@@ -701,6 +701,23 @@ class AdaEvolveController(DiscoveryController):
         metrics = eval_result.metrics
         artifacts = eval_result.artifacts
 
+        # Keep failure handling consistent across AdaEvolve/EvoX/BudgetEvolve:
+        # when evaluator reports runtime/syntax failure via artifacts["error"],
+        # treat it as an iteration error (so retry path is used) instead of
+        # adding a zero-score program to the database.
+        eval_error = None
+        if isinstance(artifacts, dict):
+            raw_err = artifacts.get("error")
+            if isinstance(raw_err, str) and raw_err.strip():
+                eval_error = raw_err.strip()
+        if eval_error:
+            return SerializableResult(
+                error=f"Program execution failed: {eval_error}",
+                iteration=iteration,
+                prompt=prompt,
+                llm_response=response,
+            )
+
         # Extract image_path from evaluator metrics (non-image mode fallback)
         if not image_path:
             image_path = (
