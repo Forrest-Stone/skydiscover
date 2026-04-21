@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from statistics import mean
 from typing import Iterable, Optional
 
 
@@ -39,3 +40,25 @@ def overshoot_ratio(total_cost: float, nominal_budget: float) -> float:
     if nominal_budget <= 0:
         return 0.0
     return max((total_cost - nominal_budget) / nominal_budget, 0.0)
+
+
+def avg_cost(costs: Iterable[float]) -> float:
+    """Compute average realized cost across runs."""
+    vals = [float(c) for c in costs]
+    if not vals:
+        return 0.0
+    return float(mean(vals))
+
+
+def speedup_at_target(method_cost: Optional[float], baseline_cost: Optional[float]) -> float | None:
+    """Compute speedup to target as baseline_cost / method_cost.
+
+    Returns None when either side is missing or non-positive.
+    """
+    if method_cost is None or baseline_cost is None:
+        return None
+    m = float(method_cost)
+    b = float(baseline_cost)
+    if m <= 0.0 or b <= 0.0:
+        return None
+    return b / m
