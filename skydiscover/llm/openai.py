@@ -91,8 +91,21 @@ def _parse_default_headers_json(env_name: str) -> Dict[str, str]:
         return {}
     headers: Dict[str, str] = {}
     for k, v in parsed.items():
-        if isinstance(k, str) and isinstance(v, str):
-            headers[k] = v
+        if not (isinstance(k, str) and isinstance(v, str)):
+            continue
+        # HTTP header names/values must be ASCII-safe in common client stacks.
+        # Skip invalid entries instead of failing the entire request path.
+        try:
+            k.encode("ascii")
+            v.encode("ascii")
+        except UnicodeEncodeError:
+            logger.warning(
+                "Ignoring non-ASCII default header in %s: key=%r",
+                env_name,
+                k,
+            )
+            continue
+        headers[k] = v
     return headers
 
 
