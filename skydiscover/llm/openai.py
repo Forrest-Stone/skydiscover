@@ -132,8 +132,15 @@ def _normalize_api_key(raw_api_key: Optional[str]) -> Optional[str]:
     try:
         key.encode("ascii")
     except UnicodeEncodeError as exc:
+        sanitized = "".join(ch for ch in key if ord(ch) < 128).strip()
+        if sanitized:
+            logger.warning(
+                "API key contains non-ASCII characters; sanitized to ASCII-only content. "
+                "If authentication fails, re-copy the key from provider dashboard."
+            )
+            return sanitized
         raise ValueError(
-            "API key contains non-ASCII characters. "
+            "API key contains non-ASCII characters and cannot be sanitized. "
             "Please re-copy the key and avoid Chinese punctuation/whitespace."
         ) from exc
     return key
