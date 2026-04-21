@@ -103,6 +103,7 @@ search:
 
 # Prompt configuration
 prompt:
+  template: "adaevolve"
   system_message: |
     <REPLACE WITH YOUR PROBLEM-SPECIFIC SYSTEM MESSAGE>
 

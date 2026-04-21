@@ -110,6 +110,8 @@ class ParadigmGenerator:
         current_best_score: float,
         previously_tried_ideas: Optional[List[str]] = None,
         evaluator_feedback: Optional[str] = None,
+        mode: str = "full",
+        llm_response_callback=None,
     ) -> List[Dict[str, Any]]:
         """
         Generate breakthrough paradigms with retry logic.
@@ -136,10 +138,12 @@ class ParadigmGenerator:
 
         for attempt in range(MAX_RETRIES):
             try:
-                result = await self.llm_pool.generate(
+                result = await self.llm_pool.generate_with_usage(
                     system_message=self._get_system_message(),
                     messages=[{"role": "user", "content": prompt}],
                 )
+                if llm_response_callback is not None:
+                    llm_response_callback(result)
                 response = result.text
 
                 if not response:

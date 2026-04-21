@@ -26,7 +26,11 @@ search:
   num_context_programs: 4
   database:
     population_size: 20
-    num_islands: 3
+    num_islands: 2
+    use_dynamic_islands: true
+    max_islands: 5
+    spawn_productivity_threshold: 0.015
+    spawn_cooldown_iterations: 30
 
     # Reuse AdaEvolve scaffold knobs
     decay: 0.9
@@ -47,6 +51,10 @@ search:
     max_error_retries: 2
 
     # Shared budget (phase-1)
+    # You can override nominal budget per run, e.g. 0.5 or 1.2:
+    #   nominal_budget: 0.5
+    # or select a profile from configs/model_pricing.yaml:
+    #   budget_profile: "budget_0_5"   # or "budget_1_2"
     nominal_budget: 1.0
 
     # BCHD/CostAda controller hyperparameters
