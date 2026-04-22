@@ -96,7 +96,7 @@ def collect_runs(root: Path) -> List[Dict]:
         meta_flags = []
         for row in trace:
             cost = float(row.get("cumulative_cost", 0.0) or 0.0)
-            score = row.get("global_best_after")
+            score = row.get("best_so_far_objective", row.get("global_best_after"))
             points.append((cost, score))
             tier = row.get("tier")
             if tier:
@@ -112,6 +112,10 @@ def collect_runs(root: Path) -> List[Dict]:
                 "summary": summary,
                 "trace": trace,
                 "points": points,
+                "objective_key": next(
+                    (r.get("objective_key") for r in trace if r.get("objective_key")),
+                    "combined_score",
+                ),
                 "tiers": tiers,
                 "meta_trigger_rate": (sum(meta_flags) / len(meta_flags)) if meta_flags else 0.0,
             }
@@ -162,6 +166,8 @@ def write_runs_csv(runs: List[Dict], out_csv: Path, target: Optional[float] = No
         "overshoot",
         "overshoot_ratio",
         "best_score",
+        "best_objective",
+        "objective_key",
         "success_target",
         "cost_to_target",
         "num_iterations",
@@ -187,6 +193,8 @@ def write_runs_csv(runs: List[Dict], out_csv: Path, target: Optional[float] = No
                     "overshoot": s.get("overshoot"),
                     "overshoot_ratio": s.get("overshoot_ratio"),
                     "best_score": s.get("best_score"),
+                    "best_objective": s.get("best_objective", s.get("best_score")),
+                    "objective_key": s.get("objective_key", run.get("objective_key")),
                     "success_target": (
                         success_at_target(s.get("best_score"), target) if target is not None else ""
                     ),
@@ -223,7 +231,7 @@ def compute_metric_rows(runs: List[Dict], budgets: List[float], target: Optional
                     "task_name": run.get("task_name", ""),
                     "seed": run.get("seed", ""),
                     "budget": b,
-                    "BestScore@Budget": bscore if bscore is not None else "",
+                    "BestObjective@Budget": bscore if bscore is not None else "",
                     "Success@Target": success,
                     "Cost-to-Target": c2t if c2t is not None else "",
                     "AvgCost": total_cost,
@@ -253,7 +261,7 @@ def aggregate_metric_rows(rows: List[Dict]) -> List[Dict]:
                 vals.append(float(v))
             return vals
 
-        best_vals = _vals("BestScore@Budget")
+        best_vals = _vals("BestObjective@Budget")
         success_vals = _vals("Success@Target")
         c2t_vals = _vals("Cost-to-Target")
         avg_cost_vals = _vals("AvgCost")
@@ -266,7 +274,7 @@ def aggregate_metric_rows(rows: List[Dict]) -> List[Dict]:
             {
                 "method": method,
                 "budget": budget,
-                "BestScore@Budget": mean(best_vals) if best_vals else "",
+                "BestObjective@Budget": mean(best_vals) if best_vals else "",
                 "Success@Target": mean(success_vals) if success_vals else "",
                 "Cost-to-Target": mean(c2t_vals) if c2t_vals else "",
                 "AvgCost": mean(avg_cost_vals) if avg_cost_vals else "",
@@ -328,13 +336,13 @@ def plot_best_score_vs_cost(runs: List[Dict], out_png: Path) -> bool:
         if not trace:
             continue
         x = [float(row.get("cumulative_cost", 0.0) or 0.0) for row in trace]
-        y = [row.get("global_best_after") for row in trace]
+        y = [row.get("best_so_far_objective", row.get("global_best_after")) for row in trace]
         if all(v is None for v in y):
             continue
         plt.plot(x, y, linewidth=1.2, alpha=0.8, label=run["method"])
     plt.xlabel("Cumulative cost (USD)")
-    plt.ylabel("Best score")
-    plt.title("Best-so-far score vs cumulative cost")
+    plt.ylabel("Best-so-far objective")
+    plt.title("Best-so-far objective vs cumulative cost")
     plt.tight_layout()
     plt.savefig(out_png, dpi=180)
     plt.close()
@@ -515,6 +523,89 @@ def plot_metric_vs_budget(agg_rows: List[Dict], metric_key: str, title: str, out
     return True
 
 
+def plot_best_objective_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(8, 5))
+    for run in runs:
+        trace = run["trace"]
+        x = [int(row.get("iteration", i)) for i, row in enumerate(trace)]
+        y = [row.get("best_so_far_objective", row.get("global_best_after")) for row in trace]
+        if x and any(v is not None for v in y):
+            plt.plot(x, y, linewidth=1.2, alpha=0.8, label=run["method"])
+    plt.xlabel("Iteration")
+    plt.ylabel("Best-so-far objective")
+    plt.title("Best-so-far objective vs iteration")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_performance_vs_avg_cost(agg_rows: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    by_method: Dict[str, List[Tuple[float, float]]] = defaultdict(list)
+    for row in agg_rows:
+        p = row.get("BestObjective@Budget")
+        c = row.get("AvgCost")
+        if p in ("", None) or c in ("", None):
+            continue
+        by_method[str(row["method"])].append((float(c), float(p)))
+    if not by_method:
+        return False
+    plt.figure(figsize=(7.5, 5))
+    for method, pts in by_method.items():
+        pts.sort(key=lambda x: x[0])
+        plt.plot([x for x, _ in pts], [y for _, y in pts], marker="o", label=method)
+    plt.xlabel("Average cost (USD)")
+    plt.ylabel("BestObjective@Budget")
+    plt.title("Performance vs average cost")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_cost_composition(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    by_method: Dict[str, Dict[str, List[float]]] = defaultdict(
+        lambda: {"generation": [], "retry": [], "guide": []}
+    )
+    for run in runs:
+        s = run.get("summary") or {}
+        by_method[run["method"]]["generation"].append(float(s.get("generation_cost_fraction", 0.0) or 0.0))
+        by_method[run["method"]]["retry"].append(float(s.get("retry_cost_fraction", 0.0) or 0.0))
+        by_method[run["method"]]["guide"].append(float(s.get("guide_cost_fraction", 0.0) or 0.0))
+    if not by_method:
+        return False
+    methods = sorted(by_method.keys())
+    gen = [mean(by_method[m]["generation"]) if by_method[m]["generation"] else 0.0 for m in methods]
+    ret = [mean(by_method[m]["retry"]) if by_method[m]["retry"] else 0.0 for m in methods]
+    gui = [mean(by_method[m]["guide"]) if by_method[m]["guide"] else 0.0 for m in methods]
+
+    x = range(len(methods))
+    plt.figure(figsize=(8, 5))
+    plt.bar(x, gen, label="generation")
+    plt.bar(x, ret, bottom=gen, label="retry")
+    plt.bar(x, gui, bottom=[gen[i] + ret[i] for i in range(len(methods))], label="guide")
+    plt.xticks(list(x), methods, rotation=25)
+    plt.ylabel("Cost fraction")
+    plt.title("Cost composition by method")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
 def compute_speedup_vs_baseline(
     per_run_rows: List[Dict], baselines: List[str], target: Optional[float]
 ) -> List[Dict]:
@@ -662,6 +753,8 @@ def main() -> None:
     write_csv(speedup_rows, out_dir / "speedup_vs_baseline.csv")
 
     p1 = plot_best_score_vs_cost(runs, out_dir / "best_score_vs_cost.png")
+    p1_obj = plot_best_score_vs_cost(runs, out_dir / "best_so_far_objective_vs_cost.png")
+    p1_iter = plot_best_objective_vs_iteration(runs, out_dir / "best_so_far_objective_vs_iteration.png")
     p1_alias = plot_best_score_vs_cost(runs, out_dir / "best_vs_cost.png")
     p2 = plot_success_vs_budget(agg_rows, out_dir / "success_vs_budget.png")
     p3 = plot_cost_to_target(agg_rows, out_dir / "cost_to_target.png")
@@ -671,6 +764,8 @@ def main() -> None:
         agg_rows, "OvershootRatio", "Overshoot ratio vs budget", out_dir / "overshoot_ratio_vs_budget.png"
     )
     p9 = plot_metric_vs_budget(agg_rows, "AvgCost", "Average cost vs budget", out_dir / "avg_cost_vs_budget.png")
+    p10 = plot_performance_vs_avg_cost(agg_rows, out_dir / "performance_vs_avg_cost.png")
+    p11 = plot_cost_composition(runs, out_dir / "cost_composition.png")
     p5 = plot_tier_usage(runs, out_dir / "tier_usage.png")
     p6 = plot_meta_trigger_rate(agg_rows, out_dir / "meta_trigger_rate.png")
     p7 = plot_speedup_vs_baseline(speedup_rows, out_dir / "speedup_vs_baseline.png")
@@ -680,11 +775,15 @@ def main() -> None:
     print(f"Wrote: {out_dir / 'per_run_metrics.csv'}")
     print(f"Wrote: {out_dir / 'aggregate_metrics.csv'}")
     print(f"Wrote: {out_dir / 'speedup_vs_baseline.csv'}")
-    if not any([p1, p1_alias, p2, p3, p4, p4_alias, p5, p6, p7, p8, p9]):
+    if not any([p1, p1_obj, p1_iter, p1_alias, p2, p3, p4, p4_alias, p5, p6, p7, p8, p9, p10, p11]):
         print("Skipped plotting (matplotlib unavailable).")
     else:
         if p1:
             print(f"Wrote: {out_dir / 'best_score_vs_cost.png'}")
+        if p1_obj:
+            print(f"Wrote: {out_dir / 'best_so_far_objective_vs_cost.png'}")
+        if p1_iter:
+            print(f"Wrote: {out_dir / 'best_so_far_objective_vs_iteration.png'}")
         if p1_alias:
             print(f"Wrote: {out_dir / 'best_vs_cost.png'}")
         if p2:
@@ -699,6 +798,10 @@ def main() -> None:
             print(f"Wrote: {out_dir / 'overshoot_ratio_vs_budget.png'}")
         if p9:
             print(f"Wrote: {out_dir / 'avg_cost_vs_budget.png'}")
+        if p10:
+            print(f"Wrote: {out_dir / 'performance_vs_avg_cost.png'}")
+        if p11:
+            print(f"Wrote: {out_dir / 'cost_composition.png'}")
         if p5:
             print(f"Wrote: {out_dir / 'tier_usage.png'}")
         if p6:

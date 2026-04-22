@@ -18,6 +18,7 @@ from skydiscover.budget.io import (
     write_iteration_record,
     write_summary,
 )
+from skydiscover.budget.objective import ObjectiveSnapshot, resolve_objective_from_metrics
 
 __all__ = [
     "BudgetConfig",
@@ -34,4 +35,6 @@ __all__ = [
     "plot_run_budget_panels",
     "write_iteration_record",
     "write_summary",
+    "ObjectiveSnapshot",
+    "resolve_objective_from_metrics",
 ]

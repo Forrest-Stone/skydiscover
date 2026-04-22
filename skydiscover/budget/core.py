@@ -100,8 +100,14 @@ class BudgetLedger:
         num_generation_calls = 0
         num_retry_calls = 0
         num_guide_calls = 0
+        total_generation_cost = 0.0
+        total_retry_cost = 0.0
+        total_guide_cost = 0.0
 
         for record in self.records:
+            total_generation_cost += float(record.generation_cost or 0.0)
+            total_retry_cost += float(record.retry_cost or 0.0)
+            total_guide_cost += float(record.guide_cost or 0.0)
             for call in record.calls:
                 if call.role == CallRole.GENERATION:
                     num_generation_calls += 1
@@ -124,4 +130,20 @@ class BudgetLedger:
             "num_generation_calls": num_generation_calls,
             "num_retry_calls": num_retry_calls,
             "num_guide_calls": num_guide_calls,
+            "generation_cost_total": total_generation_cost,
+            "retry_cost_total": total_retry_cost,
+            "guide_cost_total": total_guide_cost,
+            "component_cost_total": (total_generation_cost + total_retry_cost + total_guide_cost),
+            "avg_iteration_cost": (
+                self.cumulative_cost / len(self.records) if self.records else 0.0
+            ),
+            "generation_cost_fraction": (
+                total_generation_cost / self.cumulative_cost if self.cumulative_cost > self.config.eps else 0.0
+            ),
+            "retry_cost_fraction": (
+                total_retry_cost / self.cumulative_cost if self.cumulative_cost > self.config.eps else 0.0
+            ),
+            "guide_cost_fraction": (
+                total_guide_cost / self.cumulative_cost if self.cumulative_cost > self.config.eps else 0.0
+            ),
         }
