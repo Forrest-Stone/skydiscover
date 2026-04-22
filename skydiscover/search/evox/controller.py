@@ -77,7 +77,8 @@ class CoEvolutionController(DiscoveryController):
         self._best_search_score: Optional[float] = None
         self._num_search_evolutions = 0
 
-        self._switch_interval = getattr(self.config.search, "switch_interval", None)
+        self._switch_interval = getattr(
+            self.config.search, "switch_interval", None)
         self._stagnant_count = 0
         self._last_tracked_best_score: Optional[float] = None
 
@@ -108,8 +109,10 @@ class CoEvolutionController(DiscoveryController):
         self._max_solution_iterations = max_iterations
 
         if self._switch_interval is None:
-            self._switch_interval = max(1, int(max_iterations * self.DEFAULT_SWITCH_RATIO))
-            logger.info(f"Switch if {self._switch_interval} iterations of stagnation detected")
+            self._switch_interval = max(
+                1, int(max_iterations * self.DEFAULT_SWITCH_RATIO))
+            logger.info(
+                f"Switch if {self._switch_interval} iterations of stagnation detected")
 
         self.start_db_stats = self.database.get_statistics(
             improvement_threshold=self.DEFAULT_IMPROVEMENT_THRESHOLD
@@ -142,7 +145,8 @@ class CoEvolutionController(DiscoveryController):
                         self._restore_fallback_database()
                         continue  # Retry same iteration with restored database
                 else:
-                    self._process_iteration_result(result, iteration, checkpoint_callback)
+                    self._process_iteration_result(
+                        result, iteration, checkpoint_callback)
 
                 for _ in range(attempts_used):
                     self._record_search_window_step()
@@ -158,7 +162,8 @@ class CoEvolutionController(DiscoveryController):
                     await self._evolve_search(completed_solution_iter)
 
             except Exception as e:
-                logger.error(f"Error in iteration {iteration}: {e}", exc_info=True)
+                logger.error(
+                    f"Error in iteration {iteration}: {e}", exc_info=True)
                 # Exception from database.add() after a switch: fall back and retry
                 if self._fallback_database is not None:
                     self._restore_fallback_database()
@@ -168,10 +173,8 @@ class CoEvolutionController(DiscoveryController):
         if self._pending_search_result:
             await self._finalize_pending_search()
 
-        # Persist run-level budget summary (phase-1 instrumentation output)
-        self._write_budget_summary()
-
-        logger.info(f"[SOLUTION EVOLUTION] Evolution completed: {self.database.name}")
+        logger.info(
+            f"[SOLUTION EVOLUTION] Evolution completed: {self.database.name}")
         return self.database.get_best_program()
 
     def _should_evolve_search(self) -> bool:
@@ -249,9 +252,11 @@ class CoEvolutionController(DiscoveryController):
             self._num_search_evolutions,
         )
         initial_program.metadata = initial_program.metadata or {}
-        initial_program.metadata["start_db_stats"] = make_json_serializable(self.start_db_stats)
+        initial_program.metadata["start_db_stats"] = make_json_serializable(
+            self.start_db_stats)
         initial_program.metadata["end_db_stats"] = make_json_serializable(
-            self.database.get_statistics(improvement_threshold=self.DEFAULT_IMPROVEMENT_THRESHOLD)
+            self.database.get_statistics(
+                improvement_threshold=self.DEFAULT_IMPROVEMENT_THRESHOLD)
         )
 
         initial_result = SerializableResult(
@@ -296,10 +301,12 @@ class CoEvolutionController(DiscoveryController):
         evaluator_code = load_evaluator_code(self.evaluation_file)
 
         try:
-            problem_dir = Path(self.evaluation_file).parent if self.evaluation_file else None
+            problem_dir = Path(
+                self.evaluation_file).parent if self.evaluation_file else None
             label_llms = self.search_controller.guide_llms
             model_names = ", ".join(m.name for m in label_llms.models_cfg)
-            logger.info(f"Label generation: using guide_model = [{model_names}]")
+            logger.info(
+                f"Label generation: using guide_model = [{model_names}]")
             self._diverge_label, self._refine_label = await generate_variation_operators(
                 system_message,
                 evaluator_code,
@@ -312,7 +319,8 @@ class CoEvolutionController(DiscoveryController):
         except Exception as e:
             self._diverge_label = ""
             self._refine_label = ""
-            logger.error(f"Label generation failed: {e}, setting labels to empty strings")
+            logger.error(
+                f"Label generation failed: {e}, setting labels to empty strings")
 
         self._assign_labels_to_db(self.database)
 
@@ -410,7 +418,8 @@ class CoEvolutionController(DiscoveryController):
                 new_db_class.DIVERGE_LABEL = ""
             if not hasattr(new_db_class, "REFINE_LABEL"):
                 new_db_class.REFINE_LABEL = ""
-            new_db = new_db_class(self.config.search.type, self.config.search.database)
+            new_db = new_db_class(self.config.search.type,
+                                  self.config.search.database)
             new_db._program_class = prog_class
 
             # Assign labels to the new search algorithm database
@@ -436,7 +445,8 @@ class CoEvolutionController(DiscoveryController):
             return True
 
         except Exception as e:
-            logger.error(f"Failed to load search algorithm {search_program_id}: {e}")
+            logger.error(
+                f"Failed to load search algorithm {search_program_id}: {e}")
             return False
         finally:
             if os.path.exists(file_path):
@@ -456,7 +466,8 @@ class CoEvolutionController(DiscoveryController):
                     old_db.add(program, iteration=program.iteration_found)
                     migrated += 1
                 except Exception:
-                    logger.debug("Migration failed for program %s", program.id, exc_info=True)
+                    logger.debug("Migration failed for program %s",
+                                 program.id, exc_info=True)
 
         logger.warning(
             "New search strategy caused database error — "
@@ -475,7 +486,8 @@ class CoEvolutionController(DiscoveryController):
         """Migrate all programs and prompts from current database to new database."""
         prog_class = getattr(new_db, "_program_class", None)
         for program in sorted(self.database.programs.values(), key=lambda x: x.iteration_found):
-            converted = prog_class(**program.to_dict()) if prog_class else program
+            converted = prog_class(
+                **program.to_dict()) if prog_class else program
             new_db.add(converted, iteration=program.iteration_found)
         migrated = len(self.database.programs)
 
@@ -486,7 +498,8 @@ class CoEvolutionController(DiscoveryController):
 
             old_prompts = self.database.prompts_by_program or {}
             new_db.prompts_by_program.update(
-                {k: v for k, v in old_prompts.items() if k not in new_db.prompts_by_program}
+                {k: v for k, v in old_prompts.items(
+                ) if k not in new_db.prompts_by_program}
             )
 
             for p in new_db.programs.values():
@@ -507,7 +520,8 @@ class CoEvolutionController(DiscoveryController):
 
     def _reset_search_window(self, start_iteration: Optional[int] = None) -> None:
         """Start a fresh scoring window for the active search algorithm."""
-        self.search_scorer.reset_window(self._get_best_score(), start_iteration=start_iteration)
+        self.search_scorer.reset_window(
+            self._get_best_score(), start_iteration=start_iteration)
 
     def _record_search_window_step(self) -> None:
         """Record current best score for search algorithm scoring."""
@@ -540,7 +554,8 @@ class CoEvolutionController(DiscoveryController):
 
         def wrapped_add(program, iteration=None, **kwargs):
             result = original_add(program, iteration=iteration, **kwargs)
-            db._update_best_program(program)  # Idempotent safety for LLM-generated databases
+            # Idempotent safety for LLM-generated databases
+            db._update_best_program(program)
             return result
 
         db.add = wrapped_add
@@ -551,7 +566,8 @@ class CoEvolutionController(DiscoveryController):
             return False
 
         if self.search_scorer.get_window_size() > 0:
-            metrics = self._compute_search_metrics(horizon=self._switch_interval)
+            metrics = self._compute_search_metrics(
+                horizon=self._switch_interval)
         else:
             start = self.search_scorer.get_start_score() or 0.0
             metrics = self._compute_search_metrics(
@@ -565,7 +581,8 @@ class CoEvolutionController(DiscoveryController):
         child_dict = self._pending_search_result.child_program_dict or {}
         child_dict.setdefault("metrics", {}).update(metrics)
         child_dict.setdefault("metadata", {})["end_db_stats"] = make_json_serializable(
-            self.database.get_statistics(improvement_threshold=self.DEFAULT_IMPROVEMENT_THRESHOLD)
+            self.database.get_statistics(
+                improvement_threshold=self.DEFAULT_IMPROVEMENT_THRESHOLD)
         )
         self._pending_search_result.child_program_dict = child_dict
 
@@ -583,12 +600,16 @@ class CoEvolutionController(DiscoveryController):
         logger.info("[EVOX CO-EVOLUTION SETUP]")
         logger.info("-" * 70)
         logger.info(f"  [SOLUTION EVOLUTION]")
-        logger.info(f"    Initial search strategy file : {db_cfg.database_file_path}")
-        logger.info(f"    Solution database class      : {self.database.__class__.__name__}")
+        logger.info(
+            f"    Initial search strategy file : {db_cfg.database_file_path}")
+        logger.info(
+            f"    Solution database class      : {self.database.__class__.__name__}")
         logger.info(f"  [META EVOLUTION OF SEARCH STRATEGY]")
         logger.info(
             f"    Search strategy database class: {self.search_controller.database.__class__.__name__}"
         )
-        logger.info(f"    Search strategy evaluator     : {db_cfg.evaluation_file}")
-        logger.info(f"    Search strategy config        : {db_cfg.config_path}")
+        logger.info(
+            f"    Search strategy evaluator     : {db_cfg.evaluation_file}")
+        logger.info(
+            f"    Search strategy config        : {db_cfg.config_path}")
         logger.info("=" * 70)

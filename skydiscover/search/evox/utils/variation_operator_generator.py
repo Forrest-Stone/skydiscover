@@ -7,6 +7,7 @@ Reads config.yaml and evaluator.py, then uses an LLM to generate both variation 
 - Local refinement operator: Intensify search within current approach, parameter tuning
 """
 
+from skydiscover.search.evox.utils.template import DIVERGE_TEMPLATE, REFINE_TEMPLATE
 import argparse
 import asyncio
 import json
@@ -30,25 +31,25 @@ You are an expert at analyzing problems and suggesting diverse algorithmic appro
 Given a problem description and the evaluator setup and code, generate a concise "different approaches" guidance block that will help an LLM generate diverse solutions.
 
 ## STEP 1: ANALYZE THE PROBLEM TYPE (do this internally, don't output)
-Before suggesting anything, you MUST determine: 
-- What kinds of problems are you dealing with? 
+Before suggesting anything, you MUST determine:
+- What kinds of problems are you dealing with?
     - **Optimization problem**: continuous vs discrete, constrained vs unconstrained, what variables and constraints, and what optimization family, ...
     - **Algorithm/heuristic design**: what decisions, what tradeoffs
     - **System design**: what resources, what objectives
     - And anything else that is related to the problem type and context.
-- What is the objective? 
+- What is the objective?
     - Read the evaluator's scoring function (e.g., `combined_score`) to understand ALL components of the objective.
     - If the objective combines multiple sub-scores, what are the weights and tradeoffs between them?
-- What are the constraints or requirements? 
+- What are the constraints or requirements?
     - E.g., bounds, accuracy, time limits, correctness criteria, etc.
-- Does this problem have multiple decision stages? 
-- What tradeoffs exist? 
+- Does this problem have multiple decision stages?
+- What tradeoffs exist?
     - E.g. size vs weight, cost vs quality, speed vs accuracy, ...
 - For optimization problems specifically:
     - Are the decisions discrete or continuous (real-valued parameters)?
     - What variables are being optimized and what are the constraint types?
 
-## STEP 2: PROVIDE SUGGESTIONS FOR DIFFERENT APPROACHES 
+## STEP 2: PROVIDE SUGGESTIONS FOR DIFFERENT APPROACHES
 
 ### STEP 2a: IDENTIFY STANDARD TOOLKIT
 Before suggesting anything, think like a DOMAIN EXPERT. Ask yourself:
@@ -63,7 +64,7 @@ Before suggesting anything, think like a DOMAIN EXPERT. Ask yourself:
     - What metaheuristic/evolutionary algorithms are available?
 
 ### STEP 2b: GENERATE SUGGESTIONS (based on problem & evaluator)
-Your suggestions should be driven primarily by analyzing the PROBLEM and EVALUATOR from Step 1. Enumerate the landscape of known, proven techniques for this problem type. 
+Your suggestions should be driven primarily by analyzing the PROBLEM and EVALUATOR from Step 1. Enumerate the landscape of known, proven techniques for this problem type.
 - In the Libraries bullet: include the canonical/standard library for this problem domain, with its key functions. Do not skip it.
 - For multi-objective problems, include at least ONE category named after a KEY QUALITY DIMENSION from the evaluator's `combined_score`. Name the category after the objective, then list diverse techniques that target it.
 - Consider MULTIPLE PARADIGMS: Your suggestions should span at least two distinct approach families. Don't anchor on one paradigm.
@@ -81,29 +82,29 @@ EXAMPLES OF DIFFERENT approaches (NOT LIMITED TO, PROPOSE YOUR OWN):
 
 ```
 
-Your goal is to come up with the "DIFFERENT APPROACHES" sections, with the problem specific guidance, e.g. 
-different structural components (e.g. initialization, objective design, search strategy to balance multiple factors, anything else that 
+Your goal is to come up with the "DIFFERENT APPROACHES" sections, with the problem specific guidance, e.g.
+different structural components (e.g. initialization, objective design, search strategy to balance multiple factors, anything else that
 is related to the problem type and context).
 
 EXAMPLE CATEGORIES (do not blindly copy, tailor to problem):
 ```
 EXAMPLES OF DIFFERENT approaches (NOT LIMITED TO, PROPOSE YOUR OWN):
-- **Libraries / solvers**: 
-- **Multi-phase pipeline**: 
-- **Algorithm family / strategy**: 
-- **Runtime optimization (if applicable to the problem objective)** 
-- **Construction / search method**: 
-- **Constraint handling**: 
-... Or anything else you can think of. 
+- **Libraries / solvers**:
+- **Multi-phase pipeline**:
+- **Algorithm family / strategy**:
+- **Runtime optimization (if applicable to the problem objective)**
+- **Construction / search method**:
+- **Constraint handling**:
+... Or anything else you can think of.
 ```
 Do not just blindly copy from the example; tailor the categories and ideas specifically to the problem type and context.
 
 ## RULES
-1. LIBRARIES / TOOLS - Include for problems where libraries provide algorithmic solutions. 
+1. LIBRARIES / TOOLS - Include for problems where libraries provide algorithmic solutions.
     - **CRITICAL**: ONLY suggest libraries that appear in the "Available Packages in Environment" section. Do NOT suggest libraries that are not installed.
     - Always list it in the first category if applicable.
     - **USE THIS EXACT FORMAT**: `library.submodule: func1, func2 ↔ another_lib: funcA, funcB`. Use → to wire dependent functions: `setup_func → apply_func`.
-        - **CRITICAL** For wrapper functions that accept a `method` parameter: you MUST specify the exact method names. 
+        - **CRITICAL** For wrapper functions that accept a `method` parameter: you MUST specify the exact method names.
             - The LLM needs to know WHICH specific solver to use. Format: `wrapper(method='X'), wrapper(method='Y')`.
     - **BE FOCUSED, NOT EXHAUSTIVE**: Do not list every possible methods, but DO include those from DIFFERENT library ecosystems when they offer distinct algorithms for the problem.
         - **CRITICAL**: ONLY list functions that directly SOLVE the problem . Do NOT list low-level building blocks (linear algebra routines, random generators, data structures, geometry computations, plotting, etc.).
@@ -114,11 +115,11 @@ Do not just blindly copy from the example; tailor the categories and ideas speci
     - **INCLUDE COMPLEMENTARY VARIANTS**: Standard libraries often have PAIRS for the same operation (e.g., local vs global, forward-only vs bidirectional, online vs batch). ALWAYS list **both** sides of each pair — never omit the complement.
 
 2. HIGH-LEVEL IDEAS ONLY - short, abstract concepts (stay within 15 words).
-    -  Within each category just list 3-5 alternative ideas. 
+    -  Within each category just list 3-5 alternative ideas.
 3. Tailor categories to the problem; try to focus on a few different categories, and within each category focus on actionable and simple approaches not parameter tweaks
 4. Only assume constraints explicitly stated in the problem.
 5. 3-6 bullet points, order them based on ease of implementation and relevance to the problem.
-6. Use ↔ to separate alternatives 
+6. Use ↔ to separate alternatives
 7. **BALANCE**: Include libraries with SPECIFIC algorithms when they provide solutions, but EQUALLY emphasize domain-specific algorithmic strategies. Both are important.
 8. If the evaluator passes input data for processing, add a **separate bullet** after Libraries: state that the full input is available and library functions can be applied directly to it.
 """
@@ -137,19 +138,19 @@ The LLM receiving this guidance already has a working solution. Your job is to h
 - Improve the quality of inputs (seeds, initializations, candidates)
 - Improve the quality of the solution (post-processing, validation, polish)
 - Refine tradeoff parameters: If the approach uses parameters to balance competing factors, tuning strategies in different ways (e.g., search ranges, convergence criteria, adaptive schedules)
-- Explore composite metrics: If the approach combines multiple factors, varying different ways in how they're combined (e.g., weights, normalization, thresholds) 
+- Explore composite metrics: If the approach combines multiple factors, varying different ways in how they're combined (e.g., weights, normalization, thresholds)
 
 ## STEP 1: ANALYZE THE PROBLEM TYPE (do this internally, don't output)
 Before suggesting anything, you MUST determine:
-- What type of problem is this? 
+- What type of problem is this?
 - What are the "knobs" that can be tuned without changing the core algorithm? For example,
-  - Tradeoff parameters: If the approach balances multiple factors, what parameters control the tradeoff? 
-  - Composite metrics: If the approach combines multiple factors, how are they combined? 
-  - Search strategies: If the approach searches for parameter values, what can be refined? 
+  - Tradeoff parameters: If the approach balances multiple factors, what parameters control the tradeoff?
+  - Composite metrics: If the approach combines multiple factors, how are they combined?
+  - Search strategies: If the approach searches for parameter values, what can be refined?
 - What does "better" mean for this problem? Read the evaluator's scoring function (e.g., `combined_score`) and understand ALL components.
-  - **PRINCIPLE**: Only include suggestions that DIRECTLY improve a component of `combined_score`. 
+  - **PRINCIPLE**: Only include suggestions that DIRECTLY improve a component of `combined_score`.
     If something is NOT measured in the score (e.g., runtime when only quality matters), do NOT suggest directions that do not improve the score.
-- What post-processing, validation, or polish stages could help? 
+- What post-processing, validation, or polish stages could help?
 - If the problem objective is only to improve the quality of the solution, where can more computation budget be spent to improve the quality?
 
 ## STEP 2: GENERATE REFINEMENT STRATEGIES (based on problem & evaluator)
@@ -167,7 +168,7 @@ EXAMPLES OF REFINEMENT strategies (NOT LIMITED TO, PROPOSE YOUR OWN):
 - **[Category 1]**: [describe 3-5 specific tuning techniques]
 - **[Category 2]**: [describe 3-5 specific tuning techniques]
 - ... (3-5 bullet points total, only include categories that actually apply)
-... Or anything else you can think of. 
+... Or anything else you can think of.
 
 ```
 
@@ -175,13 +176,13 @@ EXAMPLE CATEGORIES (do not blindly copy, tailor to problem):
 ```
 REFINEMENT strategies examples:
 - **Libraries / tools**: (`library.submodule: func1, func2 ↔ another_lib: funcA`; for wrapper functions that accept a `method` parameter: you MUST specify the exact method names. Format: `wrapper(method='X'), wrapper(method='Y')`).
-- **Computational budget**: 
-- **Hyperparameter tuning**: 
-- **Dynamic scheduling**: 
-- **Multi-objective weights / tradeoff balancing**: 
-- **Input quality / initialization**: 
-- **Solver tolerances / convergence**: 
-- **Post-processing / polish**: 
+- **Computational budget**:
+- **Hyperparameter tuning**:
+- **Dynamic scheduling**:
+- **Multi-objective weights / tradeoff balancing**:
+- **Input quality / initialization**:
+- **Solver tolerances / convergence**:
+- **Post-processing / polish**:
 ```
 Do not just blindly copy from the example; tailor the categories and ideas specifically to the problem type and context.
 
@@ -223,17 +224,16 @@ Your response must have exactly two sections:
 
 ## CROSS-REFERENCE RULE
 The EXPLOITATION section MUST be consistent with the EXPLORATION section AND must be self-sufficient (usable even if the user never sees the exploration section).
-- If the EXPLORATION section suggests optimization solvers or libraries, it is recommended for the EXPLOITATION section to include: 
+- If the EXPLORATION section suggests optimization solvers or libraries, it is recommended for the EXPLOITATION section to include:
     - (1) a "Libraries / tools for refinement" category that is the same list and order as the one in the EXPLORATION section
           - ALSO INCLUDE ADDITIONAL optimizers, libraries, and/or polish methods for polishing and refining existing solutions.
-    - (2) solver-specific refinement knobs: for example, maxiter, convergence tolerances, different initializations and polish passes. 
+    - (2) solver-specific refinement knobs: for example, maxiter, convergence tolerances, different initializations and polish passes.
 - The EXPLOITATION section should contain enough concrete, actionable ideas that the LLM can make meaningful improvements even without seeing the EXPLORATION section.
 - These can be general knobs, not specific numbers.
 
 Generate BOTH sections now, clearly separated with the headers above.
 """
 
-from skydiscover.search.evox.utils.template import DIVERGE_TEMPLATE, REFINE_TEMPLATE
 
 # Backwards-compatible aliases
 DEFAULT_DIVERGE_TEMPLATE = DIVERGE_TEMPLATE
@@ -288,7 +288,8 @@ def get_available_packages(problem_dir=None) -> list:
                             continue
                         packages.append(line)
                     if packages:
-                        logger.info(f"Read {len(packages)} packages from {requirements_path}")
+                        logger.info(
+                            f"Read {len(packages)} packages from {requirements_path}")
                         return packages
                 except Exception as e:
                     logger.warning(f"Could not read {requirements_path} ({e})")
@@ -311,10 +312,12 @@ def get_available_packages(problem_dir=None) -> list:
                     continue
                 packages.append(line)
             if packages:
-                logger.info(f"Read {len(packages)} packages from {requirements_path}")
+                logger.info(
+                    f"Read {len(packages)} packages from {requirements_path}")
                 return packages
         except Exception as e:
-            logger.warning(f"Could not read requirements.txt ({e}), trying pyproject.toml")
+            logger.warning(
+                f"Could not read requirements.txt ({e}), trying pyproject.toml")
 
     # Priority 3: pyproject.toml
     try:
@@ -328,7 +331,8 @@ def get_available_packages(problem_dir=None) -> list:
 
         pyproject_path = repo_root / "pyproject.toml"
         if not pyproject_path.exists():
-            raise FileNotFoundError(f"pyproject.toml not found at {pyproject_path}")
+            raise FileNotFoundError(
+                f"pyproject.toml not found at {pyproject_path}")
 
         with open(pyproject_path, "rb") as f:
             data = tomllib.load(f)
@@ -336,7 +340,8 @@ def get_available_packages(problem_dir=None) -> list:
         dependencies = data.get("project", {}).get("dependencies", [])
         return dependencies
     except (ImportError, FileNotFoundError, KeyError) as e:
-        logger.warning(f"Could not read pyproject.toml ({e}), falling back to uv pip list")
+        logger.warning(
+            f"Could not read pyproject.toml ({e}), falling back to uv pip list")
         try:
             result = subprocess.run(
                 ["uv", "pip", "list", "--format", "json"],
@@ -428,7 +433,8 @@ def _build_operator_prompt(
 ) -> str:
     """Build the user prompt for variation operator generation."""
     available_packages = get_available_packages(problem_dir=problem_dir)
-    packages_list = "\n".join(available_packages) if available_packages else "No packages found"
+    packages_list = "\n".join(
+        available_packages) if available_packages else "No packages found"
 
     initial_program_section = ""
     if initial_program_solution:
@@ -470,9 +476,12 @@ For EXPLOITATION guidance block, focus on INTENSIFYING within existing approache
 
 def _operators_from_response(combined_response: str) -> Tuple[str, str]:
     """Parse LLM response and build diverge/refine variation operators."""
-    explore_examples, refine_examples = _parse_combined_response(combined_response)
-    diverge_operator = DIVERGE_TEMPLATE.replace("{GENERATED_EXAMPLES}", explore_examples)
-    refine_operator = REFINE_TEMPLATE.replace("{GENERATED_EXAMPLES}", refine_examples)
+    explore_examples, refine_examples = _parse_combined_response(
+        combined_response)
+    diverge_operator = DIVERGE_TEMPLATE.replace(
+        "{GENERATED_EXAMPLES}", explore_examples)
+    refine_operator = REFINE_TEMPLATE.replace(
+        "{GENERATED_EXAMPLES}", refine_examples)
     return diverge_operator, refine_operator
 
 
@@ -564,12 +573,15 @@ def main():
     # Optionally load initial program
     initial_program_solution = None
     if args.provide_initial:
-        initial_program_path = os.path.join(args.problem_dir, "initial_program.py")
+        initial_program_path = os.path.join(
+            args.problem_dir, "initial_program.py")
         if os.path.exists(initial_program_path):
             print(f"Loading initial program from: {initial_program_path}")
-            initial_program_solution = load_initial_program(initial_program_path)
+            initial_program_solution = load_initial_program(
+                initial_program_path)
         else:
-            print(f"Warning: --provide-initial set but {initial_program_path} not found, skipping")
+            print(
+                f"Warning: --provide-initial set but {initial_program_path} not found, skipping")
 
     # Build LLMPool for CLI usage
     from skydiscover.config import LLMModelConfig

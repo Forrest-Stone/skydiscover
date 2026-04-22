@@ -43,7 +43,8 @@ async def log_search_algorithm_generated(
 ) -> None:
     """Save newly generated search algorithm details to files (before scoring)."""
     if result.error:
-        logger.warning(f"Search strategy generation failed (iteration {iteration}): {result.error}")
+        logger.warning(
+            f"Search strategy generation failed (iteration {iteration}): {result.error}")
         return
 
     child_dict = result.child_program_dict or {}
@@ -144,7 +145,8 @@ async def update_saved_search_algorithm_score(
     db_stats: Dict[str, Any],
 ) -> None:
     """Update the saved metadata file with the newly assigned score."""
-    metadata_path = os.path.join(outputs_dir, f"iteration_{iteration}", "metadata.json")
+    metadata_path = os.path.join(
+        outputs_dir, f"iteration_{iteration}", "metadata.json")
 
     if not os.path.exists(metadata_path):
         logger.warning(
@@ -244,10 +246,12 @@ async def log_failed_attempt(
 
     failed_attempts.append(attempt_data)
     with open(failed_file, "w") as f:
-        json.dump({"iteration": iteration, "failed_attempts": failed_attempts}, f, indent=2)
+        json.dump({"iteration": iteration,
+                  "failed_attempts": failed_attempts}, f, indent=2)
 
     if attempt_data["solution"]:
-        code_file = os.path.join(iteration_dir, f"failed_attempt_{attempt_number}.py")
+        code_file = os.path.join(
+            iteration_dir, f"failed_attempt_{attempt_number}.py")
         with open(code_file, "w") as f:
             f.write(attempt_data["solution"])
 
@@ -264,7 +268,8 @@ async def log_active_algorithm(
     os.makedirs(iteration_dir, exist_ok=True)
 
     candidate_code_path = os.path.join(iteration_dir, "code.py")
-    active_code_filename = "active_code.py" if os.path.exists(candidate_code_path) else "code.py"
+    active_code_filename = "active_code.py" if os.path.exists(
+        candidate_code_path) else "code.py"
     with open(os.path.join(iteration_dir, active_code_filename), "w") as f:
         f.write(active_code)
 

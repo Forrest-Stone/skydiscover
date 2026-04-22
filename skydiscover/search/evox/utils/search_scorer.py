@@ -26,7 +26,8 @@ class LogWindowScorer:
         algorithm_id: Optional[str] = None,
         start_iteration: Optional[int] = None,
     ) -> None:
-        self._start_score = float(start_score) if start_score is not None else 0.0
+        self._start_score = float(
+            start_score) if start_score is not None else 0.0
         self._start_iteration = start_iteration
         self._best_scores = []
         if algorithm_id:
@@ -55,7 +56,8 @@ class LogWindowScorer:
     ) -> Dict[str, Any]:
         if start_iteration is None:
             start_iteration = self._start_iteration
-        start = float(start_score if start_score is not None else (self._start_score or 0.0))
+        start = float(start_score if start_score is not None else (
+            self._start_score or 0.0))
         scores_to_use = best_scores if best_scores is not None else self._best_scores
         T_obs = len(scores_to_use) if scores_to_use else 0
         horizon_int = int(horizon) if horizon else max(1, T_obs)
