@@ -12,6 +12,12 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     model_name = record.calls[-1].model_name if record.calls else "unknown"
     prompt_tokens, completion_tokens = aggregate_tokens(record)
+    gen_prompt = sum(c.prompt_tokens for c in record.calls if c.role.value == "generation")
+    gen_completion = sum(c.completion_tokens for c in record.calls if c.role.value == "generation")
+    retry_prompt = sum(c.prompt_tokens for c in record.calls if c.role.value == "retry")
+    retry_completion = sum(c.completion_tokens for c in record.calls if c.role.value == "retry")
+    guide_prompt = sum(c.prompt_tokens for c in record.calls if c.role.value == "guide")
+    guide_completion = sum(c.completion_tokens for c in record.calls if c.role.value == "guide")
     row: Dict[str, Any] = {
         "iteration": record.iteration,
         "frontier_id": record.meta.get("frontier_id"),
@@ -47,7 +53,29 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         "meta_triggered": record.meta.get("meta_triggered", False),
         "attempts_used": record.meta.get("attempts_used", 1),
         "num_calls": len(record.calls),
+        "num_generation_calls_this_iteration": sum(
+            1 for c in record.calls if c.role.value == "generation"
+        ),
+        "num_retry_calls_this_iteration": sum(1 for c in record.calls if c.role.value == "retry"),
+        "num_guide_calls_this_iteration": sum(1 for c in record.calls if c.role.value == "guide"),
         "total_tokens": prompt_tokens + completion_tokens,
+        "generation_prompt_tokens": gen_prompt,
+        "generation_completion_tokens": gen_completion,
+        "retry_prompt_tokens": retry_prompt,
+        "retry_completion_tokens": retry_completion,
+        "guide_prompt_tokens": guide_prompt,
+        "guide_completion_tokens": guide_completion,
+        "objective_key": record.meta.get("objective_key"),
+        "objective_value": record.meta.get("objective_value"),
+        "best_so_far_objective": record.meta.get("best_so_far_objective"),
+        "target_value": record.meta.get("target_value"),
+        "target_ratio": record.meta.get("target_ratio"),
+        "best_so_far_target_ratio": record.meta.get("best_so_far_target_ratio"),
+        "combined_score": record.meta.get("combined_score"),
+        "best_so_far_combined_score": record.meta.get("best_so_far_combined_score"),
+        "validity": record.meta.get("validity"),
+        "eval_time": record.meta.get("eval_time"),
+        "metrics_raw": record.meta.get("metrics_raw"),
         "call_roles": [c.role.value for c in record.calls],
         "call_model_names": [c.model_name for c in record.calls],
         "call_prompt_tokens": [c.prompt_tokens for c in record.calls],
@@ -59,11 +87,18 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
-def write_summary(path: Path, ledger: BudgetLedger, best_score: float | None = None) -> None:
+def write_summary(
+    path: Path,
+    ledger: BudgetLedger,
+    best_score: float | None = None,
+    extra: Dict[str, Any] | None = None,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     summary = ledger.summary()
     if best_score is not None:
         summary["best_score"] = float(best_score)
+    if extra:
+        summary.update(extra)
     with path.open("w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
 

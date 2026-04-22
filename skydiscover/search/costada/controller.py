@@ -7,6 +7,7 @@ import time
 from collections import deque
 from typing import Dict, List, Optional
 
+from skydiscover.budget import CallRole
 from skydiscover.context_builder.costada import CostAdaContextBuilder
 from skydiscover.search.adaevolve.controller import AdaEvolveController
 from skydiscover.search.base_database import Program
@@ -135,6 +136,37 @@ class CostAdaController(AdaEvolveController):
         """Map frontier signal H to exploration intensity via deterministic scheduler."""
         return self.tier_scheduler.compute_intensity(frontier_signal)
 
+    async def run_discovery(self, *args, **kwargs):
+        out = await super().run_discovery(*args, **kwargs)
+        self._write_budget_summary()
+        return out
+
+    async def _run_normal_step(
+        self,
+        iteration: int,
+        budget_record=None,
+    ) -> SerializableResult:
+        """Run one CostAda step with explicit call-role labeling for budget accounting."""
+        last_error = None
+        attempts = 1 + (self.max_retries if self.enable_retry else 0)
+        for attempt in range(attempts):
+            role = CallRole.GENERATION if attempt == 0 else CallRole.RETRY
+            result = await self._generate_child(
+                iteration,
+                error_context=last_error,
+                call_role=role,
+                budget_record=budget_record,
+            )
+            if not result.error:
+                result.attempts_used = attempt + 1
+                return result
+            last_error = result.error
+        return SerializableResult(
+            error=f"All {attempts} attempts failed: {last_error}",
+            iteration=iteration,
+            attempts_used=attempts,
+        )
+
     async def _run_iteration(self, iteration: int, checkpoint_callback) -> None:
         """Execute one CostAda iteration with unified BCHD signal updates."""
         iteration_start_time = time.time()
@@ -155,7 +187,7 @@ class CostAdaController(AdaEvolveController):
 
         # Optional paradigm generation follows AdaEvolve scaffold.
         if self.database.use_paradigm_breakthrough and self.database.is_paradigm_stagnating():
-            await self._generate_paradigms_if_needed(budget_record=budget_record)
+            await self._generate_paradigms_if_needed()
 
         result = await self._run_normal_step(iteration, budget_record=budget_record)
         iteration_time = time.time() - iteration_start_time
