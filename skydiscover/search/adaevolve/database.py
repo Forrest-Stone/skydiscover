@@ -177,7 +177,8 @@ class AdaEvolveDatabase(ProgramDatabase):
         self.population_size = config.population_size
         self.higher_is_better = getattr(config, "higher_is_better", {}) or {}
         self.fitness_key = getattr(config, "fitness_key", None)
-        self.pareto_objectives = list(getattr(config, "pareto_objectives", []) or [])
+        self.pareto_objectives = list(
+            getattr(config, "pareto_objectives", []) or [])
 
         # Unified archive flag (can be disabled for ablation studies)
         self.use_unified_archive = getattr(config, "use_unified_archive", True)
@@ -205,16 +206,20 @@ class AdaEvolveDatabase(ProgramDatabase):
             self.intensity_min, self.intensity_max = self.intensity_max, self.intensity_min
 
         if not (0.0 <= self.decay <= 1.0):
-            logger.warning(f"decay ({self.decay}) should be in [0, 1]. Clamping.")
+            logger.warning(
+                f"decay ({self.decay}) should be in [0, 1]. Clamping.")
             self.decay = max(0.0, min(1.0, self.decay))
 
         # other context program mix (local vs global)
-        self.local_context_program_ratio = getattr(config, "local_context_program_ratio", 0.6)
+        self.local_context_program_ratio = getattr(
+            config, "local_context_program_ratio", 0.6)
 
         # Dynamic island spawning configuration
-        self.use_dynamic_islands = getattr(config, "use_dynamic_islands", False)
+        self.use_dynamic_islands = getattr(
+            config, "use_dynamic_islands", False)
         self.max_islands = getattr(config, "max_islands", 8)
-        self.spawn_productivity_threshold = getattr(config, "spawn_productivity_threshold", 0.02)
+        self.spawn_productivity_threshold = getattr(
+            config, "spawn_productivity_threshold", 0.02)
         self.spawn_cooldown = getattr(config, "spawn_cooldown_iterations", 50)
         self.last_spawn_iteration = -self.spawn_cooldown
         self.island_config_names: List[str] = ["balanced"] * self.num_islands
@@ -226,14 +231,17 @@ class AdaEvolveDatabase(ProgramDatabase):
             )
 
         # Paradigm breakthrough configuration
-        self.use_paradigm_breakthrough = getattr(config, "use_paradigm_breakthrough", False)
+        self.use_paradigm_breakthrough = getattr(
+            config, "use_paradigm_breakthrough", False)
         if self.use_paradigm_breakthrough:
             self.paradigm_tracker = ParadigmTracker(
                 window_size=getattr(config, "paradigm_window_size", 30),
-                improvement_threshold=getattr(config, "paradigm_improvement_threshold", 0.05),
+                improvement_threshold=getattr(
+                    config, "paradigm_improvement_threshold", 0.05),
                 max_paradigm_uses=getattr(config, "paradigm_max_uses", 5),
                 max_tried_paradigms=getattr(config, "paradigm_max_tried", 10),
-                num_paradigms_to_generate=getattr(config, "paradigm_num_to_generate", 3),
+                num_paradigms_to_generate=getattr(
+                    config, "paradigm_num_to_generate", 3),
             )
         else:
             self.paradigm_tracker = None
@@ -256,9 +264,12 @@ class AdaEvolveDatabase(ProgramDatabase):
             self.children_map = None  # Archive handles genealogy
         else:
             self.archives = None  # Not used in legacy mode
-            self.islands: List[List[Program]] = [[] for _ in range(self.num_islands)]
-            self.children_map: List[Dict[str, List[str]]] = [{} for _ in range(self.num_islands)]
-            self._diversity_strategy_type = getattr(config, "diversity_strategy", "code")
+            self.islands: List[List[Program]] = [[]
+                                                 for _ in range(self.num_islands)]
+            self.children_map: List[Dict[str, List[str]]] = [
+                {} for _ in range(self.num_islands)]
+            self._diversity_strategy_type = getattr(
+                config, "diversity_strategy", "code")
 
         # Global best tracking
         self._global_best_score = float("-inf")
@@ -288,8 +299,10 @@ class AdaEvolveDatabase(ProgramDatabase):
         """Initialize per-island UnifiedArchives."""
         higher_is_better = getattr(config, "higher_is_better", {})
         pareto_objectives = getattr(config, "pareto_objectives", [])
-        pareto_objectives_weight = getattr(config, "pareto_objectives_weight", 0.0)
-        self._diversity_strategy_type = getattr(config, "diversity_strategy", "code")
+        pareto_objectives_weight = getattr(
+            config, "pareto_objectives_weight", 0.0)
+        self._diversity_strategy_type = getattr(
+            config, "diversity_strategy", "code")
 
         for i in range(self.num_islands):
             archive_config = ArchiveConfig(
@@ -379,7 +392,8 @@ class AdaEvolveDatabase(ProgramDatabase):
             program: The initial/seed program to copy to all islands
             iteration: Current iteration (for tracking)
         """
-        logger.info(f"Seeding all {self.num_islands} islands with initial program")
+        logger.info(
+            f"Seeding all {self.num_islands} islands with initial program")
 
         for island_idx in range(self.num_islands):
             if island_idx == 0:
@@ -454,7 +468,8 @@ class AdaEvolveDatabase(ProgramDatabase):
 
             # Track sibling relationship (only for mutations, not migrations)
             if parent_id is not None and not is_migration:
-                self.children_map[island_idx].setdefault(parent_id, []).append(program.id)
+                self.children_map[island_idx].setdefault(
+                    parent_id, []).append(program.id)
 
             # Enforce population limit in legacy mode
             self._enforce_island_population_limit(island_idx)
@@ -480,7 +495,8 @@ class AdaEvolveDatabase(ProgramDatabase):
 
             # Record improvement for paradigm tracking
             if self.paradigm_tracker is not None and not is_migration:
-                self.paradigm_tracker.record_improvement(global_improved, self._global_best_score)
+                self.paradigm_tracker.record_improvement(
+                    global_improved, self._global_best_score)
 
             # Save if configured
             if self.config.db_path:
@@ -580,10 +596,12 @@ class AdaEvolveDatabase(ProgramDatabase):
         global_count = num - local_count
 
         # Local: most different from parent (but from top performers - see sample_other_context_programs)
-        local_context_programs = archive.sample_other_context_programs(parent, local_count)
+        local_context_programs = archive.sample_other_context_programs(
+            parent, local_count)
 
         # Global: top performers across all islands (cross-pollination)
-        global_context_programs = self._sample_global_top(parent.id, global_count)
+        global_context_programs = self._sample_global_top(
+            parent.id, global_count)
 
         other_context_programs = local_context_programs + global_context_programs
 
@@ -719,7 +737,8 @@ class AdaEvolveDatabase(ProgramDatabase):
             return candidates
 
         if self.is_multiobjective_enabled():
-            pareto_front = [p for p in self.get_global_pareto_front() if p.id != exclude_id]
+            pareto_front = [
+                p for p in self.get_global_pareto_front() if p.id != exclude_id]
             if len(pareto_front) >= n:
                 return pareto_front[:n]
 
@@ -731,7 +750,8 @@ class AdaEvolveDatabase(ProgramDatabase):
             )
             return pareto_front + remaining[: max(0, n - len(pareto_front))]
 
-        sorted_candidates = sorted(candidates, key=self._get_fitness, reverse=True)
+        sorted_candidates = sorted(
+            candidates, key=self._get_fitness, reverse=True)
         return sorted_candidates[:n]
 
     def _enforce_island_population_limit(self, island_idx: int) -> None:
@@ -748,7 +768,7 @@ class AdaEvolveDatabase(ProgramDatabase):
         population.sort(key=self._get_fitness, reverse=True)
 
         # Keep top population_size, remove rest
-        removed = population[self.population_size :]
+        removed = population[self.population_size:]
         self.islands[island_idx] = population[: self.population_size]
 
         # Also remove from global registry (but preserve best program)
@@ -811,7 +831,8 @@ class AdaEvolveDatabase(ProgramDatabase):
             dest_island = (src_island + 1) % self.num_islands
 
             # Get top programs from source
-            top_programs = self.archives[src_island].get_top_programs(self.migration_count)
+            top_programs = self.archives[src_island].get_top_programs(
+                self.migration_count)
 
             if not top_programs:
                 continue
@@ -830,7 +851,8 @@ class AdaEvolveDatabase(ProgramDatabase):
                     iteration_found=program.iteration_found,
                     parent_id=program.id,
                     generation=program.generation,
-                    metadata={"migrated_from": src_island, "migrated_to": dest_island},
+                    metadata={"migrated_from": src_island,
+                              "migrated_to": dest_island},
                 )
 
                 self.add(migrant, parent_id=None, target_island=dest_island)
@@ -864,7 +886,8 @@ class AdaEvolveDatabase(ProgramDatabase):
                 iteration_found=program.iteration_found,
                 parent_id=program.id,
                 generation=program.generation,
-                metadata={"migrated_from": src_island, "migrated_to": dest_island},
+                metadata={"migrated_from": src_island,
+                          "migrated_to": dest_island},
             )
 
             self.add(migrant, parent_id=None, target_island=dest_island)
@@ -887,7 +910,8 @@ class AdaEvolveDatabase(ProgramDatabase):
         island_stats = []
         for i in range(self.num_islands):
             dim_stats = (
-                adapter_stats["dimensions"][i] if i < len(adapter_stats["dimensions"]) else {}
+                adapter_stats["dimensions"][i] if i < len(
+                    adapter_stats["dimensions"]) else {}
             )
 
             if self.use_unified_archive and self.archives:
@@ -954,13 +978,15 @@ class AdaEvolveDatabase(ProgramDatabase):
         # =========================================================================
         island_stats = []
         for i in range(self.num_islands):
-            state = self.adapter.states[i] if i < len(self.adapter.states) else None
+            state = self.adapter.states[i] if i < len(
+                self.adapter.states) else None
 
             island_data = {
                 "island_idx": i,
                 "is_current": i == self.current_island,
                 "config_name": (
-                    self.island_config_names[i] if i < len(self.island_config_names) else "unknown"
+                    self.island_config_names[i] if i < len(
+                        self.island_config_names) else "unknown"
                 ),
             }
 
@@ -980,7 +1006,8 @@ class AdaEvolveDatabase(ProgramDatabase):
             if state:
                 island_data["accumulated_signal_G"] = state.accumulated_signal
                 island_data["best_score"] = (
-                    state.best_score if not math.isinf(state.best_score) else None
+                    state.best_score if not math.isinf(
+                        state.best_score) else None
                 )
                 island_data["search_intensity"] = state.get_search_intensity()
                 island_data["improvement_count"] = state.improvement_count
@@ -1000,10 +1027,12 @@ class AdaEvolveDatabase(ProgramDatabase):
             if i < len(self.adapter.dimension_rewards):
                 island_data["ucb_decayed_rewards"] = self.adapter.dimension_rewards[i]
                 dec_visits = (
-                    self.adapter.decayed_visits[i] if i < len(self.adapter.decayed_visits) else 0.0
+                    self.adapter.decayed_visits[i] if i < len(
+                        self.adapter.decayed_visits) else 0.0
                 )
                 island_data["ucb_reward_avg"] = (
-                    self.adapter.dimension_rewards[i] / dec_visits if dec_visits > 0 else 0.0
+                    self.adapter.dimension_rewards[i] /
+                    dec_visits if dec_visits > 0 else 0.0
                 )
 
             island_stats.append(island_data)
@@ -1012,13 +1041,15 @@ class AdaEvolveDatabase(ProgramDatabase):
         # Global statistics
         # =========================================================================
         best_program = self.get_best_program()
-        pareto_front = self.get_global_pareto_front() if self.is_multiobjective_enabled() else []
+        pareto_front = self.get_global_pareto_front(
+        ) if self.is_multiobjective_enabled() else []
         global_stats = {
             "iteration": iteration,
             "num_islands": self.num_islands,
             "current_island_idx": self.current_island,
             "global_best_score": (
-                self._global_best_score if not math.isinf(self._global_best_score) else None
+                self._global_best_score if not math.isinf(
+                    self._global_best_score) else None
             ),
             "global_best_program_id": self.best_program_id,
             "optimization_mode": "pareto" if self.is_multiobjective_enabled() else "scalar",
@@ -1235,7 +1266,8 @@ class AdaEvolveDatabase(ProgramDatabase):
             # Re-add to first archive to ensure it survives future save cycles
             if self.use_unified_archive and self.archives:
                 self.archives[0].add(best_program)
-            logger.warning(f"Restored evicted best program {best_id[:8]} during save")
+            logger.warning(
+                f"Restored evicted best program {best_id[:8]} during save")
 
         # Save base state (programs, prompts, artifacts)
         super().save(save_path, iteration)
@@ -1264,12 +1296,14 @@ class AdaEvolveDatabase(ProgramDatabase):
 
         # Island membership and genealogy depend on mode
         if self.use_unified_archive and self.archives:
-            metadata["islands"] = [[p.id for p in archive.get_all()] for archive in self.archives]
+            metadata["islands"] = [[p.id for p in archive.get_all()]
+                                   for archive in self.archives]
             metadata["archive_genealogies"] = [
                 archive.get_genealogy_state() for archive in self.archives
             ]
         else:
-            metadata["islands"] = [[p.id for p in island] for island in self.islands]
+            metadata["islands"] = [[p.id for p in island]
+                                   for island in self.islands]
             metadata["children_map"] = self.children_map
 
         # Save dynamic island state if enabled
@@ -1322,8 +1356,10 @@ class AdaEvolveDatabase(ProgramDatabase):
         saved_num_islands = metadata.get("num_islands", self.num_islands)
         self.current_island = metadata.get("current_island", 0)
         self._iteration_count = metadata.get("iteration_count", 0)
-        self._global_best_score = metadata.get("global_best_score", float("-inf"))
-        self._diversity_strategy_type = metadata.get("diversity_strategy_type", "code")
+        self._global_best_score = metadata.get(
+            "global_best_score", float("-inf"))
+        self._diversity_strategy_type = metadata.get(
+            "diversity_strategy_type", "code")
 
         # NOTE: Ablation flags are NOT restored from checkpoint.
         # The current config's ablation settings take precedence.
@@ -1344,7 +1380,8 @@ class AdaEvolveDatabase(ProgramDatabase):
 
         # Load adapter state
         if "adapter" in metadata:
-            self.adapter = MultiDimensionalAdapter.from_dict(metadata["adapter"])
+            self.adapter = MultiDimensionalAdapter.from_dict(
+                metadata["adapter"])
 
         # Restore island config names
         self.island_config_names = metadata.get(
@@ -1362,7 +1399,8 @@ class AdaEvolveDatabase(ProgramDatabase):
         # This allows ablation: load checkpoint with paradigm, run without it
         if self.use_paradigm_breakthrough and "paradigm_tracker" in metadata:
             # Current config wants paradigm - restore state from checkpoint
-            self.paradigm_tracker = ParadigmTracker.from_dict(metadata["paradigm_tracker"])
+            self.paradigm_tracker = ParadigmTracker.from_dict(
+                metadata["paradigm_tracker"])
 
         # Restore island membership based on mode
         island_ids = metadata.get("islands", [])
@@ -1390,7 +1428,8 @@ class AdaEvolveDatabase(ProgramDatabase):
         else:
             # Legacy mode: restore to island lists
             self.islands = [[] for _ in range(self.num_islands)]
-            self.children_map = metadata.get("children_map", [{} for _ in range(self.num_islands)])
+            self.children_map = metadata.get(
+                "children_map", [{} for _ in range(self.num_islands)])
 
             for island_idx, program_ids in enumerate(island_ids):
                 if island_idx >= self.num_islands:
@@ -1431,7 +1470,8 @@ class AdaEvolveDatabase(ProgramDatabase):
                     self.islands[island_idx].append(program)
 
         self._invalidate_global_pareto_cache()
-        logger.info(f"Distributed {len(programs_list)} programs across {self.num_islands} islands")
+        logger.info(
+            f"Distributed {len(programs_list)} programs across {self.num_islands} islands")
 
     def _expand_to_island_count(self, target_count: int, metadata: Dict[str, Any]) -> None:
         """
@@ -1464,7 +1504,8 @@ class AdaEvolveDatabase(ProgramDatabase):
 
             # Get config name from saved state or default to "balanced"
             config_name = (
-                saved_config_names[new_idx] if new_idx < len(saved_config_names) else "balanced"
+                saved_config_names[new_idx] if new_idx < len(
+                    saved_config_names) else "balanced"
             )
             preset = get_island_config_preset(config_name)
 
@@ -1557,8 +1598,10 @@ class AdaEvolveDatabase(ProgramDatabase):
         metrics = getattr(program, "metrics", None) or {}
         vector: List[float] = []
         for objective in self.pareto_objectives:
-            normalized = self._metric_to_maximization_value(objective, metrics.get(objective))
-            vector.append(normalized if normalized is not None else float("-inf"))
+            normalized = self._metric_to_maximization_value(
+                objective, metrics.get(objective))
+            vector.append(
+                normalized if normalized is not None else float("-inf"))
         return vector
 
     @staticmethod
@@ -1707,7 +1750,8 @@ class AdaEvolveDatabase(ProgramDatabase):
         if fitness > self._global_best_score:
             self._global_best_score = fitness
             self.best_program_id = program.id
-            logger.debug(f"New global best: {program.id[:8]} with fitness {fitness:.6f}")
+            logger.debug(
+                f"New global best: {program.id[:8]} with fitness {fitness:.6f}")
             return True
         return False
 
@@ -1734,11 +1778,14 @@ class AdaEvolveDatabase(ProgramDatabase):
                 return children[-limit:]
 
             # Fallback: scan all programs (less efficient)
-            children = [p for p in archive.get_all() if getattr(p, "parent_id", None) == parent_id]
+            children = [p for p in archive.get_all() if getattr(
+                p, "parent_id", None) == parent_id]
         else:
             # Legacy mode: use children_map
-            child_ids = self.children_map[self.current_island].get(parent_id, [])
-            children = [self.programs[cid] for cid in child_ids if cid in self.programs]
+            child_ids = self.children_map[self.current_island].get(
+                parent_id, [])
+            children = [self.programs[cid]
+                        for cid in child_ids if cid in self.programs]
 
         # Sort by iteration_found to get most recent
         children.sort(key=lambda p: getattr(p, "iteration_found", 0))
@@ -1780,7 +1827,8 @@ class AdaEvolveDatabase(ProgramDatabase):
                         candidate = archive.get_best()
                     else:
                         all_progs = archive.get_all()
-                        candidate = max(all_progs, key=self._get_fitness) if all_progs else None
+                        candidate = max(
+                            all_progs, key=self._get_fitness) if all_progs else None
 
                     if candidate:
                         fitness = self._get_fitness(candidate)
@@ -1815,7 +1863,8 @@ class AdaEvolveDatabase(ProgramDatabase):
                     candidate = archive.get_best()
                 else:
                     all_progs = archive.get_all()
-                    candidate = max(all_progs, key=self._get_fitness) if all_progs else None
+                    candidate = max(
+                        all_progs, key=self._get_fitness) if all_progs else None
 
                 if candidate:
                     fitness = self._get_fitness(candidate)
@@ -1850,11 +1899,13 @@ class AdaEvolveDatabase(ProgramDatabase):
                 normalized = self._metric_to_maximization_value(metric, val)
                 return normalized if normalized is not None else float("-inf")
 
-            sorted_programs = sorted(all_programs, key=_metric_key, reverse=True)
+            sorted_programs = sorted(
+                all_programs, key=_metric_key, reverse=True)
             return sorted_programs[:n]
 
         if not self.is_multiobjective_enabled():
-            sorted_programs = sorted(all_programs, key=self._get_fitness, reverse=True)
+            sorted_programs = sorted(
+                all_programs, key=self._get_fitness, reverse=True)
             return sorted_programs[:n]
 
         pareto_front = self.get_global_pareto_front()
@@ -1880,7 +1931,8 @@ class AdaEvolveDatabase(ProgramDatabase):
                 population = self.islands[idx]
                 if not population:
                     return []
-                sorted_pop = sorted(population, key=self._get_fitness, reverse=True)
+                sorted_pop = sorted(
+                    population, key=self._get_fitness, reverse=True)
                 return sorted_pop[: max(1, len(sorted_pop) // 4)]
         return []
 
@@ -1973,7 +2025,8 @@ class AdaEvolveDatabase(ProgramDatabase):
         was_added = False
         if self.use_unified_archive and self.archives:
             if hasattr(self.archives[idx], "add_merged_program"):
-                was_added = self.archives[idx].add_merged_program(program, parent_ids)
+                was_added = self.archives[idx].add_merged_program(
+                    program, parent_ids)
             else:
                 was_added = self.archives[idx].add(program)
         else:
@@ -1992,7 +2045,8 @@ class AdaEvolveDatabase(ProgramDatabase):
             if self.config.db_path:
                 self._save_program(program)
 
-            logger.debug(f"Added merged program {program.id[:8]} to island {idx}")
+            logger.debug(
+                f"Added merged program {program.id[:8]} to island {idx}")
 
         return program.id
 
@@ -2063,7 +2117,8 @@ class AdaEvolveDatabase(ProgramDatabase):
             novelty_weight=preset["novelty_weight"],
             higher_is_better=higher_is_better,
             pareto_objectives=getattr(self.config, "pareto_objectives", []),
-            pareto_objectives_weight=getattr(self.config, "pareto_objectives_weight", 0.0),
+            pareto_objectives_weight=getattr(
+                self.config, "pareto_objectives_weight", 0.0),
             fitness_key=getattr(self.config, "fitness_key", None),
         )
 
@@ -2134,7 +2189,8 @@ class AdaEvolveDatabase(ProgramDatabase):
             return
 
         # Get top programs to seed
-        sorted_programs = sorted(all_programs, key=self._get_fitness, reverse=True)
+        sorted_programs = sorted(
+            all_programs, key=self._get_fitness, reverse=True)
         seed_count = min(5, len(sorted_programs))
 
         for program in sorted_programs[:seed_count]:
@@ -2184,7 +2240,8 @@ class AdaEvolveDatabase(ProgramDatabase):
     def set_paradigms(self, paradigms: List[Dict[str, Any]]) -> None:
         """Set new paradigms from generator."""
         if self.paradigm_tracker is not None:
-            self.paradigm_tracker.set_paradigms(paradigms, self._global_best_score)
+            self.paradigm_tracker.set_paradigms(
+                paradigms, self._global_best_score)
 
     def get_previously_tried_ideas(self) -> List[str]:
         """Get formatted list of previously tried paradigm ideas."""

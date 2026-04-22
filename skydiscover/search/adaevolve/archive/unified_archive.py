@@ -160,7 +160,8 @@ class UnifiedArchive:
             )
             return True
 
-        logger.debug(f"Rejected {program.id[:8]} " f"(score {new_score:.3f} <= {old_score:.3f})")
+        logger.debug(
+            f"Rejected {program.id[:8]} " f"(score {new_score:.3f} <= {old_score:.3f})")
         return False
 
     def _track_genealogy(self, program: Program) -> None:
@@ -247,14 +248,16 @@ class UnifiedArchive:
         self.diversity.update(programs)
 
         # Compute fitness ranks (higher fitness = higher rank)
-        fitness_sorted = sorted(programs, key=lambda p: self._get_fitness(p), reverse=True)
+        fitness_sorted = sorted(
+            programs, key=lambda p: self._get_fitness(p), reverse=True)
         self._fitness_ranks = {p.id: i for i, p in enumerate(fitness_sorted)}
 
         # Compute Pareto ranking on explicit objectives (no-op when unconfigured)
         self._compute_pareto_ranking(programs)
         if self._pareto_ranks:
             entries = [
-                (pid, self._pareto_ranks[pid], self._crowding_distances.get(pid, 0.0))
+                (pid, self._pareto_ranks[pid],
+                 self._crowding_distances.get(pid, 0.0))
                 for pid in self._pareto_ranks
             ]
             entries.sort(key=lambda x: (x[1], -x[2]))
@@ -267,7 +270,8 @@ class UnifiedArchive:
         self._dominated_flags = {}
 
         # Compute novelty scores (O(n²) but used for diversity-based sampling)
-        self._novelty_scores = {p.id: self._compute_novelty(p, programs) for p in programs}
+        self._novelty_scores = {p.id: self._compute_novelty(
+            p, programs) for p in programs}
 
         # Compute elite scores
         self._elite_scores = {}
@@ -334,7 +338,8 @@ class UnifiedArchive:
 
         # === Fitness percentile ===
         fitness = self._get_fitness(program)
-        better_count = sum(1 for p in programs if self._get_fitness(p) > fitness)
+        better_count = sum(
+            1 for p in programs if self._get_fitness(p) > fitness)
 
         if n == 1:
             fitness_percentile = 1.0 if better_count == 0 else 0.0
@@ -346,9 +351,11 @@ class UnifiedArchive:
         novelty = self._compute_novelty(program, programs)
 
         if self._cache_valid and self._novelty_scores:
-            existing_novelties = [self._novelty_scores.get(p.id, 0.0) for p in programs]
+            existing_novelties = [self._novelty_scores.get(
+                p.id, 0.0) for p in programs]
         else:
-            existing_novelties = [self._compute_novelty(p, programs) for p in programs]
+            existing_novelties = [self._compute_novelty(
+                p, programs) for p in programs]
 
         lower_count = sum(1 for n_val in existing_novelties if n_val < novelty)
         novelty_percentile = lower_count / n
@@ -401,7 +408,8 @@ class UnifiedArchive:
             return 1.0  # Max novelty if alone
 
         # Compute distances to all other programs
-        distances = [self.diversity.distance(program, other) for other in others]
+        distances = [self.diversity.distance(
+            program, other) for other in others]
 
         # Sort and take k nearest
         distances.sort()
@@ -483,17 +491,20 @@ class UnifiedArchive:
                 continue
 
             for m in range(num_objectives):
-                sorted_layer = sorted(layer, key=lambda pid: obj_vectors[pid][m])
+                sorted_layer = sorted(
+                    layer, key=lambda pid: obj_vectors[pid][m])
                 crowding[sorted_layer[0]] = float("inf")
                 crowding[sorted_layer[-1]] = float("inf")
 
-                obj_range = obj_vectors[sorted_layer[-1]][m] - obj_vectors[sorted_layer[0]][m]
+                obj_range = obj_vectors[sorted_layer[-1]
+                                        ][m] - obj_vectors[sorted_layer[0]][m]
                 if obj_range < 1e-10:
                     continue
 
                 for i in range(1, len(sorted_layer) - 1):
                     crowding[sorted_layer[i]] += (
-                        obj_vectors[sorted_layer[i + 1]][m] - obj_vectors[sorted_layer[i - 1]][m]
+                        obj_vectors[sorted_layer[i + 1]][m] -
+                        obj_vectors[sorted_layer[i - 1]][m]
                     ) / obj_range
 
         self._crowding_distances = crowding
@@ -548,7 +559,8 @@ class UnifiedArchive:
             )
 
         # Prefer combined_score as the canonical scalar fallback.
-        normalized = self._normalize_metric_value("combined_score", metrics.get("combined_score"))
+        normalized = self._normalize_metric_value(
+            "combined_score", metrics.get("combined_score"))
         if normalized is not None:
             return normalized
 
@@ -602,7 +614,8 @@ class UnifiedArchive:
 
         # Protect top programs by elite score
         if self._elite_scores:
-            elite_count = max(1, int(len(self._programs) * self.config.elite_ratio))
+            elite_count = max(
+                1, int(len(self._programs) * self.config.elite_ratio))
             sorted_ids = sorted(
                 self._elite_scores.keys(), key=lambda pid: self._elite_scores[pid], reverse=True
             )
@@ -655,7 +668,8 @@ class UnifiedArchive:
 
         elif mode == "exploration":
             # Sample proportional to novelty
-            novelties = [max(self._novelty_scores.get(p.id, 0.0), 0.001) for p in programs]
+            novelties = [max(self._novelty_scores.get(p.id, 0.0), 0.001)
+                         for p in programs]
             total = sum(novelties)
             if total <= 0:
                 return random.choice(programs)
@@ -748,7 +762,7 @@ class UnifiedArchive:
 
         # Try to find a pair with common ancestor
         for i, pa in enumerate(top_progs[:-1]):
-            for pb in top_progs[i + 1 :]:
+            for pb in top_progs[i + 1:]:
                 ancestor_id = self._find_common_ancestor(pa.id, pb.id)
                 if ancestor_id and ancestor_id in self._programs:
                     return (pa, pb, self._programs[ancestor_id])
@@ -948,6 +962,7 @@ class UnifiedArchive:
         # Restore children (only relationships where both exist in archive)
         children_data = state.get("children", {})
         for parent_id, child_list in children_data.items():
-            valid_children = [cid for cid in child_list if cid in self._programs]
+            valid_children = [
+                cid for cid in child_list if cid in self._programs]
             if valid_children:
                 self._children[parent_id] = valid_children

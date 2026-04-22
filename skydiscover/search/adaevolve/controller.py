@@ -13,8 +13,6 @@ Features:
 - Comprehensive JSON logging of all AdaEvolve signals
 """
 
-from __future__ import annotations
-
 import json
 import logging
 import os
@@ -28,7 +26,6 @@ from skydiscover.context_builder.adaevolve import AdaEvolveContextBuilder
 from skydiscover.context_builder.default import DefaultContextBuilder
 from skydiscover.evaluation.llm_judge import LLMJudge
 from skydiscover.llm.llm_pool import LLMPool
-from skydiscover.budget import CallRole, call_record_from_response
 from skydiscover.search.adaevolve.paradigm import ParadigmGenerator
 from skydiscover.search.base_database import Program
 from skydiscover.search.default_discovery_controller import (
@@ -264,8 +261,8 @@ class AdaEvolveController(DiscoveryController):
 
         # Log final summary and stats file location
         if self._iteration_stats_log_path:
-            logger.info(f"AdaEvolve iteration stats saved to: {self._iteration_stats_log_path}")
-        self._write_budget_summary()
+            logger.info(
+                f"AdaEvolve iteration stats saved to: {self._iteration_stats_log_path}")
 
         return self.database.get_best_program()
 
@@ -304,16 +301,13 @@ class AdaEvolveController(DiscoveryController):
     async def _run_iteration(self, iteration: int, checkpoint_callback) -> None:
         """Execute one evolution iteration."""
         iteration_start_time = time.time()
-        budget_record = self.budget_ledger.start_iteration(iteration)
-        budget_record.meta["frontier_id"] = getattr(self.database, "current_island", None)
-        budget_record.meta["global_best_before"] = self._best_score_or_zero()
 
         # Check for global paradigm stagnation
         # Use database flag directly to stay in sync after checkpoint load
         if self.database.use_paradigm_breakthrough and self.database.is_paradigm_stagnating():
-            await self._generate_paradigms_if_needed(budget_record=budget_record)
+            await self._generate_paradigms_if_needed()
 
-        result = await self._run_normal_step(iteration, budget_record=budget_record)
+        result = await self._run_normal_step(iteration)
 
         iteration_time = time.time() - iteration_start_time
 
@@ -343,9 +337,8 @@ class AdaEvolveController(DiscoveryController):
                 eval_time=result.eval_time,
                 error=None,
             )
-        self._finalize_budget_iteration(budget_record, result)
 
-    async def _generate_paradigms_if_needed(self, budget_record=None) -> None:
+    async def _generate_paradigms_if_needed(self) -> None:
         """Generate new paradigms if stagnating and none active."""
         if self.paradigm_generator is None:
             return
@@ -353,7 +346,8 @@ class AdaEvolveController(DiscoveryController):
         if self.database.has_active_paradigm():
             return  # Already have paradigms to use
 
-        logger.info("Global paradigm stagnation detected, generating breakthrough ideas...")
+        logger.info(
+            "Global paradigm stagnation detected, generating breakthrough ideas...")
 
         # Get current best program for context
         best_program = self.database.get_best_program()
@@ -376,11 +370,6 @@ class AdaEvolveController(DiscoveryController):
             current_best_score=best_score,
             previously_tried_ideas=previously_tried,
             evaluator_feedback=evaluator_feedback,
-            llm_response_callback=lambda response: self.budget_ledger.add_call(
-                budget_record, call_record_from_response(response, CallRole.GUIDE)
-            )
-            if budget_record is not None
-            else None,
         )
 
         if paradigms:
@@ -389,23 +378,18 @@ class AdaEvolveController(DiscoveryController):
         else:
             logger.warning("Failed to generate paradigms")
 
-    async def _run_normal_step(self, iteration: int, budget_record=None) -> SerializableResult:
+    async def _run_normal_step(self, iteration: int) -> SerializableResult:
         """Run a normal iteration with optional retry."""
         last_error = None
         attempts = 1 + (self.max_retries if self.enable_retry else 0)
 
         for attempt in range(attempts):
-            role = CallRole.GENERATION if attempt == 0 else CallRole.RETRY
-            result = await self._generate_child(
-                iteration,
-                error_context=last_error,
-                call_role=role,
-                budget_record=budget_record,
-            )
+            result = await self._generate_child(iteration, error_context=last_error)
             if not result.error:
                 return result
             last_error = result.error
-            logger.debug(f"Attempt {attempt + 1}/{attempts} failed: {last_error}")
+            logger.debug(
+                f"Attempt {attempt + 1}/{attempts} failed: {last_error}")
 
         return SerializableResult(
             error=f"All {attempts} attempts failed: {last_error}",
@@ -422,7 +406,8 @@ class AdaEvolveController(DiscoveryController):
         child = Program(**result.child_program_dict)
 
         # Add to database (database handles which island)
-        self.database.add(child, iteration=iteration, parent_id=result.parent_id)
+        self.database.add(child, iteration=iteration,
+                          parent_id=result.parent_id)
 
         # Fire monitor callback (live dashboard)
         if self.monitor_callback:
@@ -463,17 +448,21 @@ class AdaEvolveController(DiscoveryController):
 
         # Check for new best
         if self.database.is_multiobjective_enabled():
-            pareto_front_ids = {program.id for program in self.database.get_pareto_front()}
+            pareto_front_ids = {
+                program.id for program in self.database.get_pareto_front()}
             if child.id in pareto_front_ids:
-                logger.info(f"Program entered the global Pareto front at iteration {iteration}")
+                logger.info(
+                    f"Program entered the global Pareto front at iteration {iteration}")
             if self.database.best_program_id == child.id:
-                logger.info(f"New representative Pareto solution found at iteration {iteration}")
+                logger.info(
+                    f"New representative Pareto solution found at iteration {iteration}")
         elif self.database.best_program_id == child.id:
             logger.info(f"New best solution found at iteration {iteration}")
 
         # Checkpoint callback
         if iteration > 0 and iteration % self.config.checkpoint_interval == 0:
-            logger.info(f"Checkpoint interval reached at iteration {iteration}")
+            logger.info(
+                f"Checkpoint interval reached at iteration {iteration}")
             self.database.log_status()
             if checkpoint_callback:
                 checkpoint_callback(iteration)
@@ -487,15 +476,11 @@ class AdaEvolveController(DiscoveryController):
         iteration: int,
         error_context: Optional[str] = None,
         force_exploration: bool = False,
-        call_role: CallRole = CallRole.GENERATION,
-        budget_record=None,
     ) -> SerializableResult:
         """Generate and evaluate a single child program."""
         try:
             if not self.database.programs:
-                return await self._run_from_scratch_iteration(
-                    iteration, budget_record=budget_record
-                )
+                return await self._run_from_scratch_iteration(iteration)
 
             # Ensure all islands are seeded (needed after from-scratch bootstrap)
             self._ensure_all_islands_seeded()
@@ -516,7 +501,8 @@ class AdaEvolveController(DiscoveryController):
             parent = list(parent_dict.values())[0]
 
             # Read sampling mode stashed by database.sample()
-            sampling_mode = getattr(self.database, "_last_sampling_mode", None) or "balanced"
+            sampling_mode = getattr(
+                self.database, "_last_sampling_mode", None) or "balanced"
 
             # Capture sampling mode and intensity for logging
             self._last_sampling_mode = sampling_mode
@@ -588,15 +574,14 @@ class AdaEvolveController(DiscoveryController):
                 feedback = self.feedback_reader.read()
                 if feedback:
                     prompt = self.feedback_reader.apply_feedback(prompt)
-                    self.feedback_reader.log_usage(iteration, feedback, self.feedback_reader.mode)
+                    self.feedback_reader.log_usage(
+                        iteration, feedback, self.feedback_reader.mode)
 
             # Generate and evaluate
             return await self._execute_generation(
                 parent,
                 prompt,
                 iteration,
-                call_role=call_role,
-                budget_record=budget_record,
                 parent_info=parent_info,
                 context_info=context_info,
                 context_program_ids=context_program_ids,
@@ -616,8 +601,6 @@ class AdaEvolveController(DiscoveryController):
         parent: Program,
         prompt: Dict[str, str],
         iteration: int,
-        call_role: CallRole = CallRole.GENERATION,
-        budget_record=None,
         parent_info: Optional[tuple] = None,
         context_info: Optional[List[tuple]] = None,
         context_program_ids: Optional[List[str]] = None,
@@ -645,8 +628,6 @@ class AdaEvolveController(DiscoveryController):
                     image_output=True,
                     output_dir=self._get_image_output_dir(),
                     program_id=child_id,
-                    _budget_record=budget_record,
-                    _call_role=call_role,
                 )
                 response = result.text or ""
                 image_path = result.image_path
@@ -655,12 +636,7 @@ class AdaEvolveController(DiscoveryController):
                         error="VLM did not generate an image", iteration=iteration
                     )
             else:
-                result = await self._call_llm(
-                    prompt["system"],
-                    prompt["user"],
-                    _budget_record=budget_record,
-                    _call_role=call_role,
-                )
+                result = await self._call_llm(prompt["system"], prompt["user"])
                 response = result.text
             llm_generation_time = time.time() - llm_start
         except Exception as e:
@@ -680,7 +656,8 @@ class AdaEvolveController(DiscoveryController):
                 changes = format_diff_summary(diffs)
             else:
                 # No diffs found, try full rewrite
-                child_solution = parse_full_rewrite(response, self.config.language)
+                child_solution = parse_full_rewrite(
+                    response, self.config.language)
                 changes = "Full rewrite"
         else:
             child_solution = parse_full_rewrite(response, self.config.language)
@@ -700,23 +677,6 @@ class AdaEvolveController(DiscoveryController):
 
         metrics = eval_result.metrics
         artifacts = eval_result.artifacts
-
-        # Keep failure handling consistent across AdaEvolve/EvoX/BudgetEvolve:
-        # when evaluator reports runtime/syntax failure via artifacts["error"],
-        # treat it as an iteration error (so retry path is used) instead of
-        # adding a zero-score program to the database.
-        eval_error = None
-        if isinstance(artifacts, dict):
-            raw_err = artifacts.get("error")
-            if isinstance(raw_err, str) and raw_err.strip():
-                eval_error = raw_err.strip()
-        if eval_error:
-            return SerializableResult(
-                error=f"Program execution failed: {eval_error}",
-                iteration=iteration,
-                prompt=prompt,
-                llm_response=response,
-            )
 
         # Extract image_path from evaluator metrics (non-image mode fallback)
         if not image_path:

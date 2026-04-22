@@ -254,11 +254,13 @@ class MultiDimensionalAdapter:
     """
 
     states: List[AdaptiveState] = field(default_factory=list)
-    dimension_visits: List[int] = field(default_factory=list)  # Raw counts for exploration
+    dimension_visits: List[int] = field(
+        default_factory=list)  # Raw counts for exploration
     dimension_rewards: List[float] = field(
         default_factory=list
     )  # Decayed rewards (GLOBAL normalized)
-    decayed_visits: List[float] = field(default_factory=list)  # Decayed visits for reward_avg
+    decayed_visits: List[float] = field(
+        default_factory=list)  # Decayed visits for reward_avg
 
     # Global tracking for UCB normalization
     global_best_score: float = float("-inf")  # Best across ALL dimensions
@@ -343,13 +345,15 @@ class MultiDimensionalAdapter:
 
         # Update adaptive state with LOCAL normalization (for search intensity)
         # This returns locally-normalized delta
-        local_normalized_delta = self.states[dim_idx].record_evaluation(fitness)
+        local_normalized_delta = self.states[dim_idx].record_evaluation(
+            fitness)
 
         # Update raw visit count (for exploration bonus)
         self.dimension_visits[dim_idx] += 1
 
         # Update DECAYED visits: V_t = ρ * V_{t-1} + 1
-        self.decayed_visits[dim_idx] = self.decay * self.decayed_visits[dim_idx] + 1.0
+        self.decayed_visits[dim_idx] = self.decay * \
+            self.decayed_visits[dim_idx] + 1.0
 
         # Calculate GLOBAL-normalized delta for UCB rewards
         # This ensures fair comparison: a 10-point improvement is valued
@@ -366,7 +370,8 @@ class MultiDimensionalAdapter:
 
         # Update UCB rewards with GLOBAL-normalized delta and DECAY
         self.dimension_rewards[dim_idx] = (
-            self.decay * self.dimension_rewards[dim_idx] + global_normalized_delta
+            self.decay *
+            self.dimension_rewards[dim_idx] + global_normalized_delta
         )
 
         return local_normalized_delta
@@ -424,7 +429,8 @@ class MultiDimensionalAdapter:
         # Ensure minimum visits for all dimensions
         # Randomize order to avoid always returning dimension 0 when multiple
         # dimensions are underexplored (fixes biased exploration issue)
-        underexplored = [i for i in range(n_dims) if self.dimension_visits[i] < self.min_visits]
+        underexplored = [i for i in range(
+            n_dims) if self.dimension_visits[i] < self.min_visits]
         if underexplored:
             import random
 
@@ -441,14 +447,16 @@ class MultiDimensionalAdapter:
             # Recent reward average using DECAYED visits
             # This prevents reward_avg → 0 as raw visits grow
             # reward_avg = decayed_rewards / decayed_visits = recent reward per recent visit
-            reward_avg = self.dimension_rewards[i] / dec_visits if dec_visits > 0 else 0.0
+            reward_avg = self.dimension_rewards[i] / \
+                dec_visits if dec_visits > 0 else 0.0
 
             # Exploration bonus uses RAW visits
             # We still want classic UCB exploration: visit underexplored islands
             # GUARD: Prevent division by zero if raw_visits is somehow 0
             # (shouldn't happen after min_visits check, but defensive programming)
             if raw_visits <= 0:
-                exploration_bonus = float("inf")  # Force exploration of unvisited dimension
+                # Force exploration of unvisited dimension
+                exploration_bonus = float("inf")
             else:
                 exploration_bonus = self.ucb_exploration * math.sqrt(
                     math.log(total_iterations + 1) / raw_visits
@@ -500,7 +508,8 @@ class MultiDimensionalAdapter:
         """
         dim_stats = []
         for i, state in enumerate(self.states):
-            dec_visits = self.decayed_visits[i] if i < len(self.decayed_visits) else 0.0
+            dec_visits = self.decayed_visits[i] if i < len(
+                self.decayed_visits) else 0.0
             dim_stats.append(
                 {
                     "index": i,
@@ -546,16 +555,19 @@ class MultiDimensionalAdapter:
             decay=data.get("decay", 0.9),
             epsilon=data.get("epsilon", 1e-8),
         )
-        adapter.states = [AdaptiveState.from_dict(s) for s in data.get("states", [])]
+        adapter.states = [AdaptiveState.from_dict(
+            s) for s in data.get("states", [])]
         adapter.dimension_visits = list(data.get("dimension_visits", []))
         adapter.dimension_rewards = list(data.get("dimension_rewards", []))
         adapter.decayed_visits = list(data.get("decayed_visits", []))
-        adapter.global_best_score = data.get("global_best_score", float("-inf"))
+        adapter.global_best_score = data.get(
+            "global_best_score", float("-inf"))
 
         # Backward compatibility: if decayed_visits not in checkpoint,
         # initialize from raw visits (loses decay history but functional)
         if not adapter.decayed_visits and adapter.dimension_visits:
-            adapter.decayed_visits = [float(v) for v in adapter.dimension_visits]
+            adapter.decayed_visits = [float(v)
+                                      for v in adapter.dimension_visits]
 
         # Backward compatibility: if global_best_score not in checkpoint,
         # compute from per-dimension best scores

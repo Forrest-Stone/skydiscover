@@ -93,10 +93,12 @@ class ParadigmGenerator:
 
         parts = []
         for objective in self.objective_names:
-            direction = "maximize" if self.higher_is_better.get(objective, True) else "minimize"
+            direction = "maximize" if self.higher_is_better.get(
+                objective, True) else "minimize"
             parts.append(f"{objective} ({direction})")
 
-        text = "Optimize the Pareto trade-offs across: " + ", ".join(parts) + "."
+        text = "Optimize the Pareto trade-offs across: " + \
+            ", ".join(parts) + "."
         if self.fitness_key:
             text += (
                 f" Use `{self.fitness_key}` only as a scalar proxy when one score is needed for"
@@ -110,8 +112,6 @@ class ParadigmGenerator:
         current_best_score: float,
         previously_tried_ideas: Optional[List[str]] = None,
         evaluator_feedback: Optional[str] = None,
-        mode: str = "full",
-        llm_response_callback=None,
     ) -> List[Dict[str, Any]]:
         """
         Generate breakthrough paradigms with retry logic.
@@ -138,16 +138,15 @@ class ParadigmGenerator:
 
         for attempt in range(MAX_RETRIES):
             try:
-                result = await self.llm_pool.generate_with_usage(
+                result = await self.llm_pool.generate(
                     system_message=self._get_system_message(),
                     messages=[{"role": "user", "content": prompt}],
                 )
-                if llm_response_callback is not None:
-                    llm_response_callback(result)
                 response = result.text
 
                 if not response:
-                    logger.warning(f"Empty response from LLM (attempt {attempt + 1}/{MAX_RETRIES})")
+                    logger.warning(
+                        f"Empty response from LLM (attempt {attempt + 1}/{MAX_RETRIES})")
                     last_error = "Empty response"
                     # Don't retry for empty response - likely a parsing issue
                     break
@@ -180,7 +179,8 @@ class ParadigmGenerator:
                     await asyncio.sleep(backoff)
                     backoff *= BACKOFF_MULTIPLIER
 
-        logger.error(f"Paradigm generation failed after {MAX_RETRIES} attempts: {last_error}")
+        logger.error(
+            f"Paradigm generation failed after {MAX_RETRIES} attempts: {last_error}")
         return []
 
     def _get_system_message(self) -> str:
@@ -243,7 +243,8 @@ class ParadigmGenerator:
         if evaluator_feedback:
             max_len = 2000
             if len(evaluator_feedback) > max_len:
-                evaluator_feedback = evaluator_feedback[:max_len] + "\n... (truncated)"
+                evaluator_feedback = evaluator_feedback[:max_len] + \
+                    "\n... (truncated)"
             sections.insert(
                 -1,  # before the output format section
                 f"## Evaluator Feedback on Current Best Program\n"

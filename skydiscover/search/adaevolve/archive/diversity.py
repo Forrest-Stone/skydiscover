@@ -155,17 +155,20 @@ class CodeDiversity(DiversityStrategy):
             features.add(f"import:{imp.split('.')[0]}")
 
         # Function definitions
-        functions = re.findall(r"def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(", solution)
+        functions = re.findall(
+            r"def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(", solution)
         for func in functions:
             features.add(f"func:{func}")
 
         # Class definitions
-        classes = re.findall(r"class\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:\(]", solution)
+        classes = re.findall(
+            r"class\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[:\(]", solution)
         for cls in classes:
             features.add(f"class:{cls}")
 
         # Key function calls (common libraries)
-        calls = re.findall(r"([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)+)\s*\(", solution)
+        calls = re.findall(
+            r"([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)+)\s*\(", solution)
         for call in calls:
             features.add(f"call:{call}")
 
