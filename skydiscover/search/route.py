@@ -10,8 +10,6 @@ import logging
 
 from skydiscover.search.adaevolve.controller import AdaEvolveController
 from skydiscover.search.adaevolve.database import AdaEvolveDatabase
-from skydiscover.search.budgetevolve.controller import BudgetEvolveController
-from skydiscover.search.budgetevolve.database import BudgetEvolveDatabase
 from skydiscover.search.beam_search.database import BeamSearchDatabase
 from skydiscover.search.costada.controller import CostAdaController
 from skydiscover.search.costada.database import CostAdaDatabase
@@ -50,8 +48,10 @@ def get_discovery_controller(controller_input: DiscoveryControllerInput) -> Disc
     if none is registered.
     """
     search_type = controller_input.config.search.type
-    controller_class = _CONTROLLER_REGISTRY.get(search_type, DiscoveryController)
-    logger.debug(f"Using controller {controller_class.__name__} for search type '{search_type}'")
+    controller_class = _CONTROLLER_REGISTRY.get(
+        search_type, DiscoveryController)
+    logger.debug(
+        f"Using controller {controller_class.__name__} for search type '{search_type}'")
     return controller_class(controller_input)
 
 
@@ -64,8 +64,6 @@ register_database("topk", TopKDatabase)
 # AdaEvolve
 register_database("adaevolve", AdaEvolveDatabase)
 register_controller("adaevolve", AdaEvolveController)
-register_database("budgetevolve", BudgetEvolveDatabase)
-register_controller("budgetevolve", BudgetEvolveController)
 register_database("costada", CostAdaDatabase)
 register_controller("costada", CostAdaController)
 
