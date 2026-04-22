@@ -24,7 +24,6 @@ _SEARCH_CHOICES = [
     "evox",
     "adaevolve",
     "costada",
-    "budgetevolve",
     "best_of_n",
     "beam_search",
     "topk",
@@ -56,8 +55,10 @@ def parse_args() -> argparse.Namespace:
             "or a benchmark directory containing Dockerfile + evaluate.sh"
         ),
     )
-    parser.add_argument("--config", "-c", help="Path to configuration file (YAML)", default=None)
-    parser.add_argument("--output", "-o", help="Output directory for results", default=None)
+    parser.add_argument(
+        "--config", "-c", help="Path to configuration file (YAML)", default=None)
+    parser.add_argument(
+        "--output", "-o", help="Output directory for results", default=None)
     parser.add_argument(
         "--iterations", "-i", type=int, default=None, help="Maximum number of iterations"
     )
@@ -73,7 +74,8 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Path to a checkpoint directory to resume from",
     )
-    parser.add_argument("--api-base", default=None, help="Base URL for the LLM API")
+    parser.add_argument("--api-base", default=None,
+                        help="Base URL for the LLM API")
     parser.add_argument(
         "--agentic",
         action="store_true",
@@ -108,10 +110,12 @@ async def main_async() -> int:
     _configure_logging(args.log_level)
 
     if args.initial_program and not os.path.exists(args.initial_program):
-        print(f"Error: Initial program file '{args.initial_program}' not found", file=sys.stderr)
+        print(
+            f"Error: Initial program file '{args.initial_program}' not found", file=sys.stderr)
         return 1
     if not os.path.exists(args.evaluation_file):
-        print(f"Error: Evaluation file '{args.evaluation_file}' not found", file=sys.stderr)
+        print(
+            f"Error: Evaluation file '{args.evaluation_file}' not found", file=sys.stderr)
         return 1
 
     has_overrides = any((args.api_base, args.model, args.agentic, args.search))
@@ -147,7 +151,8 @@ async def main_async() -> int:
                     f"[Benchmark Loader] Benchmark: {config.benchmark.name}, Initial program: {args.initial_program}, Evaluator: {args.evaluation_file}"
                 )
             except Exception as exc:
-                print(f"Error: Failed to load benchmark problem: {exc}", file=sys.stderr)
+                print(
+                    f"Error: Failed to load benchmark problem: {exc}", file=sys.stderr)
                 traceback.print_exc()
                 return 1
 
@@ -155,7 +160,8 @@ async def main_async() -> int:
             print("Active models:")
             for i, m in enumerate(config.llm.models):
                 provider, *_ = _parse_model_spec(m.name)
-                print(f"  {i + 1}. {m.name} (provider: {provider}, weight: {m.weight})")
+                print(
+                    f"  {i + 1}. {m.name} (provider: {provider}, weight: {m.weight})")
         if args.api_base:
             print(f"Using API base: {config.llm.api_base}")
         if args.agentic:
@@ -163,13 +169,15 @@ async def main_async() -> int:
                 config.agentic.codebase_root = os.path.dirname(
                     os.path.abspath(args.initial_program)
                 )
-            print(f"Agentic mode enabled (codebase: {config.agentic.codebase_root})")
+            print(
+                f"Agentic mode enabled (codebase: {config.agentic.codebase_root})")
         if args.search:
             print(f"Using search algorithm: {args.search}")
 
     # Run the discovery
     try:
-        search_type = config.search.type if config and hasattr(config, "search") else None
+        search_type = config.search.type if config and hasattr(
+            config, "search") else None
 
         if search_type:
             from skydiscover.extras.external import (
@@ -218,13 +226,15 @@ async def main_async() -> int:
                 except ModuleNotFoundError as exc:
                     pkg = get_package_name(search_type)
                     print(f"Error: {exc}", file=sys.stderr)
-                    print(f"\nThe '{search_type}' backend requires its package.", file=sys.stderr)
+                    print(
+                        f"\nThe '{search_type}' backend requires its package.", file=sys.stderr)
                     print(f"Install with:  pip install {pkg}", file=sys.stderr)
                     return 1
                 finally:
                     stop_monitor(monitor_server)
 
-                print(f"\nDiscovery complete! Best score: {result.best_score:.4f}")
+                print(
+                    f"\nDiscovery complete! Best score: {result.best_score:.4f}")
                 return 0
 
             if search_type in KNOWN_EXTERNAL:
@@ -249,7 +259,8 @@ async def main_async() -> int:
         # Load the checkpoint if provided
         if args.checkpoint:
             if not os.path.exists(args.checkpoint):
-                print(f"Error: Checkpoint directory '{args.checkpoint}' not found", file=sys.stderr)
+                print(
+                    f"Error: Checkpoint directory '{args.checkpoint}' not found", file=sys.stderr)
                 return 1
             print(f"Will resume from checkpoint: {args.checkpoint}")
 
@@ -268,7 +279,8 @@ async def main_async() -> int:
         else:
             print("Best program metrics:")
             for name, value in best_program.metrics.items():
-                formatted = f"{value:.4f}" if isinstance(value, (int, float)) else str(value)
+                formatted = f"{value:.4f}" if isinstance(
+                    value, (int, float)) else str(value)
                 print(f"  {name}: {formatted}")
 
         if latest_checkpoint:

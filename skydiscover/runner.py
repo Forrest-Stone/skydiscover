@@ -46,7 +46,8 @@ class Runner:
         output_dir: Optional[str] = None,
         evaluator_env_vars: Optional[dict[str, str]] = None,
     ):
-        self.config = config if config is not None else load_config(config_path)
+        self.config = config if config is not None else load_config(
+            config_path)
         self.name = self.config.search.type
         self.output_dir = output_dir or build_output_dir(
             self.name, initial_program_path or "scratch"
@@ -60,19 +61,22 @@ class Runner:
             self._load_initial_program() if initial_program_path else None
         )
         if self.initial_program_solution and not self.config.language:
-            self.config.language = extract_solution_language(self.initial_program_solution)
+            self.config.language = extract_solution_language(
+                self.initial_program_solution)
         if not self.config.language:
             self.config.language = "python"
 
         # Set the file extension
-        ext = os.path.splitext(initial_program_path)[1] if initial_program_path else ".py"
+        ext = os.path.splitext(initial_program_path)[
+            1] if initial_program_path else ".py"
         ext = ext or ".py"
         self.file_extension = ext if ext.startswith(".") else f".{ext}"
         if self.config.file_suffix == ".py":
             self.config.file_suffix = self.file_extension
 
         # Create the database
-        self.database = create_database(self.config.search.type, self.config.search.database)
+        self.database = create_database(
+            self.config.search.type, self.config.search.database)
         self.database.language = self.config.language or "python"
         self.evaluation_file = evaluation_file
         self.evaluator_env_vars = dict(evaluator_env_vars or {})
@@ -80,7 +84,8 @@ class Runner:
         # Initialize the discovery controller
         self.discovery_controller: Optional[DiscoveryController] = None
 
-        logger.info(f"Runner ready: search={self.name}, program={self.initial_program_path}")
+        logger.info(
+            f"Runner ready: search={self.name}, program={self.initial_program_path}")
 
     @property
     def initial_score(self) -> Optional[float]:
@@ -213,17 +218,20 @@ class Runner:
             if monitor_server:
                 try:
                     reason = "early_stopping" if early_stopped else "completed"
-                    monitor_server.push_event({"type": "discovery_complete", "reason": reason})
+                    monitor_server.push_event(
+                        {"type": "discovery_complete", "reason": reason})
                     time.sleep(0.5)
                     monitor_server.stop()
                 except Exception:
-                    logger.debug("Failed to stop monitor server", exc_info=True)
+                    logger.debug(
+                        "Failed to stop monitor server", exc_info=True)
 
         # Get the best program
         best_program = self._get_best_program()
         if best_program:
             status = "early stopping" if early_stopped else "completed"
-            logger.info(f"Discovery {status}. Best: {format_metrics(best_program.metrics)}")
+            logger.info(
+                f"Discovery {status}. Best: {format_metrics(best_program.metrics)}")
             self._save_best_program(best_program)
             return best_program
 
@@ -245,7 +253,8 @@ class Runner:
             try:
                 result = await self.discovery_controller.llms.generate(
                     system_message="Generate an image based on the following description. Also provide brief reasoning about your creative choices.",
-                    messages=[{"role": "user", "content": self.initial_program_solution}],
+                    messages=[
+                        {"role": "user", "content": self.initial_program_solution}],
                     image_output=True,
                     output_dir=img_dir,
                     program_id=program_id,
@@ -280,7 +289,8 @@ class Runner:
         self.database.add(program)
         try:
             self.database.initial_program_id = program.id
-            self.database.initial_program_score = get_score(program.metrics or {})
+            self.database.initial_program_score = get_score(
+                program.metrics or {})
         except Exception as e:
             logger.warning(f"Failed to set initial program score: {e}")
 
@@ -299,10 +309,12 @@ class Runner:
                 port=self.config.monitor.port,
                 max_solution_length=self.config.monitor.max_solution_length,
             )
-            server.set_config_summary(f"{self.name} | max_iter={max_iterations}")
+            server.set_config_summary(
+                f"{self.name} | max_iter={max_iterations}")
             server.start()
 
-            callback = create_monitor_callback(server, self.database, time.time())
+            callback = create_monitor_callback(
+                server, self.database, time.time())
             self.discovery_controller.monitor_callback = callback
 
             url = f"http://localhost:{server.port}/"
@@ -354,8 +366,10 @@ class Runner:
                     prog, getattr(prog, "iteration_found", 0)
                 )
             except Exception:
-                logger.debug("Monitor callback failed for program %s", prog.id, exc_info=True)
-        logger.info(f"Pushed {len(self.database.programs)} existing program(s) to monitor")
+                logger.debug("Monitor callback failed for program %s",
+                             prog.id, exc_info=True)
+        logger.info(
+            f"Pushed {len(self.database.programs)} existing program(s) to monitor")
 
     def _install_signal_handlers(self) -> None:
         def on_signal(signum, frame):
@@ -386,7 +400,8 @@ class Runner:
 
     def _setup_logging(self) -> None:
         log_dir = self.config.log_dir or os.path.join(self.output_dir, "logs")
-        setup_search_logging(log_level=self.config.log_level, log_dir=log_dir, name=self.name)
+        setup_search_logging(log_level=self.config.log_level,
+                             log_dir=log_dir, name=self.name)
 
     def _load_initial_program(self) -> str:
         with open(self.initial_program_path, "r") as f:
@@ -394,7 +409,8 @@ class Runner:
 
     def _save_checkpoint(self, iteration: int) -> None:
         checkpoint_dir = os.path.join(self.output_dir, "checkpoints")
-        checkpoint_path = os.path.join(checkpoint_dir, f"checkpoint_{iteration}")
+        checkpoint_path = os.path.join(
+            checkpoint_dir, f"checkpoint_{iteration}")
         os.makedirs(checkpoint_path, exist_ok=True)
 
         self.database.save(checkpoint_path, iteration)
@@ -402,7 +418,8 @@ class Runner:
         best = self._get_best_program()
         if best:
             with open(
-                os.path.join(checkpoint_path, f"best_program{self.file_extension}"), "w"
+                os.path.join(checkpoint_path,
+                             f"best_program{self.file_extension}"), "w"
             ) as f:
                 f.write(best.solution)
             with open(os.path.join(checkpoint_path, "best_program_info.json"), "w") as f:
@@ -423,7 +440,8 @@ class Runner:
                     indent=2,
                     cls=SafeJSONEncoder,
                 )
-            logger.info(f"Checkpoint {iteration}: best={format_metrics(best.metrics)}")
+            logger.info(
+                f"Checkpoint {iteration}: best={format_metrics(best.metrics)}")
 
         logger.info(f"Checkpoint saved to {checkpoint_path}")
 
@@ -431,7 +449,8 @@ class Runner:
         if not os.path.exists(checkpoint_path):
             raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
         self.database.load(checkpoint_path)
-        logger.info(f"Loaded checkpoint (iteration {self.database.last_iteration})")
+        logger.info(
+            f"Loaded checkpoint (iteration {self.database.last_iteration})")
 
     def _get_best_program(self) -> Optional[Program]:
         if self.database.best_program_id:
@@ -444,7 +463,8 @@ class Runner:
         best_dir = os.path.join(self.output_dir, "best")
         os.makedirs(best_dir, exist_ok=True)
 
-        code_path = os.path.join(best_dir, f"best_program{self.file_extension}")
+        code_path = os.path.join(
+            best_dir, f"best_program{self.file_extension}")
         with open(code_path, "w") as f:
             f.write(program.solution)
 
@@ -473,6 +493,7 @@ class Runner:
             if img and os.path.exists(img):
                 import shutil
 
-                shutil.copy2(img, os.path.join(best_dir, "best_image" + os.path.splitext(img)[1]))
+                shutil.copy2(img, os.path.join(
+                    best_dir, "best_image" + os.path.splitext(img)[1]))
 
         logger.info(f"Best program saved to {best_dir}")

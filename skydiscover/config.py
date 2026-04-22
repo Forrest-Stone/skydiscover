@@ -87,7 +87,8 @@ def _load_model_pricing_table() -> Dict[str, Dict[str, float]]:
     if pricing_path:
         candidate = Path(pricing_path)
     else:
-        candidate = Path(__file__).resolve().parent.parent / "configs" / "model_pricing.yaml"
+        candidate = Path(__file__).resolve().parent.parent / \
+            "configs" / "model_pricing.yaml"
 
     if not candidate.exists():
         return {}
@@ -95,7 +96,8 @@ def _load_model_pricing_table() -> Dict[str, Dict[str, float]]:
     try:
         data = yaml.safe_load(candidate.read_text(encoding="utf-8")) or {}
     except Exception as exc:
-        logger.warning("Failed to read model pricing file '%s': %s", candidate, exc)
+        logger.warning(
+            "Failed to read model pricing file '%s': %s", candidate, exc)
         return {}
 
     table = data.get("model_pricing") if isinstance(data, dict) else None
@@ -126,7 +128,8 @@ def _load_budget_defaults_config() -> Dict[str, Any]:
     if pricing_path:
         candidate = Path(pricing_path)
     else:
-        candidate = Path(__file__).resolve().parent.parent / "configs" / "model_pricing.yaml"
+        candidate = Path(__file__).resolve().parent.parent / \
+            "configs" / "model_pricing.yaml"
 
     if not candidate.exists():
         return {}
@@ -134,7 +137,8 @@ def _load_budget_defaults_config() -> Dict[str, Any]:
     try:
         data = yaml.safe_load(candidate.read_text(encoding="utf-8")) or {}
     except Exception as exc:
-        logger.warning("Failed to read budget defaults from '%s': %s", candidate, exc)
+        logger.warning(
+            "Failed to read budget defaults from '%s': %s", candidate, exc)
         return {}
 
     if not isinstance(data, dict):
@@ -144,7 +148,6 @@ def _load_budget_defaults_config() -> Dict[str, Any]:
         "budget_profiles": data.get("budget_profiles", {}) or {},
         "costada_budget": data.get("costada_budget", {}) or {},
         "adaevolve_budget": data.get("adaevolve_budget", {}) or {},
-        "budgetevolve": data.get("budgetevolve", {}) or {},
         "evox_budget": data.get("evox_budget", {}) or {},
     }
 
@@ -168,12 +171,13 @@ def _apply_budget_defaults(config: "Config") -> None:
     method_section_key = {
         "costada": "costada_budget",
         "adaevolve": "adaevolve_budget",
-        "budgetevolve": "budgetevolve",
         "evox": "evox_budget",
     }.get(search_type, "")
-    method_defaults = budget_cfg.get(method_section_key, {}) if method_section_key else {}
+    method_defaults = budget_cfg.get(
+        method_section_key, {}) if method_section_key else {}
     profile_name = (
-        str(getattr(db, "budget_profile", "") or os.environ.get("SKYDISCOVER_BUDGET_PROFILE", "")).strip()
+        str(getattr(db, "budget_profile", "") or os.environ.get(
+            "SKYDISCOVER_BUDGET_PROFILE", "")).strip()
     )
     profile_overrides = profiles.get(profile_name, {}) if profile_name else {}
 
@@ -412,10 +416,12 @@ class LLMConfig(LLMModelConfig):
         # (i.e. it differs from the hardcoded default).  When a custom api_base
         # is provided, we should NOT override it with the provider default so
         # that update_model_params() below can propagate the user's value.
-        user_set_api_base = self.api_base.rstrip("/") != _PROVIDERS["openai"][0].rstrip("/")
+        user_set_api_base = self.api_base.rstrip(
+            "/") != _PROVIDERS["openai"][0].rstrip("/")
         for model in self.models + self.evaluator_models + self.guide_models:
             if model.name and model.api_base is None:
-                provider, bare_name, provider_base, env_vars = _parse_model_spec(model.name)
+                provider, bare_name, provider_base, env_vars = _parse_model_spec(
+                    model.name)
                 env_api_base = _resolve_api_base_from_env(provider)
                 # Skip provider URL only for unrecognized bare names that fell
                 # through to the OpenAI default — never for an explicitly-prefixed
@@ -433,7 +439,8 @@ class LLMConfig(LLMModelConfig):
                 # Strip provider prefix so the API receives the bare model name
                 if "/" in model.name and provider != "openai":
                     model.name = bare_name
-                model.name = _normalize_model_name_for_api_base(model.name, model.api_base)
+                model.name = _normalize_model_name_for_api_base(
+                    model.name, model.api_base)
 
         # Update models with shared configuration values
         shared_config = {
@@ -622,10 +629,12 @@ class EvoxDatabaseConfig(EvolveDatabaseConfig):
     def __post_init__(self):
         if self.database_file_path is None:
             # Initial guide strategy for the solution discovery
-            self.database_file_path = str(self._evox_database_dir / "initial_search_strategy.py")
+            self.database_file_path = str(
+                self._evox_database_dir / "initial_search_strategy.py")
         if self.evaluation_file is None:
             # Dummy evaluator for the guide strategy
-            self.evaluation_file = str(self._evox_database_dir / "search_strategy_evaluator.py")
+            self.evaluation_file = str(
+                self._evox_database_dir / "search_strategy_evaluator.py")
         if self.config_path is None:
             # Default config for the guide strategy
             self.config_path = str(self._evox_config_dir / "search.yaml")
@@ -703,23 +712,6 @@ class AdaEvolveDatabaseConfig(DatabaseConfig):
     pareto_objectives: List[str] = field(default_factory=list)
     pareto_objectives_weight: float = 0.0
 
-    # Budget-aware control
-    budget_enabled: bool = False
-    token_budget_total: int = 500000
-    cost_budget_total: float = 0.0
-    input_token_cost: float = 0.0
-    output_token_cost: float = 0.0
-    budget_accounting_mode: str = "provider_usage"
-    budget_strict_stop: bool = True
-    budget_bins: List[float] = field(default_factory=lambda: [0.2, 0.5, 0.8])
-    cheap_max_output_tokens: int = 512
-    standard_max_output_tokens: int = 1024
-    rich_max_output_tokens: int = 2048
-    budget_lambda: float = 1e-4
-    budget_ucb_beta: float = 0.5
-    budget_meta_threshold: float = 0.25
-    budget_significant_gain_eps: float = 1e-6
-
 
 @dataclass
 class OpenEvolveNativeDatabaseConfig(DatabaseConfig):
@@ -731,7 +723,8 @@ class OpenEvolveNativeDatabaseConfig(DatabaseConfig):
     exploration_ratio: float = 0.2
     exploitation_ratio: float = 0.7
     elite_selection_ratio: float = 0.1
-    feature_dimensions: List[str] = field(default_factory=lambda: ["complexity", "diversity"])
+    feature_dimensions: List[str] = field(
+        default_factory=lambda: ["complexity", "diversity"])
     feature_bins: int = 10
     diversity_reference_size: int = 20
     migration_interval: int = 10
@@ -761,7 +754,8 @@ class GEPANativeDatabaseConfig(DatabaseConfig):
     """
 
     population_size: int = 40
-    candidate_selection_strategy: str = "epsilon_greedy"  # "epsilon_greedy", "best", "pareto"
+    # "epsilon_greedy", "best", "pareto"
+    candidate_selection_strategy: str = "epsilon_greedy"
     epsilon: float = 0.1
     max_rejection_history: int = 20
 
@@ -780,7 +774,6 @@ _DB_CONFIG_BY_TYPE: Dict[str, type] = {
     "best_of_n": BestOfNDatabaseConfig,
     "topk": DatabaseConfig,
     "adaevolve": AdaEvolveDatabaseConfig,
-    "budgetevolve": AdaEvolveDatabaseConfig,
     "costada": AdaEvolveDatabaseConfig,
     "openevolve_native": OpenEvolveNativeDatabaseConfig,
     "gepa_native": GEPANativeDatabaseConfig,
@@ -797,10 +790,12 @@ class SearchConfig:
     num_context_programs: int = 4
     output_dir: Optional[str] = None
     switch_interval: Optional[int] = (
-        None  # EvoX: stagnation iters before strategy switch. Auto-calculated if None.
+        # EvoX: stagnation iters before strategy switch. Auto-calculated if None.
+        None
     )
     share_llm: bool = (
-        False  # EvoX: if True, meta-level search evolution uses the same LLM as the main discovery process.
+        # EvoX: if True, meta-level search evolution uses the same LLM as the main discovery process.
+        False
     )
 
 
@@ -846,9 +841,11 @@ class BenchmarkConfig:
     enabled: bool = False
     name: Optional[str] = None
     resolver: Optional[str] = (
-        None  # Python import path to resolver module (e.g., 'benchmarks.kernelbench.resolver')
+        # Python import path to resolver module (e.g., 'benchmarks.kernelbench.resolver')
+        None
     )
-    params: Dict[str, Any] = field(default_factory=dict)  # Benchmark-specific parameters
+    # Benchmark-specific parameters
+    params: Dict[str, Any] = field(default_factory=dict)
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -870,7 +867,8 @@ class Config:
 
     # Component configurations
     llm: LLMConfig = field(default_factory=LLMConfig)
-    context_builder: ContextBuilderConfig = field(default_factory=ContextBuilderConfig)
+    context_builder: ContextBuilderConfig = field(
+        default_factory=ContextBuilderConfig)
     search: SearchConfig = field(default_factory=SearchConfig)
     evaluator: EvaluatorConfig = field(default_factory=EvaluatorConfig)
     agentic: AgenticConfig = field(default_factory=AgenticConfig)
@@ -921,7 +919,8 @@ class Config:
                         with open(file_path, "r") as f:
                             config_dict["prompt"]["system_message"] = f.read()
                 except OSError:
-                    logger.debug("Could not read system_message from %s", file_path, exc_info=True)
+                    logger.debug(
+                        "Could not read system_message from %s", file_path, exc_info=True)
 
         return cls.from_dict(config_dict)
 
@@ -954,16 +953,19 @@ class Config:
         if "llm" in config_dict:
             llm_dict = config_dict["llm"]
             if "models" in llm_dict:
-                llm_dict["models"] = [LLMModelConfig(**m) for m in llm_dict["models"]]
+                llm_dict["models"] = [LLMModelConfig(
+                    **m) for m in llm_dict["models"]]
             if "evaluator_models" in llm_dict:
                 llm_dict["evaluator_models"] = [
                     LLMModelConfig(**m) for m in llm_dict["evaluator_models"]
                 ]
             if "guide_models" in llm_dict:
-                llm_dict["guide_models"] = [LLMModelConfig(**m) for m in llm_dict["guide_models"]]
+                llm_dict["guide_models"] = [LLMModelConfig(
+                    **m) for m in llm_dict["guide_models"]]
             config.llm = LLMConfig(**llm_dict)
         if "prompt" in config_dict:
-            config.context_builder = ContextBuilderConfig(**config_dict["prompt"])
+            config.context_builder = ContextBuilderConfig(
+                **config_dict["prompt"])
 
         if "search" in config_dict:
             search_dict = config_dict["search"]
@@ -974,8 +976,10 @@ class Config:
                 # Separate known fields from algorithm-specific extras
                 # (e.g., adaevolve's decay, intensity_min, use_adaptive_search, etc.)
                 known_fields = {f.name for f in fields(db_config_cls)}
-                db_known = {k: v for k, v in db_dict.items() if k in known_fields}
-                db_extras = {k: v for k, v in db_dict.items() if k not in known_fields}
+                db_known = {k: v for k, v in db_dict.items()
+                            if k in known_fields}
+                db_extras = {k: v for k, v in db_dict.items()
+                             if k not in known_fields}
                 db_config = db_config_cls(**db_known)
                 for k, v in db_extras.items():
                     setattr(db_config, k, v)
@@ -987,19 +991,25 @@ class Config:
         if "evaluator" in config_dict:
             config.evaluator = EvaluatorConfig(**config_dict["evaluator"])
         if "agentic" in config_dict:
-            agentic_dict = dict(config_dict["agentic"])  # copy to avoid mutating input
+            # copy to avoid mutating input
+            agentic_dict = dict(config_dict["agentic"])
             # Convert list fields to tuples for the dataclass
             for tuple_field in ("allowed_extensions", "excluded_dirs"):
                 if tuple_field in agentic_dict and isinstance(agentic_dict[tuple_field], list):
-                    agentic_dict[tuple_field] = tuple(agentic_dict[tuple_field])
+                    agentic_dict[tuple_field] = tuple(
+                        agentic_dict[tuple_field])
             config.agentic = AgenticConfig(**agentic_dict)
         if "benchmark" in config_dict:
             benchmark_dict = config_dict["benchmark"]
             # Separate known dataclass fields from benchmark-specific parameters
-            known_fields = {f.name for f in fields(BenchmarkConfig) if f.name != "params"}
-            benchmark_known = {k: v for k, v in benchmark_dict.items() if k in known_fields}
-            benchmark_params = {k: v for k, v in benchmark_dict.items() if k not in known_fields}
-            config.benchmark = BenchmarkConfig(**benchmark_known, params=benchmark_params)
+            known_fields = {f.name for f in fields(
+                BenchmarkConfig) if f.name != "params"}
+            benchmark_known = {
+                k: v for k, v in benchmark_dict.items() if k in known_fields}
+            benchmark_params = {
+                k: v for k, v in benchmark_dict.items() if k not in known_fields}
+            config.benchmark = BenchmarkConfig(
+                **benchmark_known, params=benchmark_params)
         if "monitor" in config_dict:
             config.monitor = MonitorConfig(**config_dict["monitor"])
 
@@ -1120,7 +1130,8 @@ def load_config(config_path: Optional[Union[str, Path]] = None) -> Config:
             config.llm.update_model_params({"api_key": api_key})
 
     # Make the system message available to the individual models, in case it is not provided from the prompt sampler
-    config.llm.update_model_params({"system_message": config.context_builder.system_message})
+    config.llm.update_model_params(
+        {"system_message": config.context_builder.system_message})
 
     # Apply centralized budget defaults/profile (single source config), while
     # keeping explicit per-run YAML values unchanged.
@@ -1163,7 +1174,8 @@ def build_output_dir(search_type: str, initial_program_path: str, base_dir: str 
     from datetime import datetime
 
     problem_name = (
-        os.path.basename(os.path.dirname(os.path.abspath(initial_program_path))) or "unknown"
+        os.path.basename(os.path.dirname(
+            os.path.abspath(initial_program_path))) or "unknown"
     )
     timestamp = datetime.now().strftime("%m%d_%H%M")
     return os.path.join(base_dir, search_type, f"{problem_name}_{timestamp}")
@@ -1190,18 +1202,22 @@ def apply_overrides(
         # drop to zero-cost due to missing per-token prices.
         existing_models = list(getattr(config.llm, "models", []) or [])
         fallback_input_price = (
-            getattr(existing_models[0], "input_price_per_1m", None) if existing_models else None
+            getattr(existing_models[0], "input_price_per_1m",
+                    None) if existing_models else None
         )
         fallback_output_price = (
-            getattr(existing_models[0], "output_price_per_1m", None) if existing_models else None
+            getattr(existing_models[0], "output_price_per_1m",
+                    None) if existing_models else None
         )
 
         # Parse the model string into a list of model specifications
         specs = [s.strip() for s in model.split(",")]
         models: List[LLMModelConfig] = []
         for spec in specs:
-            provider, model_name, default_api_base, env_vars = _parse_model_spec(spec)
-            effective_base = api_base or _resolve_api_base_from_env(provider) or default_api_base
+            provider, model_name, default_api_base, env_vars = _parse_model_spec(
+                spec)
+            effective_base = api_base or _resolve_api_base_from_env(
+                provider) or default_api_base
             if effective_base is None:
                 raise ValueError(
                     f"Provider '{provider}' requires an explicit api_base.\n"
@@ -1210,7 +1226,8 @@ def apply_overrides(
             resolved_key = _resolve_api_key_from_env(env_vars)
             models.append(
                 LLMModelConfig(
-                    name=_normalize_model_name_for_api_base(model_name, effective_base),
+                    name=_normalize_model_name_for_api_base(
+                        model_name, effective_base),
                     api_base=effective_base,
                     api_key=resolved_key,
                     input_price_per_1m=fallback_input_price,
@@ -1257,7 +1274,8 @@ def apply_overrides(
         resolved_key = _resolve_api_key_from_env(parsed_env_vars)
         if resolved_key:
             config.llm.api_key = resolved_key
-            config.llm.update_model_params({"api_key": resolved_key}, overwrite=True)
+            config.llm.update_model_params(
+                {"api_key": resolved_key}, overwrite=True)
 
     # Propagate shared generation/request settings
     if model or api_base:
