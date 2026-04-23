@@ -168,11 +168,20 @@ def _apply_budget_defaults(config: "Config") -> None:
     base_defaults = budget_cfg.get("budget_defaults", {})
     profiles = budget_cfg.get("budget_profiles", {})
     search_type = str(getattr(config.search, "type", "") or "").strip().lower()
+    base_search_type = (
+        search_type[: -len("_budget")] if search_type.endswith("_budget") else search_type
+    )
     method_section_key = {
         "costada": "costada_budget",
         "adaevolve": "adaevolve_budget",
+        "adaevolve_budget": "adaevolve_budget",
         "evox": "evox_budget",
-    }.get(search_type, "")
+        "evox_budget": "evox_budget",
+    }.get(search_type) or {
+        "costada": "costada_budget",
+        "adaevolve": "adaevolve_budget",
+        "evox": "evox_budget",
+    }.get(base_search_type, "")
     method_defaults = budget_cfg.get(
         method_section_key, {}) if method_section_key else {}
     profile_name = (
@@ -774,10 +783,13 @@ _DB_CONFIG_BY_TYPE: Dict[str, type] = {
     "best_of_n": BestOfNDatabaseConfig,
     "topk": DatabaseConfig,
     "adaevolve": AdaEvolveDatabaseConfig,
+    "adaevolve_budget": AdaEvolveDatabaseConfig,
     "costada": AdaEvolveDatabaseConfig,
+    "costada_budget": AdaEvolveDatabaseConfig,
     "openevolve_native": OpenEvolveNativeDatabaseConfig,
     "gepa_native": GEPANativeDatabaseConfig,
     "claude_code": ClaudeCodeConfig,
+    "evox_budget": EvoxDatabaseConfig,
 }
 
 
@@ -970,7 +982,14 @@ class Config:
         if "search" in config_dict:
             search_dict = config_dict["search"]
             search_type = search_dict.get("type", "topk")
-            db_config_cls = _DB_CONFIG_BY_TYPE.get(search_type, DatabaseConfig)
+            base_search_type = (
+                str(search_type)[: -len("_budget")]
+                if str(search_type).endswith("_budget")
+                else search_type
+            )
+            db_config_cls = _DB_CONFIG_BY_TYPE.get(
+                search_type, _DB_CONFIG_BY_TYPE.get(base_search_type, DatabaseConfig)
+            )
             if "database" in search_dict:
                 db_dict = search_dict["database"]
                 # Separate known fields from algorithm-specific extras
