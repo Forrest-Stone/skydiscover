@@ -47,6 +47,8 @@ class AdaEvolveBudgetController(AdaEvolveController):
         budget_record.meta["global_best_before"] = self._best_score_or_zero()
         budget_record.meta["tier"] = getattr(self, "_last_sampling_mode", None)
         self._active_budget_record = budget_record
+        result: SerializableResult | None = None
+        finalized = False
 
         try:
             if self.database.use_paradigm_breakthrough and self.database.is_paradigm_stagnating():
@@ -58,8 +60,8 @@ class AdaEvolveBudgetController(AdaEvolveController):
             if result.error:
                 self._log_iteration_stats(
                     iteration=iteration,
-                    sampling_mode=self._last_sampling_mode,
-                    sampling_intensity=self._last_sampling_intensity,
+                    sampling_mode=getattr(self, "_last_sampling_mode", None),
+                    sampling_intensity=getattr(self, "_last_sampling_intensity", None),
                     child_program=None,
                     iteration_time=result.iteration_time,
                     llm_generation_time=result.llm_generation_time,
@@ -70,8 +72,8 @@ class AdaEvolveBudgetController(AdaEvolveController):
                 self._process_result(result, iteration, checkpoint_callback)
                 self._log_iteration_stats(
                     iteration=iteration,
-                    sampling_mode=self._last_sampling_mode,
-                    sampling_intensity=self._last_sampling_intensity,
+                    sampling_mode=getattr(self, "_last_sampling_mode", None),
+                    sampling_intensity=getattr(self, "_last_sampling_intensity", None),
                     child_program=result.child_program_dict,
                     iteration_time=result.iteration_time,
                     llm_generation_time=result.llm_generation_time,
@@ -80,10 +82,23 @@ class AdaEvolveBudgetController(AdaEvolveController):
                 )
 
             budget_record.meta["attempts_used"] = int(result.attempts_used or 1)
-            budget_record.meta["tier"] = self._last_sampling_mode
-            budget_record.meta["recent_improvement_avg"] = self._last_sampling_intensity
+            budget_record.meta["tier"] = getattr(self, "_last_sampling_mode", None)
+            budget_record.meta["recent_improvement_avg"] = getattr(self, "_last_sampling_intensity", None)
             self._finalize_budget_iteration(budget_record, result)
+            finalized = True
+        except Exception as exc:
+            result = SerializableResult(
+                error=f"Budget wrapper iteration error: {exc}",
+                iteration=iteration,
+                attempts_used=1,
+                iteration_time=(time.time() - iteration_start_time),
+            )
         finally:
+            if not finalized and result is not None:
+                try:
+                    self._finalize_budget_iteration(budget_record, result)
+                except Exception:
+                    pass
             self._active_budget_record = None
             self._current_call_role = CallRole.GENERATION
 

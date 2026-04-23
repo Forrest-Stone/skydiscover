@@ -177,6 +177,8 @@ class CostAdaController(AdaEvolveController):
         iteration_start_time = time.time()
         budget_record = self.budget_ledger.start_iteration(iteration)
         self._active_budget_record = budget_record
+        result: SerializableResult | None = None
+        finalized = False
 
         try:
             frontier_id = self._select_frontier()
@@ -243,6 +245,60 @@ class CostAdaController(AdaEvolveController):
                 and compact_state.remaining_budget_ratio > self.meta_eta_min
                 and self._avg_recent_H() < self.meta_h_threshold
             )
+
+            budget_record.meta["recent_improvement_avg"] = float(self._recent_improvement_avg())
+            budget_record.meta["stagnation_steps"] = int(frontier_state.stagnation_steps)
+            budget_record.meta["local_gain"] = float(d_local)
+            budget_record.meta["global_gain"] = float(g_global)
+            budget_record.meta["utility"] = float(util)
+            budget_record.meta["frontier_signal"] = float(frontier_state.H)
+            budget_record.meta["routing_reward"] = float(realized_router_reward)
+            budget_record.meta["router_reward"] = float(realized_router_reward)  # backward-compatible alias
+            budget_record.meta["meta_triggered"] = bool(meta_triggered)
+
+            # Keep default summary/trace pipeline from phase-1.
+            self._finalize_budget_iteration(budget_record, result)
+            finalized = True
+
+            # Keep AdaEvolve iteration stats logging behavior.
+            if result.error:
+                self._log_iteration_stats(
+                    iteration=iteration,
+                    sampling_mode=getattr(self, "_last_sampling_mode", None),
+                    sampling_intensity=getattr(self, "_last_sampling_intensity", None),
+                    child_program=None,
+                    iteration_time=iteration_time,
+                    llm_generation_time=result.llm_generation_time,
+                    eval_time=result.eval_time,
+                    error=result.error,
+                )
+            else:
+                self._log_iteration_stats(
+                    iteration=iteration,
+                    sampling_mode=getattr(self, "_last_sampling_mode", None),
+                    sampling_intensity=getattr(self, "_last_sampling_intensity", None),
+                    child_program=result.child_program_dict,
+                    iteration_time=result.iteration_time,
+                    llm_generation_time=result.llm_generation_time,
+                    eval_time=result.eval_time,
+                    error=None,
+                )
+        except Exception as exc:
+            # Persist budget/cost trace even when iteration orchestration fails mid-way.
+            result = SerializableResult(
+                error=f"CostAda iteration error: {exc}",
+                iteration=iteration,
+                attempts_used=1,
+                iteration_time=(time.time() - iteration_start_time),
+            )
+        finally:
+            if not finalized and result is not None:
+                try:
+                    self._finalize_budget_iteration(budget_record, result)
+                except Exception:
+                    pass
+            self._active_budget_record = None
+            self._active_call_role = CallRole.GENERATION
 
             budget_record.meta["recent_improvement_avg"] = float(self._recent_improvement_avg())
             budget_record.meta["stagnation_steps"] = int(frontier_state.stagnation_steps)
