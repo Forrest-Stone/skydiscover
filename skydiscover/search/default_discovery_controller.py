@@ -117,7 +117,10 @@ class DiscoveryController:
         self.monitor_callback: Optional[Callable] = None
         self.feedback_reader: Optional[Any] = None
         self._prompt_context: Dict[str, Any] = {}
-        nominal_budget = float(getattr(self.config.search.database, "nominal_budget", 1e9) or 1e9)
+        nominal_budget = float(getattr(self.config.search.database, "nominal_budget", 0.0) or 0.0)
+        if nominal_budget <= 0.0:
+            # Use a practical fallback budget when task config does not provide one.
+            nominal_budget = 1.0
         self.budget_ledger = BudgetLedger(BudgetConfig(nominal_budget=nominal_budget))
         output_path = Path(self.output_dir or ".")
         self._budget_iterations_path = output_path / "iterations.jsonl"
