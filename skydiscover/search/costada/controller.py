@@ -177,7 +177,7 @@ class CostAdaController(AdaEvolveController):
         iteration_start_time = time.time()
         budget_record = self.budget_ledger.start_iteration(iteration)
         self._active_budget_record = budget_record
-        result: SerializableResult | None = None
+        result: Optional[SerializableResult] = None
         finalized = False
 
         try:
@@ -297,46 +297,6 @@ class CostAdaController(AdaEvolveController):
                     self._finalize_budget_iteration(budget_record, result)
                 except Exception:
                     pass
-            self._active_budget_record = None
-            self._active_call_role = CallRole.GENERATION
-
-            budget_record.meta["recent_improvement_avg"] = float(self._recent_improvement_avg())
-            budget_record.meta["stagnation_steps"] = int(frontier_state.stagnation_steps)
-            budget_record.meta["local_gain"] = float(d_local)
-            budget_record.meta["global_gain"] = float(g_global)
-            budget_record.meta["utility"] = float(util)
-            budget_record.meta["frontier_signal"] = float(frontier_state.H)
-            budget_record.meta["routing_reward"] = float(realized_router_reward)
-            budget_record.meta["router_reward"] = float(realized_router_reward)  # backward-compatible alias
-            budget_record.meta["meta_triggered"] = bool(meta_triggered)
-
-            # Keep default summary/trace pipeline from phase-1.
-            self._finalize_budget_iteration(budget_record, result)
-
-            # Keep AdaEvolve iteration stats logging behavior.
-            if result.error:
-                self._log_iteration_stats(
-                    iteration=iteration,
-                    sampling_mode=getattr(self, "_last_sampling_mode", None),
-                    sampling_intensity=getattr(self, "_last_sampling_intensity", None),
-                    child_program=None,
-                    iteration_time=iteration_time,
-                    llm_generation_time=result.llm_generation_time,
-                    eval_time=result.eval_time,
-                    error=result.error,
-                )
-            else:
-                self._log_iteration_stats(
-                    iteration=iteration,
-                    sampling_mode=getattr(self, "_last_sampling_mode", None),
-                    sampling_intensity=getattr(self, "_last_sampling_intensity", None),
-                    child_program=result.child_program_dict,
-                    iteration_time=result.iteration_time,
-                    llm_generation_time=result.llm_generation_time,
-                    eval_time=result.eval_time,
-                    error=None,
-                )
-        finally:
             self._active_budget_record = None
             self._active_call_role = CallRole.GENERATION
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, Optional
 
 from skydiscover.budget import CallRole
 from skydiscover.search.adaevolve.controller import AdaEvolveController
@@ -47,7 +47,7 @@ class AdaEvolveBudgetController(AdaEvolveController):
         budget_record.meta["global_best_before"] = self._best_score_or_zero()
         budget_record.meta["tier"] = getattr(self, "_last_sampling_mode", None)
         self._active_budget_record = budget_record
-        result: SerializableResult | None = None
+        result: Optional[SerializableResult] = None
         finalized = False
 
         try:
