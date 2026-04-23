@@ -23,6 +23,7 @@ from skydiscover.budget import (
     call_record_from_response,
     plot_run_budget_panels,
     plot_run_best_score_vs_cost,
+    plot_run_metric_vs_cost,
     resolve_objective_from_metrics,
     write_iteration_record,
     write_summary,
@@ -925,6 +926,20 @@ class DiscoveryController:
             self._budget_iterations_path,
             self._budget_summary_path.parent / "best_score_vs_cost.png",
         )
+        plotted_obj = plot_run_metric_vs_cost(
+            self._budget_iterations_path,
+            self._budget_summary_path.parent / "best_so_far_objective_vs_cost.png",
+            y_keys=["best_so_far_objective", "objective_value", "global_best_after"],
+            ylabel="Best-so-far objective",
+            title="Best-so-far objective vs cumulative cost",
+        )
+        plotted_combined = plot_run_metric_vs_cost(
+            self._budget_iterations_path,
+            self._budget_summary_path.parent / "best_so_far_combined_score_vs_cost.png",
+            y_keys=["best_so_far_combined_score", "combined_score", "global_best_after"],
+            ylabel="Best-so-far combined score",
+            title="Best-so-far combined score vs cumulative cost",
+        )
         if plotted:
             logger.info(
                 "Budget plot saved: %s",
@@ -932,6 +947,16 @@ class DiscoveryController:
             )
         else:
             logger.info("Budget plot skipped (no trace yet or matplotlib unavailable).")
+        if plotted_obj:
+            logger.info(
+                "Budget plot saved: %s",
+                self._budget_summary_path.parent / "best_so_far_objective_vs_cost.png",
+            )
+        if plotted_combined:
+            logger.info(
+                "Budget plot saved: %s",
+                self._budget_summary_path.parent / "best_so_far_combined_score_vs_cost.png",
+            )
         panels_plotted = plot_run_budget_panels(
             self._budget_iterations_path,
             self._budget_summary_path.parent / "budget_report.png",
@@ -944,7 +969,7 @@ class DiscoveryController:
         else:
             logger.info("Budget panel plot skipped (no trace yet or matplotlib unavailable).")
 
-        if not plotted or not panels_plotted:
+        if not plotted or not plotted_obj or not plotted_combined or not panels_plotted:
             note_path = self._budget_summary_path.parent / "budget_plot_status.txt"
             note_path.write_text(
                 (
@@ -958,6 +983,68 @@ class DiscoveryController:
                 ),
                 encoding="utf-8",
             )
+        logger.info(
+            "Tip: regenerate aggregate plots later with: python scripts/plot_budget_curves.py --root <outputs_root> --out-dir <aggregate_dir>"
+        )
+
+    def _build_budget_summary_extra(self) -> Dict[str, Any]:
+        rows = []
+        if self._budget_iterations_path.exists():
+            try:
+                import json
+
+                with self._budget_iterations_path.open("r", encoding="utf-8") as f:
+                    rows = [json.loads(line) for line in f if line.strip()]
+            except Exception:
+                rows = []
+        objective_key = next((r.get("objective_key") for r in rows if r.get("objective_key")), None)
+        best_objective = max(
+            [float(r["best_so_far_objective"]) for r in rows if r.get("best_so_far_objective") is not None],
+            default=None,
+        )
+        best_target_ratio = max(
+            [float(r["best_so_far_target_ratio"]) for r in rows if r.get("best_so_far_target_ratio") is not None],
+            default=None,
+        )
+        best_combined_score = max(
+            [float(r["best_so_far_combined_score"]) for r in rows if r.get("best_so_far_combined_score") is not None],
+            default=None,
+        )
+        cost_to_target = next(
+            (
+                float(r["cumulative_cost"])
+                for r in rows
+                if r.get("target_ratio") is not None
+                and r.get("best_so_far_target_ratio") is not None
+                and float(r.get("best_so_far_target_ratio")) >= 1.0
+            ),
+            None,
+        )
+        iteration_to_target = next(
+            (
+                int(r["iteration"])
+                for r in rows
+                if r.get("target_ratio") is not None
+                and r.get("best_so_far_target_ratio") is not None
+                and float(r.get("best_so_far_target_ratio")) >= 1.0
+            ),
+            None,
+        )
+        target_value = next((r.get("target_value") for r in rows if r.get("target_value") is not None), None)
+        return {
+            "method": self.config.search.type,
+            "task_family": (Path(self.evaluation_file).parent.name if self.evaluation_file else ""),
+            "task_name": (Path(self.evaluation_file).stem if self.evaluation_file else ""),
+            "seed": getattr(self.config.search.database, "random_seed", None),
+            "objective_key": objective_key,
+            "best_objective": best_objective,
+            "best_combined_score": best_combined_score,
+            "best_target_ratio": best_target_ratio,
+            "target_value": target_value,
+            "success_target": bool(best_target_ratio is not None and float(best_target_ratio) >= 1.0),
+            "cost_to_target": cost_to_target,
+            "iteration_to_target": iteration_to_target,
+        }
 
     def _build_budget_summary_extra(self) -> Dict[str, Any]:
         rows = []

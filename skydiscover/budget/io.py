@@ -128,8 +128,15 @@ def load_summary(path: Path) -> Dict[str, Any]:
         return {}
 
 
-def plot_run_best_score_vs_cost(iterations_path: Path, out_png: Path) -> bool:
-    """Plot best-score-vs-cost for a single run.
+def plot_run_metric_vs_cost(
+    iterations_path: Path,
+    out_png: Path,
+    *,
+    y_keys: list[str],
+    ylabel: str,
+    title: str,
+) -> bool:
+    """Plot a chosen best-so-far metric vs cumulative cost for a single run.
 
     Returns False when plotting dependencies are unavailable.
     """
@@ -142,7 +149,7 @@ def plot_run_best_score_vs_cost(iterations_path: Path, out_png: Path) -> bool:
         return False
 
     costs = []
-    best_scores = []
+    values = []
     with iterations_path.open("r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -153,21 +160,37 @@ def plot_run_best_score_vs_cost(iterations_path: Path, out_png: Path) -> bool:
             except json.JSONDecodeError:
                 continue
             costs.append(float(row.get("cumulative_cost", 0.0) or 0.0))
-            best_scores.append(row.get("global_best_after"))
+            metric_val = None
+            for key in y_keys:
+                if row.get(key) is not None:
+                    metric_val = row.get(key)
+                    break
+            values.append(metric_val)
 
     if not costs:
         return False
 
     out_png.parent.mkdir(parents=True, exist_ok=True)
     plt.figure(figsize=(7.5, 4.8))
-    plt.plot(costs, best_scores, linewidth=1.8)
+    plt.plot(costs, values, linewidth=1.8)
     plt.xlabel("Cumulative cost (USD)")
-    plt.ylabel("Best score")
-    plt.title("Best score vs cumulative cost")
+    plt.ylabel(ylabel)
+    plt.title(title)
     plt.tight_layout()
     plt.savefig(out_png, dpi=180)
     plt.close()
     return True
+
+
+def plot_run_best_score_vs_cost(iterations_path: Path, out_png: Path) -> bool:
+    """Backward-compatible best-score plot."""
+    return plot_run_metric_vs_cost(
+        iterations_path,
+        out_png,
+        y_keys=["global_best_after", "best_so_far_combined_score", "combined_score"],
+        ylabel="Best score",
+        title="Best score vs cumulative cost",
+    )
 
 
 def plot_run_budget_panels(iterations_path: Path, out_png: Path) -> bool:
