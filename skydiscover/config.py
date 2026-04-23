@@ -197,8 +197,9 @@ def _apply_budget_defaults(config: "Config") -> None:
     # Respect user-provided extra keys from task config (e.g. nominal_budget: 0.5).
     # For dataclass-declared fields we keep centralized defaults as before.
     declared_fields = {f.name for f in fields(type(db))}
+    existing_extra_keys = set(vars(db).keys()) - declared_fields
     for key, value in merged.items():
-        if key not in declared_fields and hasattr(db, key):
+        if key in existing_extra_keys:
             continue
         setattr(db, key, value)
 
