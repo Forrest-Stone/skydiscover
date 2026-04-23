@@ -8,7 +8,6 @@ this module wires up implementations and provides ``get_discovery_controller``.
 
 import logging
 
-from skydiscover.search.adaevolve.controller import AdaEvolveController
 from skydiscover.search.adaevolve_budget.controller import AdaEvolveBudgetController
 from skydiscover.search.adaevolve.database import AdaEvolveDatabase
 from skydiscover.search.beam_search.database import BeamSearchDatabase
@@ -23,7 +22,6 @@ from skydiscover.search.default_discovery_controller import (
     DiscoveryController,
     DiscoveryControllerInput,
 )
-from skydiscover.search.evox.controller import CoEvolutionController
 from skydiscover.search.evox_budget.controller import CoEvolutionBudgetController
 from skydiscover.search.evox.database.search_strategy_db import SearchStrategyDatabase
 from skydiscover.search.gepa_native.controller import GEPANativeController
@@ -69,7 +67,7 @@ register_database("topk", TopKDatabase)
 
 # AdaEvolve
 register_database("adaevolve", AdaEvolveDatabase)
-register_controller("adaevolve", AdaEvolveController)
+register_controller("adaevolve", AdaEvolveBudgetController)
 register_database("adaevolve_budget", AdaEvolveDatabase)
 register_controller("adaevolve_budget", AdaEvolveBudgetController)
 register_database("costada", CostAdaDatabase)
@@ -81,7 +79,7 @@ register_controller("costada_budget", CostAdaController)
 register_database("openevolve_native", OpenEvolveNativeDatabase)
 
 # EvoX
-register_controller("evox", CoEvolutionController)
+register_controller("evox", CoEvolutionBudgetController)
 register_controller("evox_budget", CoEvolutionBudgetController)
 register_database("evox_meta", SearchStrategyDatabase)
 
