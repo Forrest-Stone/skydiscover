@@ -12,6 +12,12 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     model_name = record.calls[-1].model_name if record.calls else "unknown"
     prompt_tokens, completion_tokens = aggregate_tokens(record)
+    gen_prompt = sum(c.prompt_tokens for c in record.calls if c.role.value == "generation")
+    gen_completion = sum(c.completion_tokens for c in record.calls if c.role.value == "generation")
+    retry_prompt = sum(c.prompt_tokens for c in record.calls if c.role.value == "retry")
+    retry_completion = sum(c.completion_tokens for c in record.calls if c.role.value == "retry")
+    guide_prompt = sum(c.prompt_tokens for c in record.calls if c.role.value == "guide")
+    guide_completion = sum(c.completion_tokens for c in record.calls if c.role.value == "guide")
     row: Dict[str, Any] = {
         "iteration": record.iteration,
         "frontier_id": record.meta.get("frontier_id"),
@@ -47,7 +53,29 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         "meta_triggered": record.meta.get("meta_triggered", False),
         "attempts_used": record.meta.get("attempts_used", 1),
         "num_calls": len(record.calls),
+        "num_generation_calls_this_iteration": sum(
+            1 for c in record.calls if c.role.value == "generation"
+        ),
+        "num_retry_calls_this_iteration": sum(1 for c in record.calls if c.role.value == "retry"),
+        "num_guide_calls_this_iteration": sum(1 for c in record.calls if c.role.value == "guide"),
         "total_tokens": prompt_tokens + completion_tokens,
+        "generation_prompt_tokens": gen_prompt,
+        "generation_completion_tokens": gen_completion,
+        "retry_prompt_tokens": retry_prompt,
+        "retry_completion_tokens": retry_completion,
+        "guide_prompt_tokens": guide_prompt,
+        "guide_completion_tokens": guide_completion,
+        "objective_key": record.meta.get("objective_key"),
+        "objective_value": record.meta.get("objective_value"),
+        "best_so_far_objective": record.meta.get("best_so_far_objective"),
+        "target_value": record.meta.get("target_value"),
+        "target_ratio": record.meta.get("target_ratio"),
+        "best_so_far_target_ratio": record.meta.get("best_so_far_target_ratio"),
+        "combined_score": record.meta.get("combined_score"),
+        "best_so_far_combined_score": record.meta.get("best_so_far_combined_score"),
+        "validity": record.meta.get("validity"),
+        "eval_time": record.meta.get("eval_time"),
+        "metrics_raw": record.meta.get("metrics_raw"),
         "call_roles": [c.role.value for c in record.calls],
         "call_model_names": [c.model_name for c in record.calls],
         "call_prompt_tokens": [c.prompt_tokens for c in record.calls],
@@ -59,11 +87,18 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
-def write_summary(path: Path, ledger: BudgetLedger, best_score: float | None = None) -> None:
+def write_summary(
+    path: Path,
+    ledger: BudgetLedger,
+    best_score: float | None = None,
+    extra: Dict[str, Any] | None = None,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     summary = ledger.summary()
     if best_score is not None:
         summary["best_score"] = float(best_score)
+    if extra:
+        summary.update(extra)
     with path.open("w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
 
@@ -93,8 +128,15 @@ def load_summary(path: Path) -> Dict[str, Any]:
         return {}
 
 
-def plot_run_best_score_vs_cost(iterations_path: Path, out_png: Path) -> bool:
-    """Plot best-score-vs-cost for a single run.
+def plot_run_metric_vs_cost(
+    iterations_path: Path,
+    out_png: Path,
+    *,
+    y_keys: list[str],
+    ylabel: str,
+    title: str,
+) -> bool:
+    """Plot a chosen best-so-far metric vs cumulative cost for a single run.
 
     Returns False when plotting dependencies are unavailable.
     """
@@ -107,7 +149,7 @@ def plot_run_best_score_vs_cost(iterations_path: Path, out_png: Path) -> bool:
         return False
 
     costs = []
-    best_scores = []
+    values = []
     with iterations_path.open("r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -118,21 +160,37 @@ def plot_run_best_score_vs_cost(iterations_path: Path, out_png: Path) -> bool:
             except json.JSONDecodeError:
                 continue
             costs.append(float(row.get("cumulative_cost", 0.0) or 0.0))
-            best_scores.append(row.get("global_best_after"))
+            metric_val = None
+            for key in y_keys:
+                if row.get(key) is not None:
+                    metric_val = row.get(key)
+                    break
+            values.append(metric_val)
 
     if not costs:
         return False
 
     out_png.parent.mkdir(parents=True, exist_ok=True)
     plt.figure(figsize=(7.5, 4.8))
-    plt.plot(costs, best_scores, linewidth=1.8)
+    plt.plot(costs, values, linewidth=1.8)
     plt.xlabel("Cumulative cost (USD)")
-    plt.ylabel("Best score")
-    plt.title("Best score vs cumulative cost")
+    plt.ylabel(ylabel)
+    plt.title(title)
     plt.tight_layout()
     plt.savefig(out_png, dpi=180)
     plt.close()
     return True
+
+
+def plot_run_best_score_vs_cost(iterations_path: Path, out_png: Path) -> bool:
+    """Backward-compatible best-score plot."""
+    return plot_run_metric_vs_cost(
+        iterations_path,
+        out_png,
+        y_keys=["global_best_after", "best_so_far_combined_score", "combined_score"],
+        ylabel="Best score",
+        title="Best score vs cumulative cost",
+    )
 
 
 def plot_run_budget_panels(iterations_path: Path, out_png: Path) -> bool:
