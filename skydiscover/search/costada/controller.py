@@ -177,6 +177,8 @@ class CostAdaController(AdaEvolveController):
         iteration_start_time = time.time()
         budget_record = self.budget_ledger.start_iteration(iteration)
         self._active_budget_record = budget_record
+        result: SerializableResult | None = None
+        finalized = False
 
         try:
             frontier_id = self._select_frontier()
@@ -256,6 +258,7 @@ class CostAdaController(AdaEvolveController):
 
             # Keep default summary/trace pipeline from phase-1.
             self._finalize_budget_iteration(budget_record, result)
+            finalized = True
 
             # Keep AdaEvolve iteration stats logging behavior.
             if result.error:
@@ -280,7 +283,20 @@ class CostAdaController(AdaEvolveController):
                     eval_time=result.eval_time,
                     error=None,
                 )
+        except Exception as exc:
+            # Persist budget/cost trace even when iteration orchestration fails mid-way.
+            result = SerializableResult(
+                error=f"CostAda iteration error: {exc}",
+                iteration=iteration,
+                attempts_used=1,
+                iteration_time=(time.time() - iteration_start_time),
+            )
         finally:
+            if not finalized and result is not None:
+                try:
+                    self._finalize_budget_iteration(budget_record, result)
+                except Exception:
+                    pass
             self._active_budget_record = None
             self._active_call_role = CallRole.GENERATION
 
