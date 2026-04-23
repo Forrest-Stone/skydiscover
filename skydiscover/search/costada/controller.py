@@ -70,6 +70,8 @@ class CostAdaController(AdaEvolveController):
         self._recent_H_values: deque[float] = deque(maxlen=self.meta_window)
         self._current_tier: str = "standard"
         self._current_frontier_id: int = 0
+        self._active_budget_record = None
+        self._active_call_role = CallRole.GENERATION
 
     async def _call_llm(self, system_message: str, user_message: str, **kwargs):
         """Inject tier-specific output-token caps while preserving shared budget logging."""
@@ -86,6 +88,10 @@ class CostAdaController(AdaEvolveController):
                 kwargs["max_tokens"] = int(
                     getattr(self.config.search.database, "standard_max_output_tokens", 1024)
                 )
+        if "_budget_record" not in kwargs and self._active_budget_record is not None:
+            kwargs["_budget_record"] = self._active_budget_record
+        if "_call_role" not in kwargs:
+            kwargs["_call_role"] = self._active_call_role
         return await super()._call_llm(system_message, user_message, **kwargs)
 
     def _candidate_score(self, result: SerializableResult) -> Optional[float]:
@@ -150,11 +156,10 @@ class CostAdaController(AdaEvolveController):
         last_error = None
         attempts = 1 + (self.max_retries if self.enable_retry else 0)
         for attempt in range(attempts):
-            role = CallRole.GENERATION if attempt == 0 else CallRole.RETRY
+            self._active_call_role = CallRole.GENERATION if attempt == 0 else CallRole.RETRY
             result = await self._generate_child(
                 iteration,
                 error_context=last_error,
-                call_role=role,
                 budget_record=budget_record,
             )
             if not result.error:
@@ -171,115 +176,119 @@ class CostAdaController(AdaEvolveController):
         """Execute one CostAda iteration with unified BCHD signal updates."""
         iteration_start_time = time.time()
         budget_record = self.budget_ledger.start_iteration(iteration)
+        self._active_budget_record = budget_record
 
-        frontier_id = self._select_frontier()
-        self._current_frontier_id = frontier_id
-        frontier_state = self.frontier_states[frontier_id]
-        self.database.current_island = frontier_id
+        try:
+            frontier_id = self._select_frontier()
+            self._current_frontier_id = frontier_id
+            frontier_state = self.frontier_states[frontier_id]
+            self.database.current_island = frontier_id
 
-        compact_state = self._select_tier(frontier_state)
+            compact_state = self._select_tier(frontier_state)
 
-        global_best_prev = self._best_score_or_zero()
-        budget_record.meta["frontier_id"] = frontier_id
-        budget_record.meta["global_best_before"] = global_best_prev
-        budget_record.meta["tier"] = self._current_tier
-        budget_record.meta["remaining_budget_ratio"] = compact_state.remaining_budget_ratio
+            global_best_prev = self._best_score_or_zero()
+            budget_record.meta["frontier_id"] = frontier_id
+            budget_record.meta["global_best_before"] = global_best_prev
+            budget_record.meta["tier"] = self._current_tier
+            budget_record.meta["remaining_budget_ratio"] = compact_state.remaining_budget_ratio
 
-        # Optional paradigm generation follows AdaEvolve scaffold.
-        if self.database.use_paradigm_breakthrough and self.database.is_paradigm_stagnating():
-            await self._generate_paradigms_if_needed()
+            # Optional paradigm generation follows AdaEvolve scaffold.
+            if self.database.use_paradigm_breakthrough and self.database.is_paradigm_stagnating():
+                await self._generate_paradigms_if_needed()
 
-        result = await self._run_normal_step(iteration, budget_record=budget_record)
-        iteration_time = time.time() - iteration_start_time
+            result = await self._run_normal_step(iteration, budget_record=budget_record)
+            iteration_time = time.time() - iteration_start_time
 
-        if result.error:
-            logger.warning(f"Iteration {iteration}: {result.error}")
-        else:
-            self._process_result(result, iteration, checkpoint_callback)
+            if result.error:
+                logger.warning(f"Iteration {iteration}: {result.error}")
+            else:
+                self._process_result(result, iteration, checkpoint_callback)
 
-        # Compute utility stats before finalize writes the iteration row.
-        raw_iteration_cost = (
-            float(budget_record.generation_cost)
-            + float(budget_record.retry_cost)
-            + float(budget_record.guide_cost)
-        )
-        score_new = self._candidate_score(result)
-        if score_new is None:
-            score_new = global_best_prev
-
-        d_local = local_gain(score_new, frontier_state.local_best)
-        g_global = global_gain(score_new, global_best_prev)
-        util = utility(d_local, g_global, raw_iteration_cost, compact_state.remaining_budget_ratio)
-        frontier_state.H = update_signal(frontier_state.H, util, alpha=self.alpha)
-        frontier_state.local_best = max(frontier_state.local_best, float(score_new))
-        frontier_state.last_update_iteration = iteration
-
-        if g_global > self.meta_gain_eps:
-            frontier_state.stagnation_steps = 0
-        else:
-            frontier_state.stagnation_steps += 1
-
-        realized_router_reward = self.router.update(
-            frontier_id=frontier_id,
-            global_gain_value=g_global,
-            raw_iteration_cost=raw_iteration_cost,
-        )
-        frontier_state.routing_reward = self.router.get_reward(frontier_id)
-        frontier_state.selection_count += 1
-
-        self._recent_global_gains.append(g_global)
-        self._recent_H_values.append(frontier_state.H)
-        self.tier_scheduler.update(compact_state, self._current_tier, util)
-
-        meta_triggered = (
-            self._is_stagnant(frontier_state)
-            and compact_state.remaining_budget_ratio > self.meta_eta_min
-            and self._avg_recent_H() < self.meta_h_threshold
-        )
-
-        budget_record.meta["recent_improvement_avg"] = float(self._recent_improvement_avg())
-        budget_record.meta["stagnation_steps"] = int(frontier_state.stagnation_steps)
-        budget_record.meta["local_gain"] = float(d_local)
-        budget_record.meta["global_gain"] = float(g_global)
-        budget_record.meta["utility"] = float(util)
-        budget_record.meta["frontier_signal"] = float(frontier_state.H)
-        budget_record.meta["routing_reward"] = float(realized_router_reward)
-        budget_record.meta["router_reward"] = float(realized_router_reward)  # backward-compatible alias
-        budget_record.meta["meta_triggered"] = bool(meta_triggered)
-
-        # Keep default summary/trace pipeline from phase-1.
-        self._finalize_budget_iteration(budget_record, result)
-
-        # Keep AdaEvolve iteration stats logging behavior.
-        if result.error:
-            self._log_iteration_stats(
-                iteration=iteration,
-                sampling_mode=getattr(self, "_last_sampling_mode", None),
-                sampling_intensity=getattr(self, "_last_sampling_intensity", None),
-                child_program=None,
-                iteration_time=iteration_time,
-                llm_generation_time=result.llm_generation_time,
-                eval_time=result.eval_time,
-                error=result.error,
+            # Compute utility stats before finalize writes the iteration row.
+            raw_iteration_cost = (
+                float(budget_record.generation_cost)
+                + float(budget_record.retry_cost)
+                + float(budget_record.guide_cost)
             )
-        else:
-            self._log_iteration_stats(
-                iteration=iteration,
-                sampling_mode=getattr(self, "_last_sampling_mode", None),
-                sampling_intensity=getattr(self, "_last_sampling_intensity", None),
-                child_program=result.child_program_dict,
-                iteration_time=result.iteration_time,
-                llm_generation_time=result.llm_generation_time,
-                eval_time=result.eval_time,
-                error=None,
+            score_new = self._candidate_score(result)
+            if score_new is None:
+                score_new = global_best_prev
+
+            d_local = local_gain(score_new, frontier_state.local_best)
+            g_global = global_gain(score_new, global_best_prev)
+            util = utility(d_local, g_global, raw_iteration_cost, compact_state.remaining_budget_ratio)
+            frontier_state.H = update_signal(frontier_state.H, util, alpha=self.alpha)
+            frontier_state.local_best = max(frontier_state.local_best, float(score_new))
+            frontier_state.last_update_iteration = iteration
+
+            if g_global > self.meta_gain_eps:
+                frontier_state.stagnation_steps = 0
+            else:
+                frontier_state.stagnation_steps += 1
+
+            realized_router_reward = self.router.update(
+                frontier_id=frontier_id,
+                global_gain_value=g_global,
+                raw_iteration_cost=raw_iteration_cost,
             )
+            frontier_state.routing_reward = self.router.get_reward(frontier_id)
+            frontier_state.selection_count += 1
+
+            self._recent_global_gains.append(g_global)
+            self._recent_H_values.append(frontier_state.H)
+            self.tier_scheduler.update(compact_state, self._current_tier, util)
+
+            meta_triggered = (
+                self._is_stagnant(frontier_state)
+                and compact_state.remaining_budget_ratio > self.meta_eta_min
+                and self._avg_recent_H() < self.meta_h_threshold
+            )
+
+            budget_record.meta["recent_improvement_avg"] = float(self._recent_improvement_avg())
+            budget_record.meta["stagnation_steps"] = int(frontier_state.stagnation_steps)
+            budget_record.meta["local_gain"] = float(d_local)
+            budget_record.meta["global_gain"] = float(g_global)
+            budget_record.meta["utility"] = float(util)
+            budget_record.meta["frontier_signal"] = float(frontier_state.H)
+            budget_record.meta["routing_reward"] = float(realized_router_reward)
+            budget_record.meta["router_reward"] = float(realized_router_reward)  # backward-compatible alias
+            budget_record.meta["meta_triggered"] = bool(meta_triggered)
+
+            # Keep default summary/trace pipeline from phase-1.
+            self._finalize_budget_iteration(budget_record, result)
+
+            # Keep AdaEvolve iteration stats logging behavior.
+            if result.error:
+                self._log_iteration_stats(
+                    iteration=iteration,
+                    sampling_mode=getattr(self, "_last_sampling_mode", None),
+                    sampling_intensity=getattr(self, "_last_sampling_intensity", None),
+                    child_program=None,
+                    iteration_time=iteration_time,
+                    llm_generation_time=result.llm_generation_time,
+                    eval_time=result.eval_time,
+                    error=result.error,
+                )
+            else:
+                self._log_iteration_stats(
+                    iteration=iteration,
+                    sampling_mode=getattr(self, "_last_sampling_mode", None),
+                    sampling_intensity=getattr(self, "_last_sampling_intensity", None),
+                    child_program=result.child_program_dict,
+                    iteration_time=result.iteration_time,
+                    llm_generation_time=result.llm_generation_time,
+                    eval_time=result.eval_time,
+                    error=None,
+                )
+        finally:
+            self._active_budget_record = None
+            self._active_call_role = CallRole.GENERATION
 
     async def _generate_child(
         self,
         iteration: int,
         error_context: Optional[str] = None,
         force_exploration: bool = False,
-        call_role=None,
         budget_record=None,
     ) -> SerializableResult:
         """Generate/evaluate a child with tier-aware sampling + prompt context."""
@@ -366,8 +375,6 @@ class CostAdaController(AdaEvolveController):
                 parent,
                 prompt,
                 iteration,
-                call_role=call_role,
-                budget_record=budget_record,
                 parent_info=parent_info,
                 context_info=context_info,
                 context_program_ids=context_program_ids,

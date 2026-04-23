@@ -754,12 +754,14 @@ def main() -> None:
 
     p1 = plot_best_score_vs_cost(runs, out_dir / "best_score_vs_cost.png")
     p1_obj = plot_best_score_vs_cost(runs, out_dir / "best_so_far_objective_vs_cost.png")
+    p1_combined = plot_best_score_vs_cost(runs, out_dir / "best_so_far_combined_score_vs_cost.png")
     p1_iter = plot_best_objective_vs_iteration(runs, out_dir / "best_so_far_objective_vs_iteration.png")
     p1_alias = plot_best_score_vs_cost(runs, out_dir / "best_vs_cost.png")
     p2 = plot_success_vs_budget(agg_rows, out_dir / "success_vs_budget.png")
     p3 = plot_cost_to_target(agg_rows, out_dir / "cost_to_target.png")
     p4 = plot_budget_adherence(agg_rows, out_dir / "budget_adherence.png")
     p4_alias = plot_metric_vs_budget(agg_rows, "OOBRate", "OOB rate vs budget", out_dir / "oob_vs_budget.png")
+    p4_oob = plot_metric_vs_budget(agg_rows, "OOBRate", "OOB rate vs budget", out_dir / "oob_rate_vs_budget.png")
     p8 = plot_metric_vs_budget(
         agg_rows, "OvershootRatio", "Overshoot ratio vs budget", out_dir / "overshoot_ratio_vs_budget.png"
     )
@@ -775,13 +777,15 @@ def main() -> None:
     print(f"Wrote: {out_dir / 'per_run_metrics.csv'}")
     print(f"Wrote: {out_dir / 'aggregate_metrics.csv'}")
     print(f"Wrote: {out_dir / 'speedup_vs_baseline.csv'}")
-    if not any([p1, p1_obj, p1_iter, p1_alias, p2, p3, p4, p4_alias, p5, p6, p7, p8, p9, p10, p11]):
+    if not any([p1, p1_obj, p1_combined, p1_iter, p1_alias, p2, p3, p4, p4_alias, p4_oob, p5, p6, p7, p8, p9, p10, p11]):
         print("Skipped plotting (matplotlib unavailable).")
     else:
         if p1:
             print(f"Wrote: {out_dir / 'best_score_vs_cost.png'}")
         if p1_obj:
             print(f"Wrote: {out_dir / 'best_so_far_objective_vs_cost.png'}")
+        if p1_combined:
+            print(f"Wrote: {out_dir / 'best_so_far_combined_score_vs_cost.png'}")
         if p1_iter:
             print(f"Wrote: {out_dir / 'best_so_far_objective_vs_iteration.png'}")
         if p1_alias:
@@ -794,6 +798,8 @@ def main() -> None:
             print(f"Wrote: {out_dir / 'budget_adherence.png'}")
         if p4_alias:
             print(f"Wrote: {out_dir / 'oob_vs_budget.png'}")
+        if p4_oob:
+            print(f"Wrote: {out_dir / 'oob_rate_vs_budget.png'}")
         if p8:
             print(f"Wrote: {out_dir / 'overshoot_ratio_vs_budget.png'}")
         if p9:
