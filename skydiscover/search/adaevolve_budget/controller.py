@@ -5,10 +5,11 @@ from typing import Any, Optional
 
 from skydiscover.budget import CallRole
 from skydiscover.search.adaevolve.controller import AdaEvolveController
+from skydiscover.search.utils.budget_iteration import BudgetIterationMixin
 from skydiscover.search.utils.discovery_utils import SerializableResult
 
 
-class AdaEvolveBudgetController(AdaEvolveController):
+class AdaEvolveBudgetController(BudgetIterationMixin, AdaEvolveController):
     """AdaEvolve wrapper that adds per-iteration budget/cost tracing."""
 
     def __init__(self, controller_input):
@@ -28,7 +29,9 @@ class AdaEvolveBudgetController(AdaEvolveController):
         attempts = 1 + (self.max_retries if self.enable_retry else 0)
 
         for attempt in range(attempts):
-            self._current_call_role = CallRole.GENERATION if attempt == 0 else CallRole.RETRY
+            self._budget_set_call_role(
+                CallRole.GENERATION if attempt == 0 else CallRole.RETRY
+            )
             result = await self._generate_child(iteration, error_context=last_error)
             if not result.error:
                 return result
@@ -42,11 +45,7 @@ class AdaEvolveBudgetController(AdaEvolveController):
 
     async def _run_iteration(self, iteration: int, checkpoint_callback) -> None:
         iteration_start_time = time.time()
-        budget_record = self.budget_ledger.start_iteration(iteration)
-        budget_record.meta["frontier_id"] = getattr(self.database, "current_island", None)
-        budget_record.meta["global_best_before"] = self._best_score_or_zero()
-        budget_record.meta["tier"] = getattr(self, "_last_sampling_mode", None)
-        self._active_budget_record = budget_record
+        budget_record = self._budget_start_iteration(iteration)
         result: Optional[SerializableResult] = None
         finalized = False
 
@@ -81,26 +80,29 @@ class AdaEvolveBudgetController(AdaEvolveController):
                     error=None,
                 )
 
-            budget_record.meta["attempts_used"] = int(result.attempts_used or 1)
-            budget_record.meta["tier"] = getattr(self, "_last_sampling_mode", None)
-            budget_record.meta["recent_improvement_avg"] = getattr(self, "_last_sampling_intensity", None)
-            self._finalize_budget_iteration(budget_record, result)
+            self._budget_finalize_iteration(
+                budget_record,
+                result,
+                extra_meta={
+                    "attempts_used": int(result.attempts_used or 1),
+                    "tier": getattr(self, "_last_sampling_mode", None),
+                    "recent_improvement_avg": getattr(self, "_last_sampling_intensity", None),
+                },
+            )
             finalized = True
         except Exception as exc:
-            result = SerializableResult(
-                error=f"Budget wrapper iteration error: {exc}",
-                iteration=iteration,
-                attempts_used=1,
-                iteration_time=(time.time() - iteration_start_time),
+            result = self._budget_error_result(
+                iteration,
+                iteration_start_time,
+                f"Budget wrapper iteration error: {exc}",
             )
         finally:
             if not finalized and result is not None:
                 try:
-                    self._finalize_budget_iteration(budget_record, result)
+                    self._budget_finalize_iteration(budget_record, result)
                 except Exception:
                     pass
-            self._active_budget_record = None
-            self._current_call_role = CallRole.GENERATION
+            self._budget_reset_context()
 
     async def run_discovery(self, *args: Any, **kwargs: Any):
         out = await super().run_discovery(*args, **kwargs)

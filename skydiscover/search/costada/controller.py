@@ -21,13 +21,14 @@ from skydiscover.search.costada.router import CostAwareFrontierRouter
 from skydiscover.search.costada.state import CompactControlState, FrontierState
 from skydiscover.search.costada.tier_scheduler import TierScheduler
 from skydiscover.search.default_discovery_controller import DiscoveryControllerInput
+from skydiscover.search.utils.budget_iteration import BudgetIterationMixin
 from skydiscover.search.utils.discovery_utils import SerializableResult
 from skydiscover.utils.metrics import compute_proxy_score
 
 logger = logging.getLogger(__name__)
 
 
-class CostAdaController(AdaEvolveController):
+class CostAdaController(BudgetIterationMixin, AdaEvolveController):
     """Budget-calibrated hierarchical controller (BCHD / CostAda).
 
     Final design split:
@@ -156,7 +157,9 @@ class CostAdaController(AdaEvolveController):
         last_error = None
         attempts = 1 + (self.max_retries if self.enable_retry else 0)
         for attempt in range(attempts):
-            self._active_call_role = CallRole.GENERATION if attempt == 0 else CallRole.RETRY
+            self._budget_set_call_role(
+                CallRole.GENERATION if attempt == 0 else CallRole.RETRY
+            )
             result = await self._generate_child(
                 iteration,
                 error_context=last_error,
@@ -175,8 +178,7 @@ class CostAdaController(AdaEvolveController):
     async def _run_iteration(self, iteration: int, checkpoint_callback) -> None:
         """Execute one CostAda iteration with unified BCHD signal updates."""
         iteration_start_time = time.time()
-        budget_record = self.budget_ledger.start_iteration(iteration)
-        self._active_budget_record = budget_record
+        budget_record = self._budget_start_iteration(iteration)
         result: Optional[SerializableResult] = None
         finalized = False
 
@@ -257,7 +259,7 @@ class CostAdaController(AdaEvolveController):
             budget_record.meta["meta_triggered"] = bool(meta_triggered)
 
             # Keep default summary/trace pipeline from phase-1.
-            self._finalize_budget_iteration(budget_record, result)
+            self._budget_finalize_iteration(budget_record, result)
             finalized = True
 
             # Keep AdaEvolve iteration stats logging behavior.
@@ -285,20 +287,18 @@ class CostAdaController(AdaEvolveController):
                 )
         except Exception as exc:
             # Persist budget/cost trace even when iteration orchestration fails mid-way.
-            result = SerializableResult(
-                error=f"CostAda iteration error: {exc}",
-                iteration=iteration,
-                attempts_used=1,
-                iteration_time=(time.time() - iteration_start_time),
+            result = self._budget_error_result(
+                iteration,
+                iteration_start_time,
+                f"CostAda iteration error: {exc}",
             )
         finally:
             if not finalized and result is not None:
                 try:
-                    self._finalize_budget_iteration(budget_record, result)
+                    self._budget_finalize_iteration(budget_record, result)
                 except Exception:
                     pass
-            self._active_budget_record = None
-            self._active_call_role = CallRole.GENERATION
+            self._budget_reset_context()
 
     async def _generate_child(
         self,
