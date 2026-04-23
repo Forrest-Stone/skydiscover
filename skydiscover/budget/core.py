@@ -103,12 +103,16 @@ class BudgetLedger:
         total_generation_cost = 0.0
         total_retry_cost = 0.0
         total_guide_cost = 0.0
+        total_prompt_tokens = 0
+        total_completion_tokens = 0
 
         for record in self.records:
             total_generation_cost += float(record.generation_cost or 0.0)
             total_retry_cost += float(record.retry_cost or 0.0)
             total_guide_cost += float(record.guide_cost or 0.0)
             for call in record.calls:
+                total_prompt_tokens += int(call.prompt_tokens or 0)
+                total_completion_tokens += int(call.completion_tokens or 0)
                 if call.role == CallRole.GENERATION:
                     num_generation_calls += 1
                 elif call.role == CallRole.RETRY:
@@ -134,6 +138,11 @@ class BudgetLedger:
             "retry_cost_total": total_retry_cost,
             "guide_cost_total": total_guide_cost,
             "component_cost_total": (total_generation_cost + total_retry_cost + total_guide_cost),
+            "prompt_tokens_total": total_prompt_tokens,
+            "completion_tokens_total": total_completion_tokens,
+            "input_tokens_total": total_prompt_tokens,
+            "output_tokens_total": total_completion_tokens,
+            "total_tokens": total_prompt_tokens + total_completion_tokens,
             "avg_iteration_cost": (
                 self.cumulative_cost / len(self.records) if self.records else 0.0
             ),

@@ -119,7 +119,8 @@ class DiscoveryController:
         self._prompt_context: Dict[str, Any] = {}
         nominal_budget = float(getattr(self.config.search.database, "nominal_budget", 0.0) or 0.0)
         if nominal_budget <= 0.0:
-            # Use a practical fallback budget when task config does not provide one.
+            # Central budget defaults should come from configs/model_pricing.yaml
+            # via config._apply_budget_defaults(). Keep a safe fallback here.
             nominal_budget = 1.0
         self.budget_ledger = BudgetLedger(BudgetConfig(nominal_budget=nominal_budget))
         output_path = Path(self.output_dir or ".")

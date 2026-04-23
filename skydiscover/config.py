@@ -124,12 +124,8 @@ def _load_model_pricing_table() -> Dict[str, Dict[str, float]]:
 
 def _load_budget_defaults_config() -> Dict[str, Any]:
     """Load optional budget defaults/profiles from model_pricing YAML."""
-    pricing_path = os.environ.get("SKYDISCOVER_MODEL_PRICING_FILE")
-    if pricing_path:
-        candidate = Path(pricing_path)
-    else:
-        candidate = Path(__file__).resolve().parent.parent / \
-            "configs" / "model_pricing.yaml"
+    # Budget defaults are sourced only from the central model pricing config.
+    candidate = Path(__file__).resolve().parent.parent / "configs" / "model_pricing.yaml"
 
     if not candidate.exists():
         return {}
