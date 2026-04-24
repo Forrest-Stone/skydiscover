@@ -844,6 +844,19 @@ class DiscoveryController:
             return previous
         return max(float(previous), float(candidate))
 
+    def _compute_best_with_iteration(
+        self,
+        previous_value: Optional[float],
+        previous_iteration: Optional[int],
+        candidate_value: Optional[float],
+        candidate_iteration: int,
+    ) -> tuple[Optional[float], Optional[int]]:
+        if candidate_value is None:
+            return previous_value, previous_iteration
+        if previous_value is None or float(candidate_value) >= float(previous_value):
+            return float(candidate_value), int(candidate_iteration)
+        return previous_value, previous_iteration
+
     def _finalize_budget_iteration(self, budget_record, result: SerializableResult) -> None:
         metrics = self._extract_metrics(result)
         objective = resolve_objective_from_metrics(metrics)
@@ -851,6 +864,19 @@ class DiscoveryController:
         prev_obj = prev_meta.get("best_so_far_objective")
         prev_ratio = prev_meta.get("best_so_far_target_ratio")
         prev_combined = prev_meta.get("best_so_far_combined_score")
+        prev_obj_iter = prev_meta.get("best_so_far_objective_iteration")
+        prev_ratio_iter = prev_meta.get("best_so_far_target_ratio_iteration")
+        prev_combined_iter = prev_meta.get("best_so_far_combined_score_iteration")
+
+        best_obj, best_obj_iter = self._compute_best_with_iteration(
+            prev_obj, prev_obj_iter, objective.objective_value, budget_record.iteration
+        )
+        best_ratio, best_ratio_iter = self._compute_best_with_iteration(
+            prev_ratio, prev_ratio_iter, objective.target_ratio, budget_record.iteration
+        )
+        best_combined, best_combined_iter = self._compute_best_with_iteration(
+            prev_combined, prev_combined_iter, objective.combined_score, budget_record.iteration
+        )
 
         budget_record.meta["objective_key"] = objective.objective_key
         budget_record.meta["objective_value"] = objective.objective_value
@@ -860,15 +886,12 @@ class DiscoveryController:
         budget_record.meta["validity"] = objective.validity
         budget_record.meta["eval_time"] = float(result.eval_time or 0.0)
         budget_record.meta["metrics_raw"] = metrics
-        budget_record.meta["best_so_far_objective"] = self._compute_best_so_far(
-            prev_obj, objective.objective_value
-        )
-        budget_record.meta["best_so_far_target_ratio"] = self._compute_best_so_far(
-            prev_ratio, objective.target_ratio
-        )
-        budget_record.meta["best_so_far_combined_score"] = self._compute_best_so_far(
-            prev_combined, objective.combined_score
-        )
+        budget_record.meta["best_so_far_objective"] = best_obj
+        budget_record.meta["best_so_far_objective_iteration"] = best_obj_iter
+        budget_record.meta["best_so_far_target_ratio"] = best_ratio
+        budget_record.meta["best_so_far_target_ratio_iteration"] = best_ratio_iter
+        budget_record.meta["best_so_far_combined_score"] = best_combined
+        budget_record.meta["best_so_far_combined_score_iteration"] = best_combined_iter
         budget_record.meta["global_best_after"] = self._best_score_or_zero()
         budget_record.meta["attempts_used"] = int(result.attempts_used or 1)
         budget_record.meta["candidate_score"] = self._extract_candidate_score(result)
@@ -896,15 +919,18 @@ class DiscoveryController:
         )
         if objective.objective_key is not None:
             logger.info(
-                "Objective(iter=%s): key=%s value=%s best_obj=%s ratio=%s best_ratio=%s combined=%s best_combined=%s validity=%s",
+                "Objective(iter=%s): key=%s value=%s best_obj=%s best_obj_iter=%s ratio=%s best_ratio=%s best_ratio_iter=%s combined=%s best_combined=%s best_combined_iter=%s validity=%s",
                 budget_record.iteration,
                 objective.objective_key,
                 budget_record.meta.get("objective_value"),
                 budget_record.meta.get("best_so_far_objective"),
+                budget_record.meta.get("best_so_far_objective_iteration"),
                 budget_record.meta.get("target_ratio"),
                 budget_record.meta.get("best_so_far_target_ratio"),
+                budget_record.meta.get("best_so_far_target_ratio_iteration"),
                 budget_record.meta.get("combined_score"),
                 budget_record.meta.get("best_so_far_combined_score"),
+                budget_record.meta.get("best_so_far_combined_score_iteration"),
                 budget_record.meta.get("validity"),
             )
 
@@ -1006,13 +1032,43 @@ class DiscoveryController:
             [float(r["best_so_far_objective"]) for r in rows if r.get("best_so_far_objective") is not None],
             default=None,
         )
+        best_objective_iteration = next(
+            (
+                int(r["best_so_far_objective_iteration"])
+                for r in reversed(rows)
+                if r.get("best_so_far_objective") is not None
+                and best_objective is not None
+                and float(r.get("best_so_far_objective")) == float(best_objective)
+            ),
+            None,
+        )
         best_target_ratio = max(
             [float(r["best_so_far_target_ratio"]) for r in rows if r.get("best_so_far_target_ratio") is not None],
             default=None,
         )
+        best_target_ratio_iteration = next(
+            (
+                int(r["best_so_far_target_ratio_iteration"])
+                for r in reversed(rows)
+                if r.get("best_so_far_target_ratio") is not None
+                and best_target_ratio is not None
+                and float(r.get("best_so_far_target_ratio")) == float(best_target_ratio)
+            ),
+            None,
+        )
         best_combined_score = max(
             [float(r["best_so_far_combined_score"]) for r in rows if r.get("best_so_far_combined_score") is not None],
             default=None,
+        )
+        best_combined_score_iteration = next(
+            (
+                int(r["best_so_far_combined_score_iteration"])
+                for r in reversed(rows)
+                if r.get("best_so_far_combined_score") is not None
+                and best_combined_score is not None
+                and float(r.get("best_so_far_combined_score")) == float(best_combined_score)
+            ),
+            None,
         )
         cost_to_target = next(
             (
@@ -1042,8 +1098,11 @@ class DiscoveryController:
             "seed": getattr(self.config.search.database, "random_seed", None),
             "objective_key": objective_key,
             "best_objective": best_objective,
+            "best_objective_iteration": best_objective_iteration,
             "best_combined_score": best_combined_score,
+            "best_combined_score_iteration": best_combined_score_iteration,
             "best_target_ratio": best_target_ratio,
+            "best_target_ratio_iteration": best_target_ratio_iteration,
             "target_value": target_value,
             "success_target": bool(best_target_ratio is not None and float(best_target_ratio) >= 1.0),
             "cost_to_target": cost_to_target,

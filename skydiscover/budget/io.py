@@ -77,11 +77,16 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         "objective_key": record.meta.get("objective_key"),
         "objective_value": record.meta.get("objective_value"),
         "best_so_far_objective": record.meta.get("best_so_far_objective"),
+        "best_so_far_objective_iteration": record.meta.get("best_so_far_objective_iteration"),
         "target_value": record.meta.get("target_value"),
         "target_ratio": record.meta.get("target_ratio"),
         "best_so_far_target_ratio": record.meta.get("best_so_far_target_ratio"),
+        "best_so_far_target_ratio_iteration": record.meta.get("best_so_far_target_ratio_iteration"),
         "combined_score": record.meta.get("combined_score"),
         "best_so_far_combined_score": record.meta.get("best_so_far_combined_score"),
+        "best_so_far_combined_score_iteration": record.meta.get(
+            "best_so_far_combined_score_iteration"
+        ),
         "validity": record.meta.get("validity"),
         "eval_time": record.meta.get("eval_time"),
         "metrics_raw": record.meta.get("metrics_raw"),
