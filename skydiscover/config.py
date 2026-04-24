@@ -1322,19 +1322,10 @@ def apply_overrides(
         config.search.type = search
         new_db_cls = _DB_CONFIG_BY_TYPE.get(search)
         if new_db_cls and not isinstance(config.search.database, new_db_cls):
-            # Preserve user-provided database knobs when switching search type
-            # via CLI flag. This keeps compatible fields (and extra attrs) from
-            # the previous database object instead of silently resetting to
-            # defaults.
-            previous_db = config.search.database
+            # Switching search algorithm should reset to the target method's
+            # own database config instead of inheriting knobs from the
+            # previously selected method.
             config.search.database = new_db_cls()
-            if previous_db is not None:
-                for key, value in vars(previous_db).items():
-                    try:
-                        setattr(config.search.database, key, value)
-                    except Exception:
-                        # Ignore read-only/incompatible attrs and keep defaults.
-                        continue
         # Switching search type can replace database instance; re-apply
         # centralized budget defaults so CostAda nominal budget is not lost.
         _apply_budget_defaults(config, preserve_existing_extras=False)
