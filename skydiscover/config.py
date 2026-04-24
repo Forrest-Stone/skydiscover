@@ -194,12 +194,11 @@ def _apply_budget_defaults(config: "Config", *, preserve_existing_extras: bool =
     if isinstance(method_defaults, dict):
         merged.update(method_defaults)
 
-    # Respect user-provided extra keys from task config (e.g. nominal_budget: 0.5).
-    # For dataclass-declared fields we keep centralized defaults as before.
-    declared_fields = {f.name for f in fields(type(db))}
-    existing_extra_keys = set(vars(db).keys()) - declared_fields
+    # Respect keys explicitly provided by the user in task config.
+    # This applies to both dataclass-declared fields and dynamic extras.
+    user_provided_keys = set(getattr(db, "_user_provided_keys", set()) or set())
     for key, value in merged.items():
-        if preserve_existing_extras and key in existing_extra_keys:
+        if preserve_existing_extras and key in user_provided_keys:
             continue
         setattr(db, key, value)
 
@@ -999,9 +998,12 @@ class Config:
                 db_config = db_config_cls(**db_known)
                 for k, v in db_extras.items():
                     setattr(db_config, k, v)
+                setattr(db_config, "_user_provided_keys", set(db_dict.keys()))
                 search_dict["database"] = db_config
             else:
-                search_dict["database"] = db_config_cls()
+                db_config = db_config_cls()
+                setattr(db_config, "_user_provided_keys", set())
+                search_dict["database"] = db_config
             config.search = SearchConfig(**search_dict)
 
         if "evaluator" in config_dict:
@@ -1326,6 +1328,7 @@ def apply_overrides(
             # own database config instead of inheriting knobs from the
             # previously selected method.
             config.search.database = new_db_cls()
+            setattr(config.search.database, "_user_provided_keys", set())
         # Switching search type can replace database instance; re-apply
         # centralized budget defaults so CostAda nominal budget is not lost.
         _apply_budget_defaults(config, preserve_existing_extras=False)
