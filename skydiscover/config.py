@@ -148,7 +148,7 @@ def _load_budget_defaults_config() -> Dict[str, Any]:
     }
 
 
-def _apply_budget_defaults(config: "Config") -> None:
+def _apply_budget_defaults(config: "Config", *, preserve_existing_extras: bool = True) -> None:
     """Apply central budget defaults/profile to search.database.
 
     Central defaults/profile are the source of truth.
@@ -199,7 +199,7 @@ def _apply_budget_defaults(config: "Config") -> None:
     declared_fields = {f.name for f in fields(type(db))}
     existing_extra_keys = set(vars(db).keys()) - declared_fields
     for key, value in merged.items():
-        if key in existing_extra_keys:
+        if preserve_existing_extras and key in existing_extra_keys:
             continue
         setattr(db, key, value)
 
@@ -1337,7 +1337,7 @@ def apply_overrides(
                         continue
         # Switching search type can replace database instance; re-apply
         # centralized budget defaults so CostAda nominal budget is not lost.
-        _apply_budget_defaults(config)
+        _apply_budget_defaults(config, preserve_existing_extras=False)
 
     # For EvoX, CLI model/api-base overrides should apply to the co-evolved
     # search-strategy side as well. Otherwise it falls back to
