@@ -8,7 +8,7 @@ this module wires up implementations and provides ``get_discovery_controller``.
 
 import logging
 
-from skydiscover.search.adaevolve.controller import AdaEvolveController
+from skydiscover.search.adaevolve_budget.controller import AdaEvolveBudgetController
 from skydiscover.search.adaevolve.database import AdaEvolveDatabase
 from skydiscover.search.beam_search.database import BeamSearchDatabase
 from skydiscover.search.costada.controller import CostAdaController
@@ -22,7 +22,7 @@ from skydiscover.search.default_discovery_controller import (
     DiscoveryController,
     DiscoveryControllerInput,
 )
-from skydiscover.search.evox.controller import CoEvolutionController
+from skydiscover.search.evox_budget.controller import CoEvolutionBudgetController
 from skydiscover.search.evox.database.search_strategy_db import SearchStrategyDatabase
 from skydiscover.search.gepa_native.controller import GEPANativeController
 from skydiscover.search.gepa_native.database import GEPANativeDatabase
@@ -48,8 +48,12 @@ def get_discovery_controller(controller_input: DiscoveryControllerInput) -> Disc
     if none is registered.
     """
     search_type = controller_input.config.search.type
-    controller_class = _CONTROLLER_REGISTRY.get(
-        search_type, DiscoveryController)
+    normalized_type = (
+        search_type[: -len("_budget")] if str(search_type).endswith("_budget") else search_type
+    )
+    controller_class = _CONTROLLER_REGISTRY.get(search_type) or _CONTROLLER_REGISTRY.get(
+        normalized_type, DiscoveryController
+    )
     logger.debug(
         f"Using controller {controller_class.__name__} for search type '{search_type}'")
     return controller_class(controller_input)
@@ -63,15 +67,20 @@ register_database("topk", TopKDatabase)
 
 # AdaEvolve
 register_database("adaevolve", AdaEvolveDatabase)
-register_controller("adaevolve", AdaEvolveController)
+register_controller("adaevolve", AdaEvolveBudgetController)
+register_database("adaevolve_budget", AdaEvolveDatabase)
+register_controller("adaevolve_budget", AdaEvolveBudgetController)
 register_database("costada", CostAdaDatabase)
 register_controller("costada", CostAdaController)
+register_database("costada_budget", CostAdaDatabase)
+register_controller("costada_budget", CostAdaController)
 
 # OpenEvolve Native
 register_database("openevolve_native", OpenEvolveNativeDatabase)
 
 # EvoX
-register_controller("evox", CoEvolutionController)
+register_controller("evox", CoEvolutionBudgetController)
+register_controller("evox_budget", CoEvolutionBudgetController)
 register_database("evox_meta", SearchStrategyDatabase)
 
 # GEPA Native: guided evolution with acceptance gating and merge
