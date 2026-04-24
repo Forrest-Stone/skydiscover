@@ -906,7 +906,7 @@ class DiscoveryController:
             extra=self._build_budget_summary_extra(),
         )
         logger.info(
-            "Budget(iter=%s): gen=%.6f retry=%.6f guide=%.6f iter=%.6f cum=%.6f tokens=%s calls=%s remain=%.6f",
+            "Budget(iter=%s): gen=%.6f retry=%.6f guide=%.6f iter=%.6f cum=%.6f tokens=%s (in=%s out=%s) calls=%s remain=%.6f",
             budget_record.iteration,
             budget_record.generation_cost,
             budget_record.retry_cost,
@@ -914,6 +914,8 @@ class DiscoveryController:
             budget_record.iteration_cost,
             budget_record.cumulative_cost,
             sum(c.total_tokens for c in budget_record.calls),
+            sum(c.prompt_tokens for c in budget_record.calls),
+            sum(c.completion_tokens for c in budget_record.calls),
             len(budget_record.calls),
             budget_record.remaining_budget_ratio,
         )
