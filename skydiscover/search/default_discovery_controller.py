@@ -853,7 +853,7 @@ class DiscoveryController:
     ) -> tuple[Optional[float], Optional[int]]:
         if candidate_value is None:
             return previous_value, previous_iteration
-        if previous_value is None or float(candidate_value) >= float(previous_value):
+        if previous_value is None or float(candidate_value) > float(previous_value):
             return float(candidate_value), int(candidate_iteration)
         return previous_value, previous_iteration
 
@@ -1037,7 +1037,7 @@ class DiscoveryController:
         best_objective_iteration = next(
             (
                 int(r["best_so_far_objective_iteration"])
-                for r in reversed(rows)
+                for r in rows
                 if r.get("best_so_far_objective") is not None
                 and best_objective is not None
                 and float(r.get("best_so_far_objective")) == float(best_objective)
@@ -1051,7 +1051,7 @@ class DiscoveryController:
         best_target_ratio_iteration = next(
             (
                 int(r["best_so_far_target_ratio_iteration"])
-                for r in reversed(rows)
+                for r in rows
                 if r.get("best_so_far_target_ratio") is not None
                 and best_target_ratio is not None
                 and float(r.get("best_so_far_target_ratio")) == float(best_target_ratio)
@@ -1065,7 +1065,7 @@ class DiscoveryController:
         best_combined_score_iteration = next(
             (
                 int(r["best_so_far_combined_score_iteration"])
-                for r in reversed(rows)
+                for r in rows
                 if r.get("best_so_far_combined_score") is not None
                 and best_combined_score is not None
                 and float(r.get("best_so_far_combined_score")) == float(best_combined_score)
