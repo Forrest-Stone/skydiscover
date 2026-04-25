@@ -124,12 +124,8 @@ def _load_model_pricing_table() -> Dict[str, Dict[str, float]]:
 
 def _load_budget_defaults_config() -> Dict[str, Any]:
     """Load optional budget defaults/profiles from model_pricing YAML."""
-    pricing_path = os.environ.get("SKYDISCOVER_MODEL_PRICING_FILE")
-    if pricing_path:
-        candidate = Path(pricing_path)
-    else:
-        candidate = Path(__file__).resolve().parent.parent / \
-            "configs" / "model_pricing.yaml"
+    # Budget defaults are sourced only from the central model pricing config.
+    candidate = Path(__file__).resolve().parent.parent / "configs" / "model_pricing.yaml"
 
     if not candidate.exists():
         return {}
@@ -152,7 +148,7 @@ def _load_budget_defaults_config() -> Dict[str, Any]:
     }
 
 
-def _apply_budget_defaults(config: "Config") -> None:
+def _apply_budget_defaults(config: "Config", *, preserve_existing_extras: bool = True) -> None:
     """Apply central budget defaults/profile to search.database.
 
     Central defaults/profile are the source of truth.
@@ -168,11 +164,20 @@ def _apply_budget_defaults(config: "Config") -> None:
     base_defaults = budget_cfg.get("budget_defaults", {})
     profiles = budget_cfg.get("budget_profiles", {})
     search_type = str(getattr(config.search, "type", "") or "").strip().lower()
+    base_search_type = (
+        search_type[: -len("_budget")] if search_type.endswith("_budget") else search_type
+    )
     method_section_key = {
         "costada": "costada_budget",
         "adaevolve": "adaevolve_budget",
+        "adaevolve_budget": "adaevolve_budget",
         "evox": "evox_budget",
-    }.get(search_type, "")
+        "evox_budget": "evox_budget",
+    }.get(search_type) or {
+        "costada": "costada_budget",
+        "adaevolve": "adaevolve_budget",
+        "evox": "evox_budget",
+    }.get(base_search_type, "")
     method_defaults = budget_cfg.get(
         method_section_key, {}) if method_section_key else {}
     profile_name = (
@@ -189,13 +194,85 @@ def _apply_budget_defaults(config: "Config") -> None:
     if isinstance(method_defaults, dict):
         merged.update(method_defaults)
 
-    # Respect user-provided extra keys from task config (e.g. nominal_budget: 0.5).
-    # For dataclass-declared fields we keep centralized defaults as before.
-    declared_fields = {f.name for f in fields(type(db))}
+    # Respect keys explicitly provided by the user in task config.
+    # This applies to both dataclass-declared fields and dynamic extras.
+    user_provided_keys = set(getattr(db, "_user_provided_keys", set()) or set())
     for key, value in merged.items():
-        if key not in declared_fields and hasattr(db, key):
+        if preserve_existing_extras and key in user_provided_keys:
             continue
         setattr(db, key, value)
+
+
+def _log_budget_resolution(config: "Config", *, stage: str) -> None:
+    """Log resolved budget values and their source precedence for debugging."""
+    if not hasattr(config, "search") or not hasattr(config.search, "database"):
+        return
+
+    budget_cfg = _load_budget_defaults_config()
+    if not budget_cfg:
+        return
+
+    db = config.search.database
+    search_type = str(getattr(config.search, "type", "") or "").strip().lower()
+    base_search_type = (
+        search_type[: -len("_budget")] if search_type.endswith("_budget") else search_type
+    )
+    method_section_key = {
+        "costada": "costada_budget",
+        "adaevolve": "adaevolve_budget",
+        "adaevolve_budget": "adaevolve_budget",
+        "evox": "evox_budget",
+        "evox_budget": "evox_budget",
+    }.get(search_type) or {
+        "costada": "costada_budget",
+        "adaevolve": "adaevolve_budget",
+        "evox": "evox_budget",
+    }.get(base_search_type, "")
+    base_defaults = budget_cfg.get("budget_defaults", {}) or {}
+    profiles = budget_cfg.get("budget_profiles", {}) or {}
+    method_defaults = budget_cfg.get(method_section_key, {}) if method_section_key else {}
+    profile_name = (
+        str(getattr(db, "budget_profile", "") or os.environ.get("SKYDISCOVER_BUDGET_PROFILE", "")).strip()
+    )
+    profile_overrides = profiles.get(profile_name, {}) if profile_name else {}
+    user_provided_keys = set(getattr(db, "_user_provided_keys", set()) or set())
+
+    key_order = list(dict.fromkeys(
+        list(base_defaults.keys())
+        + list(profile_overrides.keys())
+        + list(method_defaults.keys())
+        + sorted(user_provided_keys)
+    ))
+    if not key_order:
+        return
+
+    logger.info(
+        "[BudgetResolution:%s] search=%s profile=%s method_section=%s",
+        stage,
+        search_type,
+        profile_name or "<none>",
+        method_section_key or "<none>",
+    )
+    for key in key_order:
+        if not hasattr(db, key):
+            continue
+        if key in user_provided_keys:
+            source = "task_config.search.database (explicit)"
+        elif key in method_defaults:
+            source = f"model_pricing.{method_section_key}"
+        elif key in profile_overrides:
+            source = f"model_pricing.budget_profiles.{profile_name}"
+        elif key in base_defaults:
+            source = "model_pricing.budget_defaults"
+        else:
+            source = "runtime/default"
+        logger.info(
+            "[BudgetResolution:%s] %s=%r  <- %s",
+            stage,
+            key,
+            getattr(db, key),
+            source,
+        )
 
 
 def _load_local_default_api_key() -> Optional[str]:
@@ -774,10 +851,13 @@ _DB_CONFIG_BY_TYPE: Dict[str, type] = {
     "best_of_n": BestOfNDatabaseConfig,
     "topk": DatabaseConfig,
     "adaevolve": AdaEvolveDatabaseConfig,
+    "adaevolve_budget": AdaEvolveDatabaseConfig,
     "costada": AdaEvolveDatabaseConfig,
+    "costada_budget": AdaEvolveDatabaseConfig,
     "openevolve_native": OpenEvolveNativeDatabaseConfig,
     "gepa_native": GEPANativeDatabaseConfig,
     "claude_code": ClaudeCodeConfig,
+    "evox_budget": EvoxDatabaseConfig,
 }
 
 
@@ -970,7 +1050,14 @@ class Config:
         if "search" in config_dict:
             search_dict = config_dict["search"]
             search_type = search_dict.get("type", "topk")
-            db_config_cls = _DB_CONFIG_BY_TYPE.get(search_type, DatabaseConfig)
+            base_search_type = (
+                str(search_type)[: -len("_budget")]
+                if str(search_type).endswith("_budget")
+                else search_type
+            )
+            db_config_cls = _DB_CONFIG_BY_TYPE.get(
+                search_type, _DB_CONFIG_BY_TYPE.get(base_search_type, DatabaseConfig)
+            )
             if "database" in search_dict:
                 db_dict = search_dict["database"]
                 # Separate known fields from algorithm-specific extras
@@ -983,9 +1070,12 @@ class Config:
                 db_config = db_config_cls(**db_known)
                 for k, v in db_extras.items():
                     setattr(db_config, k, v)
+                setattr(db_config, "_user_provided_keys", set(db_dict.keys()))
                 search_dict["database"] = db_config
             else:
-                search_dict["database"] = db_config_cls()
+                db_config = db_config_cls()
+                setattr(db_config, "_user_provided_keys", set())
+                search_dict["database"] = db_config
             config.search = SearchConfig(**search_dict)
 
         if "evaluator" in config_dict:
@@ -1136,6 +1226,7 @@ def load_config(config_path: Optional[Union[str, Path]] = None) -> Config:
     # Apply centralized budget defaults/profile (single source config), while
     # keeping explicit per-run YAML values unchanged.
     _apply_budget_defaults(config)
+    _log_budget_resolution(config, stage="load_config")
 
     # Bridge provider env vars so that downstream configs (e.g. evox search.yaml)
     # can resolve ${OPENAI_API_KEY} from the environment.
@@ -1305,23 +1396,19 @@ def apply_overrides(
             config.search = SearchConfig()
         config.search.type = search
         new_db_cls = _DB_CONFIG_BY_TYPE.get(search)
+        switched_search_type = False
         if new_db_cls and not isinstance(config.search.database, new_db_cls):
-            # Preserve user-provided database knobs when switching search type
-            # via CLI flag. This keeps compatible fields (and extra attrs) from
-            # the previous database object instead of silently resetting to
-            # defaults.
-            previous_db = config.search.database
+            # Switching search algorithm should reset to the target method's
+            # own database config instead of inheriting knobs from the
+            # previously selected method.
             config.search.database = new_db_cls()
-            if previous_db is not None:
-                for key, value in vars(previous_db).items():
-                    try:
-                        setattr(config.search.database, key, value)
-                    except Exception:
-                        # Ignore read-only/incompatible attrs and keep defaults.
-                        continue
+            setattr(config.search.database, "_user_provided_keys", set())
+            switched_search_type = True
         # Switching search type can replace database instance; re-apply
-        # centralized budget defaults so CostAda nominal budget is not lost.
-        _apply_budget_defaults(config)
+        # centralized budget defaults. Preserve explicit config values unless
+        # we really switched method and reset the database object.
+        _apply_budget_defaults(config, preserve_existing_extras=not switched_search_type)
+        _log_budget_resolution(config, stage="apply_overrides")
 
     # For EvoX, CLI model/api-base overrides should apply to the co-evolved
     # search-strategy side as well. Otherwise it falls back to
