@@ -11,7 +11,12 @@ from typing import Optional
 
 from skydiscover import Runner
 from skydiscover.benchmarks.resolution import resolve_benchmark_problem
-from skydiscover.config import _parse_model_spec, apply_overrides, load_config
+from skydiscover.config import (
+    _parse_model_spec,
+    apply_overrides,
+    load_config,
+    resolve_default_config_path,
+)
 
 try:
     multiprocessing.set_start_method("spawn")
@@ -124,7 +129,7 @@ async def main_async() -> int:
 
     # Load the configuration
     if args.config or has_overrides:
-        config = load_config(args.config)
+        config = load_config(args.config or resolve_default_config_path(args.search))
 
         evaluator_env_vars = None
 

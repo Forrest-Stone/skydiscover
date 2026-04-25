@@ -1272,6 +1272,61 @@ def build_output_dir(search_type: str, initial_program_path: str, base_dir: str 
     return os.path.join(base_dir, search_type, f"{problem_name}_{timestamp}")
 
 
+def resolve_default_config_path(search: Optional[str] = None) -> str:
+    """Resolve default config path, preferring per-search config when available."""
+    base_dir = Path(__file__).resolve().parent.parent / "configs"
+    if search:
+        normalized = str(search).strip().lower()
+        if normalized.endswith("_budget"):
+            normalized = normalized[: -len("_budget")]
+        candidate = base_dir / f"{normalized}.yaml"
+        if candidate.exists():
+            return str(candidate)
+    return str(base_dir / "default.yaml")
+
+
+def _apply_search_template_defaults(config: Config, search: str) -> None:
+    """Apply method template defaults (configs/<search>.yaml) for non-explicit keys."""
+    template_path = resolve_default_config_path(search)
+    if not template_path or not os.path.exists(template_path):
+        return
+    if os.path.basename(template_path) == "default.yaml":
+        return
+
+    try:
+        template_cfg = Config.from_yaml(template_path)
+    except Exception:
+        return
+
+    if not hasattr(template_cfg, "search") or not hasattr(template_cfg.search, "database"):
+        return
+    if not hasattr(config, "search") or not hasattr(config.search, "database"):
+        return
+
+    target_db = config.search.database
+    template_db = template_cfg.search.database
+    explicit_keys = set(getattr(target_db, "_user_provided_keys", set()) or set())
+
+    # Fill search-level defaults (except database object itself) when absent.
+    for key, value in vars(template_cfg.search).items():
+        if key in {"database"}:
+            continue
+        if hasattr(config.search, key):
+            current = getattr(config.search, key)
+            if current is None:
+                setattr(config.search, key, value)
+
+    # Fill database defaults from method template for keys not explicitly set.
+    for key, value in vars(template_db).items():
+        if key == "_user_provided_keys":
+            continue
+        if key in explicit_keys:
+            continue
+        setattr(target_db, key, value)
+        explicit_keys.add(key)
+    setattr(target_db, "_user_provided_keys", explicit_keys)
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # Runtime overrides — shared by the public API and CLI
 # ═══════════════════════════════════════════════════════════════════════
@@ -1404,6 +1459,9 @@ def apply_overrides(
             config.search.database = new_db_cls()
             setattr(config.search.database, "_user_provided_keys", set())
             switched_search_type = True
+        # Apply method template defaults (configs/<search>.yaml) for any keys
+        # not explicitly provided by the current config file.
+        _apply_search_template_defaults(config, search)
         # Switching search type can replace database instance; re-apply
         # centralized budget defaults. Preserve explicit config values unless
         # we really switched method and reset the database object.
