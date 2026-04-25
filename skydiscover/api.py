@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from skydiscover.benchmarks.resolution import resolve_benchmark_problem
-from skydiscover.config import Config, apply_overrides, load_config
+from skydiscover.config import Config, apply_overrides, load_config, resolve_default_config_path
 from skydiscover.runner import Runner
 from skydiscover.search.base_database import Program
 from skydiscover.utils.metrics import get_score
@@ -128,7 +128,7 @@ async def _run_discovery_async(
         if isinstance(config, Config):
             config_obj = config
         else:
-            config_obj = load_config(str(config) if config else None)
+            config_obj = load_config(str(config) if config else resolve_default_config_path(search))
 
         apply_overrides(
             config_obj,
