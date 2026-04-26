@@ -23,6 +23,9 @@ from skydiscover.budget import (
     call_record_from_response,
     plot_run_budget_panels,
     plot_run_best_score_vs_cost,
+    plot_run_metric_vs_cost,
+    plot_run_metric_vs_iteration,
+    resolve_objective_from_metrics,
     write_iteration_record,
     write_summary,
 )
@@ -115,7 +118,11 @@ class DiscoveryController:
         self.monitor_callback: Optional[Callable] = None
         self.feedback_reader: Optional[Any] = None
         self._prompt_context: Dict[str, Any] = {}
-        nominal_budget = float(getattr(self.config.search.database, "nominal_budget", 1e9) or 1e9)
+        nominal_budget = float(getattr(self.config.search.database, "nominal_budget", 0.0) or 0.0)
+        if nominal_budget <= 0.0:
+            # Central budget defaults should come from configs/model_pricing.yaml
+            # via config._apply_budget_defaults(). Keep a safe fallback here.
+            nominal_budget = 1.0
         self.budget_ledger = BudgetLedger(BudgetConfig(nominal_budget=nominal_budget))
         output_path = Path(self.output_dir or ".")
         self._budget_iterations_path = output_path / "iterations.jsonl"
@@ -826,7 +833,66 @@ class DiscoveryController:
         except (TypeError, ValueError):
             return None
 
+    def _extract_metrics(self, result: SerializableResult) -> Dict[str, Any]:
+        child = result.child_program_dict or {}
+        metrics = child.get("metrics") or {}
+        return metrics if isinstance(metrics, dict) else {}
+
+    def _compute_best_so_far(self, previous: Optional[float], candidate: Optional[float]) -> Optional[float]:
+        if previous is None:
+            return candidate
+        if candidate is None:
+            return previous
+        return max(float(previous), float(candidate))
+
+    def _compute_best_with_iteration(
+        self,
+        previous_value: Optional[float],
+        previous_iteration: Optional[int],
+        candidate_value: Optional[float],
+        candidate_iteration: int,
+    ) -> tuple[Optional[float], Optional[int]]:
+        if candidate_value is None:
+            return previous_value, previous_iteration
+        if previous_value is None or float(candidate_value) > float(previous_value):
+            return float(candidate_value), int(candidate_iteration)
+        return previous_value, previous_iteration
+
     def _finalize_budget_iteration(self, budget_record, result: SerializableResult) -> None:
+        metrics = self._extract_metrics(result)
+        objective = resolve_objective_from_metrics(metrics)
+        prev_meta = self.budget_ledger.records[-1].meta if self.budget_ledger.records else {}
+        prev_obj = prev_meta.get("best_so_far_objective")
+        prev_ratio = prev_meta.get("best_so_far_target_ratio")
+        prev_combined = prev_meta.get("best_so_far_combined_score")
+        prev_obj_iter = prev_meta.get("best_so_far_objective_iteration")
+        prev_ratio_iter = prev_meta.get("best_so_far_target_ratio_iteration")
+        prev_combined_iter = prev_meta.get("best_so_far_combined_score_iteration")
+
+        best_obj, best_obj_iter = self._compute_best_with_iteration(
+            prev_obj, prev_obj_iter, objective.objective_value, budget_record.iteration
+        )
+        best_ratio, best_ratio_iter = self._compute_best_with_iteration(
+            prev_ratio, prev_ratio_iter, objective.target_ratio, budget_record.iteration
+        )
+        best_combined, best_combined_iter = self._compute_best_with_iteration(
+            prev_combined, prev_combined_iter, objective.combined_score, budget_record.iteration
+        )
+
+        budget_record.meta["objective_key"] = objective.objective_key
+        budget_record.meta["objective_value"] = objective.objective_value
+        budget_record.meta["target_value"] = objective.target_value
+        budget_record.meta["target_ratio"] = objective.target_ratio
+        budget_record.meta["combined_score"] = objective.combined_score
+        budget_record.meta["validity"] = objective.validity
+        budget_record.meta["eval_time"] = float(result.eval_time or 0.0)
+        budget_record.meta["metrics_raw"] = metrics
+        budget_record.meta["best_so_far_objective"] = best_obj
+        budget_record.meta["best_so_far_objective_iteration"] = best_obj_iter
+        budget_record.meta["best_so_far_target_ratio"] = best_ratio
+        budget_record.meta["best_so_far_target_ratio_iteration"] = best_ratio_iter
+        budget_record.meta["best_so_far_combined_score"] = best_combined
+        budget_record.meta["best_so_far_combined_score_iteration"] = best_combined_iter
         budget_record.meta["global_best_after"] = self._best_score_or_zero()
         budget_record.meta["attempts_used"] = int(result.attempts_used or 1)
         budget_record.meta["candidate_score"] = self._extract_candidate_score(result)
@@ -838,16 +904,38 @@ class DiscoveryController:
             self._budget_summary_path,
             self.budget_ledger,
             best_score=self._best_score_or_zero(),
+            extra=self._build_budget_summary_extra(),
         )
         logger.info(
-            "Budget(iter=%s): iter_cost=%.6f, cum_cost=%.6f, tokens=%s, calls=%s, remain_ratio=%.6f",
+            "Budget(iter=%s): gen=%.6f retry=%.6f guide=%.6f iter=%.6f cum=%.6f tokens=%s (in=%s out=%s) calls=%s remain=%.6f",
             budget_record.iteration,
+            budget_record.generation_cost,
+            budget_record.retry_cost,
+            budget_record.guide_cost,
             budget_record.iteration_cost,
             budget_record.cumulative_cost,
             sum(c.total_tokens for c in budget_record.calls),
+            sum(c.prompt_tokens for c in budget_record.calls),
+            sum(c.completion_tokens for c in budget_record.calls),
             len(budget_record.calls),
             budget_record.remaining_budget_ratio,
         )
+        if objective.objective_key is not None:
+            logger.info(
+                "Objective(iter=%s): key=%s value=%s best_obj=%s best_obj_iter=%s ratio=%s best_ratio=%s best_ratio_iter=%s combined=%s best_combined=%s best_combined_iter=%s validity=%s",
+                budget_record.iteration,
+                objective.objective_key,
+                budget_record.meta.get("objective_value"),
+                budget_record.meta.get("best_so_far_objective"),
+                budget_record.meta.get("best_so_far_objective_iteration"),
+                budget_record.meta.get("target_ratio"),
+                budget_record.meta.get("best_so_far_target_ratio"),
+                budget_record.meta.get("best_so_far_target_ratio_iteration"),
+                budget_record.meta.get("combined_score"),
+                budget_record.meta.get("best_so_far_combined_score"),
+                budget_record.meta.get("best_so_far_combined_score_iteration"),
+                budget_record.meta.get("validity"),
+            )
 
     def _write_budget_summary(self) -> None:
         summary = self.budget_ledger.summary()
@@ -855,10 +943,14 @@ class DiscoveryController:
             self._budget_summary_path,
             self.budget_ledger,
             best_score=self._best_score_or_zero(),
+            extra=self._build_budget_summary_extra(),
         )
         logger.info(
-            "Budget summary: total_cost=%.6f, nominal_budget=%.6f, oob=%s, overshoot=%.6f",
+            "Budget summary: total=%.6f (gen=%.6f retry=%.6f guide=%.6f), nominal=%.6f, oob=%s, overshoot=%.6f",
             float(summary.get("total_cost", 0.0) or 0.0),
+            float(summary.get("generation_cost_total", 0.0) or 0.0),
+            float(summary.get("retry_cost_total", 0.0) or 0.0),
+            float(summary.get("guide_cost_total", 0.0) or 0.0),
             float(summary.get("nominal_budget", 0.0) or 0.0),
             bool(summary.get("oob", False)),
             float(summary.get("overshoot", 0.0) or 0.0),
@@ -867,6 +959,34 @@ class DiscoveryController:
             self._budget_iterations_path,
             self._budget_summary_path.parent / "best_score_vs_cost.png",
         )
+        plotted_obj = plot_run_metric_vs_cost(
+            self._budget_iterations_path,
+            self._budget_summary_path.parent / "best_so_far_objective_vs_cost.png",
+            y_keys=["best_so_far_objective", "objective_value", "global_best_after"],
+            ylabel="Best-so-far objective",
+            title="Best-so-far objective vs cumulative cost",
+        )
+        plotted_combined = plot_run_metric_vs_cost(
+            self._budget_iterations_path,
+            self._budget_summary_path.parent / "best_so_far_combined_score_vs_cost.png",
+            y_keys=["best_so_far_combined_score", "combined_score", "global_best_after"],
+            ylabel="Best-so-far combined score",
+            title="Best-so-far combined score vs cumulative cost",
+        )
+        plotted_obj_iter = plot_run_metric_vs_iteration(
+            self._budget_iterations_path,
+            self._budget_summary_path.parent / "best_so_far_objective_vs_iteration.png",
+            y_keys=["best_so_far_objective", "objective_value", "global_best_after"],
+            ylabel="Best-so-far objective",
+            title="Best-so-far objective vs iteration",
+        )
+        plotted_score_iter = plot_run_metric_vs_iteration(
+            self._budget_iterations_path,
+            self._budget_summary_path.parent / "best_score_vs_iteration.png",
+            y_keys=["global_best_after", "best_so_far_combined_score", "combined_score"],
+            ylabel="Best score",
+            title="Best score vs iteration",
+        )
         if plotted:
             logger.info(
                 "Budget plot saved: %s",
@@ -874,6 +994,26 @@ class DiscoveryController:
             )
         else:
             logger.info("Budget plot skipped (no trace yet or matplotlib unavailable).")
+        if plotted_obj:
+            logger.info(
+                "Budget plot saved: %s",
+                self._budget_summary_path.parent / "best_so_far_objective_vs_cost.png",
+            )
+        if plotted_combined:
+            logger.info(
+                "Budget plot saved: %s",
+                self._budget_summary_path.parent / "best_so_far_combined_score_vs_cost.png",
+            )
+        if plotted_obj_iter:
+            logger.info(
+                "Budget plot saved: %s",
+                self._budget_summary_path.parent / "best_so_far_objective_vs_iteration.png",
+            )
+        if plotted_score_iter:
+            logger.info(
+                "Budget plot saved: %s",
+                self._budget_summary_path.parent / "best_score_vs_iteration.png",
+            )
         panels_plotted = plot_run_budget_panels(
             self._budget_iterations_path,
             self._budget_summary_path.parent / "budget_report.png",
@@ -886,7 +1026,14 @@ class DiscoveryController:
         else:
             logger.info("Budget panel plot skipped (no trace yet or matplotlib unavailable).")
 
-        if not plotted or not panels_plotted:
+        if (
+            not plotted
+            or not plotted_obj
+            or not plotted_combined
+            or not plotted_obj_iter
+            or not plotted_score_iter
+            or not panels_plotted
+        ):
             note_path = self._budget_summary_path.parent / "budget_plot_status.txt"
             note_path.write_text(
                 (
@@ -900,6 +1047,101 @@ class DiscoveryController:
                 ),
                 encoding="utf-8",
             )
+        logger.info(
+            "Tip: regenerate aggregate plots later with: python scripts/plot_budget_curves.py --root <outputs_root> --out-dir <aggregate_dir>"
+        )
+
+    def _build_budget_summary_extra(self) -> Dict[str, Any]:
+        rows = []
+        if self._budget_iterations_path.exists():
+            try:
+                import json
+
+                with self._budget_iterations_path.open("r", encoding="utf-8") as f:
+                    rows = [json.loads(line) for line in f if line.strip()]
+            except Exception:
+                rows = []
+        objective_key = next((r.get("objective_key") for r in rows if r.get("objective_key")), None)
+        best_objective = max(
+            [float(r["best_so_far_objective"]) for r in rows if r.get("best_so_far_objective") is not None],
+            default=None,
+        )
+        best_objective_iteration = next(
+            (
+                int(r["best_so_far_objective_iteration"])
+                for r in rows
+                if r.get("best_so_far_objective") is not None
+                and best_objective is not None
+                and float(r.get("best_so_far_objective")) == float(best_objective)
+            ),
+            None,
+        )
+        best_target_ratio = max(
+            [float(r["best_so_far_target_ratio"]) for r in rows if r.get("best_so_far_target_ratio") is not None],
+            default=None,
+        )
+        best_target_ratio_iteration = next(
+            (
+                int(r["best_so_far_target_ratio_iteration"])
+                for r in rows
+                if r.get("best_so_far_target_ratio") is not None
+                and best_target_ratio is not None
+                and float(r.get("best_so_far_target_ratio")) == float(best_target_ratio)
+            ),
+            None,
+        )
+        best_combined_score = max(
+            [float(r["best_so_far_combined_score"]) for r in rows if r.get("best_so_far_combined_score") is not None],
+            default=None,
+        )
+        best_combined_score_iteration = next(
+            (
+                int(r["best_so_far_combined_score_iteration"])
+                for r in rows
+                if r.get("best_so_far_combined_score") is not None
+                and best_combined_score is not None
+                and float(r.get("best_so_far_combined_score")) == float(best_combined_score)
+            ),
+            None,
+        )
+        cost_to_target = next(
+            (
+                float(r["cumulative_cost"])
+                for r in rows
+                if r.get("target_ratio") is not None
+                and r.get("best_so_far_target_ratio") is not None
+                and float(r.get("best_so_far_target_ratio")) >= 1.0
+            ),
+            None,
+        )
+        iteration_to_target = next(
+            (
+                int(r["iteration"])
+                for r in rows
+                if r.get("target_ratio") is not None
+                and r.get("best_so_far_target_ratio") is not None
+                and float(r.get("best_so_far_target_ratio")) >= 1.0
+            ),
+            None,
+        )
+        target_value = next((r.get("target_value") for r in rows if r.get("target_value") is not None), None)
+        return {
+            "method": self.config.search.type,
+            "task_family": (Path(self.evaluation_file).parent.name if self.evaluation_file else ""),
+            "task_name": (Path(self.evaluation_file).stem if self.evaluation_file else ""),
+            "seed": getattr(self.config.search.database, "random_seed", None),
+            "objective_key": objective_key,
+            "best_objective": best_objective,
+            "best_objective_iteration": best_objective_iteration,
+            "best_combined_score": best_combined_score,
+            "best_combined_score_iteration": best_combined_score_iteration,
+            "best_target_ratio": best_target_ratio,
+            "best_target_ratio_iteration": best_target_ratio_iteration,
+            "target_value": target_value,
+            "success_target": bool(best_target_ratio is not None and float(best_target_ratio) >= 1.0),
+            "cost_to_target": cost_to_target,
+            "iteration_to_target": iteration_to_target,
+        }
 
     # ------------------------------------------------------------------
     # Prompt / parsing / program creation helpers

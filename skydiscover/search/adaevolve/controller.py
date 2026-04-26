@@ -452,12 +452,12 @@ class AdaEvolveController(DiscoveryController):
                 program.id for program in self.database.get_pareto_front()}
             if child.id in pareto_front_ids:
                 logger.info(
-                    f"Program entered the global Pareto front at iteration {iteration}")
+                    f"🌟 Program entered the global Pareto front at iteration {iteration}")
             if self.database.best_program_id == child.id:
                 logger.info(
-                    f"New representative Pareto solution found at iteration {iteration}")
+                    f"🌟 New representative Pareto solution found at iteration {iteration}")
         elif self.database.best_program_id == child.id:
-            logger.info(f"New best solution found at iteration {iteration}")
+            logger.info(f"🌟 New best solution found at iteration {iteration}")
 
         # Checkpoint callback
         if iteration > 0 and iteration % self.config.checkpoint_interval == 0:
