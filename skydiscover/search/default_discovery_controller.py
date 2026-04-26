@@ -24,6 +24,7 @@ from skydiscover.budget import (
     plot_run_budget_panels,
     plot_run_best_score_vs_cost,
     plot_run_metric_vs_cost,
+    plot_run_metric_vs_iteration,
     resolve_objective_from_metrics,
     write_iteration_record,
     write_summary,
@@ -972,6 +973,20 @@ class DiscoveryController:
             ylabel="Best-so-far combined score",
             title="Best-so-far combined score vs cumulative cost",
         )
+        plotted_obj_iter = plot_run_metric_vs_iteration(
+            self._budget_iterations_path,
+            self._budget_summary_path.parent / "best_so_far_objective_vs_iteration.png",
+            y_keys=["best_so_far_objective", "objective_value", "global_best_after"],
+            ylabel="Best-so-far objective",
+            title="Best-so-far objective vs iteration",
+        )
+        plotted_score_iter = plot_run_metric_vs_iteration(
+            self._budget_iterations_path,
+            self._budget_summary_path.parent / "best_score_vs_iteration.png",
+            y_keys=["global_best_after", "best_so_far_combined_score", "combined_score"],
+            ylabel="Best score",
+            title="Best score vs iteration",
+        )
         if plotted:
             logger.info(
                 "Budget plot saved: %s",
@@ -989,6 +1004,16 @@ class DiscoveryController:
                 "Budget plot saved: %s",
                 self._budget_summary_path.parent / "best_so_far_combined_score_vs_cost.png",
             )
+        if plotted_obj_iter:
+            logger.info(
+                "Budget plot saved: %s",
+                self._budget_summary_path.parent / "best_so_far_objective_vs_iteration.png",
+            )
+        if plotted_score_iter:
+            logger.info(
+                "Budget plot saved: %s",
+                self._budget_summary_path.parent / "best_score_vs_iteration.png",
+            )
         panels_plotted = plot_run_budget_panels(
             self._budget_iterations_path,
             self._budget_summary_path.parent / "budget_report.png",
@@ -1001,7 +1026,14 @@ class DiscoveryController:
         else:
             logger.info("Budget panel plot skipped (no trace yet or matplotlib unavailable).")
 
-        if not plotted or not plotted_obj or not plotted_combined or not panels_plotted:
+        if (
+            not plotted
+            or not plotted_obj
+            or not plotted_combined
+            or not plotted_obj_iter
+            or not plotted_score_iter
+            or not panels_plotted
+        ):
             note_path = self._budget_summary_path.parent / "budget_plot_status.txt"
             note_path.write_text(
                 (

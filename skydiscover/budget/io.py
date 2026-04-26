@@ -198,6 +198,57 @@ def plot_run_metric_vs_cost(
     return True
 
 
+def plot_run_metric_vs_iteration(
+    iterations_path: Path,
+    out_png: Path,
+    *,
+    y_keys: list[str],
+    ylabel: str,
+    title: str,
+) -> bool:
+    """Plot a chosen metric vs iteration index for a single run."""
+    try:
+        import matplotlib.pyplot as plt
+    except Exception:
+        return False
+
+    if not iterations_path.exists():
+        return False
+
+    x_iter = []
+    values = []
+    with iterations_path.open("r", encoding="utf-8") as f:
+        for i, line in enumerate(f):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            x_iter.append(int(row.get("iteration", i)))
+            metric_val = None
+            for key in y_keys:
+                if row.get(key) is not None:
+                    metric_val = row.get(key)
+                    break
+            values.append(metric_val)
+
+    if not x_iter:
+        return False
+
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(7.5, 4.8))
+    plt.plot(x_iter, values, linewidth=1.8)
+    plt.xlabel("Iteration")
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
 def plot_run_best_score_vs_cost(iterations_path: Path, out_png: Path) -> bool:
     """Backward-compatible best-score plot."""
     return plot_run_metric_vs_cost(
