@@ -35,19 +35,7 @@ budget_profiles:
 
 # CostAda/BCHD-specific budget/control knobs.
 costada_budget:
-  cheap_max_output_tokens: 512
-  standard_max_output_tokens: 1024
-  rich_max_output_tokens: 2048
-  costada_tier_tau_1: 0.24
-  costada_tier_tau_2: 0.38
-  costada_eta_low: 0.12
-  costada_rich_enable_min_budget: 0.28
-  costada_eta_min: 0.15
-  costada_meta_h_threshold: 0.01
-  costada_meta_window: 8
-  costada_improvement_window: 8
-  costada_stagnation_steps: 8
-  costada_significant_gain_eps: 1.0e-6
+  nominal_budget: 1000000000.0
 
 # AdaEvolve phase-1 budget instrumentation only (no budget-constrained behavior):
 # use a very large nominal budget so original search logic is effectively unchanged.
