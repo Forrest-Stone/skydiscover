@@ -349,6 +349,86 @@ def plot_best_score_vs_cost(runs: List[Dict], out_png: Path) -> bool:
     return True
 
 
+def plot_trace_metric_vs_cost(
+    runs: List[Dict],
+    out_png: Path,
+    *,
+    y_keys: List[str],
+    ylabel: str,
+    title: str,
+) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(8, 5))
+    plotted = False
+    for run in runs:
+        trace = run["trace"]
+        x = [float(row.get("cumulative_cost", 0.0) or 0.0) for row in trace]
+        y = []
+        for row in trace:
+            val = None
+            for key in y_keys:
+                if row.get(key) is not None:
+                    val = row.get(key)
+                    break
+            y.append(val)
+        if x and any(v is not None for v in y):
+            plt.plot(x, y, linewidth=1.1, alpha=0.8, label=run["method"])
+            plotted = True
+    if not plotted:
+        plt.close()
+        return False
+    plt.xlabel("Cumulative cost (USD)")
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_trace_metric_vs_iteration(
+    runs: List[Dict],
+    out_png: Path,
+    *,
+    y_keys: List[str],
+    ylabel: str,
+    title: str,
+) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(8, 5))
+    plotted = False
+    for run in runs:
+        trace = run["trace"]
+        x = [int(row.get("iteration", i)) for i, row in enumerate(trace)]
+        y = []
+        for row in trace:
+            val = None
+            for key in y_keys:
+                if row.get(key) is not None:
+                    val = row.get(key)
+                    break
+            y.append(val)
+        if x and any(v is not None for v in y):
+            plt.plot(x, y, linewidth=1.1, alpha=0.8, label=run["method"])
+            plotted = True
+    if not plotted:
+        plt.close()
+        return False
+    plt.xlabel("Iteration")
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
 def plot_success_vs_budget(agg_rows: List[Dict], out_png: Path) -> bool:
     plt = _load_plt()
     if plt is None:
@@ -932,6 +1012,76 @@ def main() -> None:
         runs, out_dir / "best_objective_gain_vs_iteration.png"
     )
     p1_obj_gain_cost = plot_best_objective_gain_vs_cost(runs, out_dir / "best_objective_gain_vs_cost.png")
+    p12 = plot_trace_metric_vs_iteration(
+        runs,
+        out_dir / "local_best_vs_iteration.png",
+        y_keys=["local_best", "candidate_score"],
+        ylabel="Local best",
+        title="Local best vs iteration",
+    )
+    p13 = plot_trace_metric_vs_cost(
+        runs,
+        out_dir / "local_best_vs_cost.png",
+        y_keys=["local_best", "candidate_score"],
+        ylabel="Local best",
+        title="Local best vs cumulative cost",
+    )
+    p14 = plot_trace_metric_vs_iteration(
+        runs,
+        out_dir / "global_best_vs_iteration.png",
+        y_keys=["global_best", "global_best_after", "best_so_far_objective"],
+        ylabel="Global best",
+        title="Global best vs iteration",
+    )
+    p15 = plot_trace_metric_vs_cost(
+        runs,
+        out_dir / "global_best_vs_cost.png",
+        y_keys=["global_best", "global_best_after", "best_so_far_objective"],
+        ylabel="Global best",
+        title="Global best vs cumulative cost",
+    )
+    p16 = plot_trace_metric_vs_iteration(
+        runs,
+        out_dir / "local_gain_normalized_vs_iteration.png",
+        y_keys=["local_gain_normalized", "local_gain"],
+        ylabel="Local gain (normalized)",
+        title="Local gain (normalized) vs iteration",
+    )
+    p17 = plot_trace_metric_vs_cost(
+        runs,
+        out_dir / "local_gain_normalized_vs_cost.png",
+        y_keys=["local_gain_normalized", "local_gain"],
+        ylabel="Local gain (normalized)",
+        title="Local gain (normalized) vs cumulative cost",
+    )
+    p18 = plot_trace_metric_vs_iteration(
+        runs,
+        out_dir / "global_gain_normalized_vs_iteration.png",
+        y_keys=["global_gain_normalized", "global_gain"],
+        ylabel="Global gain (normalized)",
+        title="Global gain (normalized) vs iteration",
+    )
+    p19 = plot_trace_metric_vs_cost(
+        runs,
+        out_dir / "global_gain_normalized_vs_cost.png",
+        y_keys=["global_gain_normalized", "global_gain"],
+        ylabel="Global gain (normalized)",
+        title="Global gain (normalized) vs cumulative cost",
+    )
+    p20 = plot_trace_metric_vs_iteration(
+        runs,
+        out_dir / "utility_vs_iteration.png",
+        y_keys=["utility"],
+        ylabel="Utility",
+        title="Utility vs iteration",
+    )
+    p21 = plot_trace_metric_vs_cost(
+        runs,
+        out_dir / "utility_vs_cost.png",
+        y_keys=["utility"],
+        ylabel="Utility",
+        title="Utility vs cumulative cost",
+    )
     p1_alias = plot_best_score_vs_cost(runs, out_dir / "best_vs_cost.png")
     p2 = plot_success_vs_budget(agg_rows, out_dir / "success_vs_budget.png")
     p3 = plot_cost_to_target(agg_rows, out_dir / "cost_to_target.png")
@@ -964,6 +1114,16 @@ def main() -> None:
         p1_avg_iter_cost,
         p1_obj_gain_iter,
         p1_obj_gain_cost,
+        p12,
+        p13,
+        p14,
+        p15,
+        p16,
+        p17,
+        p18,
+        p19,
+        p20,
+        p21,
         p1_alias,
         p2,
         p3,
@@ -1000,6 +1160,26 @@ def main() -> None:
             print(f"Wrote: {out_dir / 'best_objective_gain_vs_iteration.png'}")
         if p1_obj_gain_cost:
             print(f"Wrote: {out_dir / 'best_objective_gain_vs_cost.png'}")
+        if p12:
+            print(f"Wrote: {out_dir / 'local_best_vs_iteration.png'}")
+        if p13:
+            print(f"Wrote: {out_dir / 'local_best_vs_cost.png'}")
+        if p14:
+            print(f"Wrote: {out_dir / 'global_best_vs_iteration.png'}")
+        if p15:
+            print(f"Wrote: {out_dir / 'global_best_vs_cost.png'}")
+        if p16:
+            print(f"Wrote: {out_dir / 'local_gain_normalized_vs_iteration.png'}")
+        if p17:
+            print(f"Wrote: {out_dir / 'local_gain_normalized_vs_cost.png'}")
+        if p18:
+            print(f"Wrote: {out_dir / 'global_gain_normalized_vs_iteration.png'}")
+        if p19:
+            print(f"Wrote: {out_dir / 'global_gain_normalized_vs_cost.png'}")
+        if p20:
+            print(f"Wrote: {out_dir / 'utility_vs_iteration.png'}")
+        if p21:
+            print(f"Wrote: {out_dir / 'utility_vs_cost.png'}")
         if p1_alias:
             print(f"Wrote: {out_dir / 'best_vs_cost.png'}")
         if p2:

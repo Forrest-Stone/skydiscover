@@ -865,6 +865,7 @@ class DiscoveryController:
         prev_obj = prev_meta.get("best_so_far_objective")
         prev_ratio = prev_meta.get("best_so_far_target_ratio")
         prev_combined = prev_meta.get("best_so_far_combined_score")
+        prev_global_best = prev_meta.get("global_best_after", 0.0)
         prev_obj_iter = prev_meta.get("best_so_far_objective_iteration")
         prev_ratio_iter = prev_meta.get("best_so_far_target_ratio_iteration")
         prev_combined_iter = prev_meta.get("best_so_far_combined_score_iteration")
@@ -896,6 +897,21 @@ class DiscoveryController:
         budget_record.meta["global_best_after"] = self._best_score_or_zero()
         budget_record.meta["attempts_used"] = int(result.attempts_used or 1)
         budget_record.meta["candidate_score"] = self._extract_candidate_score(result)
+        budget_record.meta.setdefault("local_best", budget_record.meta.get("candidate_score"))
+        budget_record.meta.setdefault("global_best_before", prev_global_best)
+        budget_record.meta.setdefault("global_best", budget_record.meta.get("global_best_after"))
+        candidate_score = budget_record.meta.get("candidate_score")
+        if candidate_score is not None:
+            prev_best = float(budget_record.meta.get("global_best_before", 0.0) or 0.0)
+            cur_best = float(budget_record.meta.get("global_best_after", 0.0) or 0.0)
+            local_gain = float(candidate_score) - prev_best
+            global_gain = cur_best - prev_best
+            denom = max(abs(prev_best), 1e-8)
+            budget_record.meta.setdefault("local_gain", local_gain)
+            budget_record.meta.setdefault("global_gain", global_gain)
+            budget_record.meta.setdefault("local_gain_normalized", local_gain / denom)
+            budget_record.meta.setdefault("global_gain_normalized", global_gain / denom)
+            budget_record.meta.setdefault("utility", local_gain)
         budget_record.meta["meta_triggered"] = False
         self.budget_ledger.finalize_iteration(budget_record)
         write_iteration_record(self._budget_iterations_path, budget_record)
@@ -935,6 +951,19 @@ class DiscoveryController:
                 budget_record.meta.get("best_so_far_combined_score"),
                 budget_record.meta.get("best_so_far_combined_score_iteration"),
                 budget_record.meta.get("validity"),
+            )
+        if budget_record.meta.get("candidate_score") is not None:
+            logger.info(
+                "Signals(iter=%s): local_best=%s global_best_before=%s global_best=%s local_gain=%s global_gain=%s local_gain_norm=%s global_gain_norm=%s utility=%s",
+                budget_record.iteration,
+                budget_record.meta.get("local_best"),
+                budget_record.meta.get("global_best_before"),
+                budget_record.meta.get("global_best"),
+                budget_record.meta.get("local_gain"),
+                budget_record.meta.get("global_gain"),
+                budget_record.meta.get("local_gain_normalized"),
+                budget_record.meta.get("global_gain_normalized"),
+                budget_record.meta.get("utility"),
             )
 
     def _write_budget_summary(self) -> None:
