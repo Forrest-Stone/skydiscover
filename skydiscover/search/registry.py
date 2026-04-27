@@ -59,13 +59,18 @@ def create_database(search_type: str, config: DatabaseConfig) -> ProgramDatabase
     Supports both registered search types and dynamic loading for "evox"/"evolve" types
     when a custom database_file_path is specified.
     """
-    if search_type in ("evox", "evolve") and getattr(config, "database_file_path", None):
+    normalized_type = search_type
+    if normalized_type.endswith("_budget"):
+        normalized_type = normalized_type[: -len("_budget")]
+
+    if normalized_type in ("evox", "evolve") and getattr(config, "database_file_path", None):
         database_class, program_class = load_database_from_file(config.database_file_path)
         db = database_class(search_type, config)
         db._program_class = program_class
         return db
 
-    if search_type not in _DATABASE_REGISTRY:
+    target_type = search_type if search_type in _DATABASE_REGISTRY else normalized_type
+    if target_type not in _DATABASE_REGISTRY:
         available_types = ", ".join(sorted(_DATABASE_REGISTRY.keys()))
         raise ValueError(
             f"Unknown search type: '{search_type}'. "
@@ -73,7 +78,7 @@ def create_database(search_type: str, config: DatabaseConfig) -> ProgramDatabase
             f"For 'evox'/'evolve' type with custom database, set config.search.database.database_file_path"
         )
 
-    database_class = _DATABASE_REGISTRY[search_type]
+    database_class = _DATABASE_REGISTRY[target_type]
     return database_class(search_type, config)
 
 
@@ -91,8 +96,9 @@ def get_program(
     when a custom database_file_path is specified.
     """
     search_type = config.search.type
+    normalized_type = search_type[:-7] if search_type.endswith("_budget") else search_type
 
-    if search_type == "evox" and getattr(config.search.database, "database_file_path", None):
+    if normalized_type == "evox" and getattr(config.search.database, "database_file_path", None):
         logger.info(f"Using search strategy from: {config.search.database.database_file_path}")
         _, program_class = load_database_from_file(config.search.database.database_file_path)
         return program_class(
@@ -103,7 +109,7 @@ def get_program(
             iteration_found=start_iteration,
         )
 
-    program_class = _PROGRAM_REGISTRY.get(search_type, Program)
+    program_class = _PROGRAM_REGISTRY.get(search_type) or _PROGRAM_REGISTRY.get(normalized_type, Program)
     return program_class(
         id=initial_program_id,
         solution=initial_program_solution,

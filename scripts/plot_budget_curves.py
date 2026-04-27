@@ -96,7 +96,7 @@ def collect_runs(root: Path) -> List[Dict]:
         meta_flags = []
         for row in trace:
             cost = float(row.get("cumulative_cost", 0.0) or 0.0)
-            score = row.get("global_best_after")
+            score = row.get("best_so_far_objective", row.get("global_best_after"))
             points.append((cost, score))
             tier = row.get("tier")
             if tier:
@@ -112,6 +112,10 @@ def collect_runs(root: Path) -> List[Dict]:
                 "summary": summary,
                 "trace": trace,
                 "points": points,
+                "objective_key": next(
+                    (r.get("objective_key") for r in trace if r.get("objective_key")),
+                    "combined_score",
+                ),
                 "tiers": tiers,
                 "meta_trigger_rate": (sum(meta_flags) / len(meta_flags)) if meta_flags else 0.0,
             }
@@ -162,6 +166,8 @@ def write_runs_csv(runs: List[Dict], out_csv: Path, target: Optional[float] = No
         "overshoot",
         "overshoot_ratio",
         "best_score",
+        "best_objective",
+        "objective_key",
         "success_target",
         "cost_to_target",
         "num_iterations",
@@ -187,6 +193,8 @@ def write_runs_csv(runs: List[Dict], out_csv: Path, target: Optional[float] = No
                     "overshoot": s.get("overshoot"),
                     "overshoot_ratio": s.get("overshoot_ratio"),
                     "best_score": s.get("best_score"),
+                    "best_objective": s.get("best_objective", s.get("best_score")),
+                    "objective_key": s.get("objective_key", run.get("objective_key")),
                     "success_target": (
                         success_at_target(s.get("best_score"), target) if target is not None else ""
                     ),
@@ -223,7 +231,7 @@ def compute_metric_rows(runs: List[Dict], budgets: List[float], target: Optional
                     "task_name": run.get("task_name", ""),
                     "seed": run.get("seed", ""),
                     "budget": b,
-                    "BestScore@Budget": bscore if bscore is not None else "",
+                    "BestObjective@Budget": bscore if bscore is not None else "",
                     "Success@Target": success,
                     "Cost-to-Target": c2t if c2t is not None else "",
                     "AvgCost": total_cost,
@@ -253,7 +261,7 @@ def aggregate_metric_rows(rows: List[Dict]) -> List[Dict]:
                 vals.append(float(v))
             return vals
 
-        best_vals = _vals("BestScore@Budget")
+        best_vals = _vals("BestObjective@Budget")
         success_vals = _vals("Success@Target")
         c2t_vals = _vals("Cost-to-Target")
         avg_cost_vals = _vals("AvgCost")
@@ -266,7 +274,7 @@ def aggregate_metric_rows(rows: List[Dict]) -> List[Dict]:
             {
                 "method": method,
                 "budget": budget,
-                "BestScore@Budget": mean(best_vals) if best_vals else "",
+                "BestObjective@Budget": mean(best_vals) if best_vals else "",
                 "Success@Target": mean(success_vals) if success_vals else "",
                 "Cost-to-Target": mean(c2t_vals) if c2t_vals else "",
                 "AvgCost": mean(avg_cost_vals) if avg_cost_vals else "",
@@ -328,13 +336,93 @@ def plot_best_score_vs_cost(runs: List[Dict], out_png: Path) -> bool:
         if not trace:
             continue
         x = [float(row.get("cumulative_cost", 0.0) or 0.0) for row in trace]
-        y = [row.get("global_best_after") for row in trace]
+        y = [row.get("best_so_far_objective", row.get("global_best_after")) for row in trace]
         if all(v is None for v in y):
             continue
         plt.plot(x, y, linewidth=1.2, alpha=0.8, label=run["method"])
     plt.xlabel("Cumulative cost (USD)")
-    plt.ylabel("Best score")
-    plt.title("Best-so-far score vs cumulative cost")
+    plt.ylabel("Best-so-far objective")
+    plt.title("Best-so-far objective vs cumulative cost")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_trace_metric_vs_cost(
+    runs: List[Dict],
+    out_png: Path,
+    *,
+    y_keys: List[str],
+    ylabel: str,
+    title: str,
+) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(8, 5))
+    plotted = False
+    for run in runs:
+        trace = run["trace"]
+        x = [float(row.get("cumulative_cost", 0.0) or 0.0) for row in trace]
+        y = []
+        for row in trace:
+            val = None
+            for key in y_keys:
+                if row.get(key) is not None:
+                    val = row.get(key)
+                    break
+            y.append(val)
+        if x and any(v is not None for v in y):
+            plt.plot(x, y, linewidth=1.1, alpha=0.8, label=run["method"])
+            plotted = True
+    if not plotted:
+        plt.close()
+        return False
+    plt.xlabel("Cumulative cost (USD)")
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_trace_metric_vs_iteration(
+    runs: List[Dict],
+    out_png: Path,
+    *,
+    y_keys: List[str],
+    ylabel: str,
+    title: str,
+) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(8, 5))
+    plotted = False
+    for run in runs:
+        trace = run["trace"]
+        x = [int(row.get("iteration", i)) for i, row in enumerate(trace)]
+        y = []
+        for row in trace:
+            val = None
+            for key in y_keys:
+                if row.get(key) is not None:
+                    val = row.get(key)
+                    break
+            y.append(val)
+        if x and any(v is not None for v in y):
+            plt.plot(x, y, linewidth=1.1, alpha=0.8, label=run["method"])
+            plotted = True
+    if not plotted:
+        plt.close()
+        return False
+    plt.xlabel("Iteration")
+    plt.ylabel(ylabel)
+    plt.title(title)
     plt.tight_layout()
     plt.savefig(out_png, dpi=180)
     plt.close()
@@ -515,6 +603,257 @@ def plot_metric_vs_budget(agg_rows: List[Dict], metric_key: str, title: str, out
     return True
 
 
+def plot_best_objective_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(8, 5))
+    for run in runs:
+        trace = run["trace"]
+        x = [int(row.get("iteration", i)) for i, row in enumerate(trace)]
+        y = [row.get("best_so_far_objective", row.get("global_best_after")) for row in trace]
+        if x and any(v is not None for v in y):
+            plt.plot(x, y, linewidth=1.2, alpha=0.8, label=run["method"])
+    plt.xlabel("Iteration")
+    plt.ylabel("Best-so-far objective")
+    plt.title("Best-so-far objective vs iteration")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_best_score_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(8, 5))
+    for run in runs:
+        trace = run["trace"]
+        x = [int(row.get("iteration", i)) for i, row in enumerate(trace)]
+        y = [row.get("global_best_after", row.get("best_so_far_combined_score")) for row in trace]
+        if x and any(v is not None for v in y):
+            plt.plot(x, y, linewidth=1.2, alpha=0.8, label=run["method"])
+    plt.xlabel("Iteration")
+    plt.ylabel("Best score")
+    plt.title("Best score vs iteration")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_iteration_cost_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(8, 5))
+    for run in runs:
+        trace = run["trace"]
+        x = [int(row.get("iteration", i)) for i, row in enumerate(trace)]
+        y = [float(row.get("iteration_cost", 0.0) or 0.0) for row in trace]
+        if x and any(v > 0 for v in y):
+            plt.plot(x, y, linewidth=1.0, alpha=0.7, label=run["method"])
+    plt.xlabel("Iteration")
+    plt.ylabel("Iteration cost (USD)")
+    plt.title("Iteration cost vs iteration")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_cumulative_cost_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(8, 5))
+    for run in runs:
+        trace = run["trace"]
+        x = [int(row.get("iteration", i)) for i, row in enumerate(trace)]
+        y = [float(row.get("cumulative_cost", 0.0) or 0.0) for row in trace]
+        if x and any(v > 0 for v in y):
+            plt.plot(x, y, linewidth=1.2, alpha=0.8, label=run["method"])
+    plt.xlabel("Iteration")
+    plt.ylabel("Cumulative cost (USD)")
+    plt.title("Cumulative cost vs iteration")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_avg_iteration_cost_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    by_method: Dict[str, Dict[int, List[float]]] = defaultdict(lambda: defaultdict(list))
+    for run in runs:
+        method = str(run["method"])
+        for i, row in enumerate(run.get("trace", [])):
+            it = int(row.get("iteration", i))
+            by_method[method][it].append(float(row.get("iteration_cost", 0.0) or 0.0))
+    if not by_method:
+        return False
+    plt.figure(figsize=(8, 5))
+    plotted = False
+    for method, by_it in sorted(by_method.items()):
+        xs = sorted(by_it.keys())
+        ys = [mean(by_it[it]) for it in xs]
+        if xs:
+            plt.plot(xs, ys, linewidth=1.8, marker="o", markersize=2.5, label=method)
+            plotted = True
+    if not plotted:
+        plt.close()
+        return False
+    plt.xlabel("Iteration")
+    plt.ylabel("Average iteration cost (USD)")
+    plt.title("Average iteration cost vs iteration")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_best_objective_gain_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(8, 5))
+    plotted = False
+    for run in runs:
+        trace = run["trace"]
+        x = []
+        y = []
+        prev = None
+        for i, row in enumerate(trace):
+            cur = row.get("best_so_far_objective", row.get("global_best_after"))
+            if cur is None:
+                continue
+            cur_f = float(cur)
+            gain = 0.0 if prev is None else max(cur_f - prev, 0.0)
+            x.append(int(row.get("iteration", i)))
+            y.append(gain)
+            prev = cur_f
+        if x:
+            plt.plot(x, y, linewidth=1.0, alpha=0.8, label=run["method"])
+            plotted = True
+    if not plotted:
+        plt.close()
+        return False
+    plt.xlabel("Iteration")
+    plt.ylabel("Best-objective gain per iteration")
+    plt.title("Best-objective gain vs iteration")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_best_objective_gain_vs_cost(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    plt.figure(figsize=(8, 5))
+    plotted = False
+    for run in runs:
+        trace = run["trace"]
+        x = []
+        y = []
+        prev = None
+        for row in trace:
+            cur = row.get("best_so_far_objective", row.get("global_best_after"))
+            if cur is None:
+                continue
+            cur_f = float(cur)
+            gain = 0.0 if prev is None else max(cur_f - prev, 0.0)
+            x.append(float(row.get("cumulative_cost", 0.0) or 0.0))
+            y.append(gain)
+            prev = cur_f
+        if x:
+            plt.plot(x, y, linewidth=1.0, alpha=0.8, label=run["method"])
+            plotted = True
+    if not plotted:
+        plt.close()
+        return False
+    plt.xlabel("Cumulative cost (USD)")
+    plt.ylabel("Best-objective gain per step")
+    plt.title("Best-objective gain vs cumulative cost")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_performance_vs_avg_cost(agg_rows: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    by_method: Dict[str, List[Tuple[float, float]]] = defaultdict(list)
+    for row in agg_rows:
+        p = row.get("BestObjective@Budget")
+        c = row.get("AvgCost")
+        if p in ("", None) or c in ("", None):
+            continue
+        by_method[str(row["method"])].append((float(c), float(p)))
+    if not by_method:
+        return False
+    plt.figure(figsize=(7.5, 5))
+    for method, pts in by_method.items():
+        pts.sort(key=lambda x: x[0])
+        plt.plot([x for x, _ in pts], [y for _, y in pts], marker="o", label=method)
+    plt.xlabel("Average cost (USD)")
+    plt.ylabel("BestObjective@Budget")
+    plt.title("Performance vs average cost")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_cost_composition(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    by_method: Dict[str, Dict[str, List[float]]] = defaultdict(
+        lambda: {"generation": [], "retry": [], "guide": []}
+    )
+    for run in runs:
+        s = run.get("summary") or {}
+        by_method[run["method"]]["generation"].append(float(s.get("generation_cost_fraction", 0.0) or 0.0))
+        by_method[run["method"]]["retry"].append(float(s.get("retry_cost_fraction", 0.0) or 0.0))
+        by_method[run["method"]]["guide"].append(float(s.get("guide_cost_fraction", 0.0) or 0.0))
+    if not by_method:
+        return False
+    methods = sorted(by_method.keys())
+    gen = [mean(by_method[m]["generation"]) if by_method[m]["generation"] else 0.0 for m in methods]
+    ret = [mean(by_method[m]["retry"]) if by_method[m]["retry"] else 0.0 for m in methods]
+    gui = [mean(by_method[m]["guide"]) if by_method[m]["guide"] else 0.0 for m in methods]
+
+    x = range(len(methods))
+    plt.figure(figsize=(8, 5))
+    plt.bar(x, gen, label="generation")
+    plt.bar(x, ret, bottom=gen, label="retry")
+    plt.bar(x, gui, bottom=[gen[i] + ret[i] for i in range(len(methods))], label="guide")
+    plt.xticks(list(x), methods, rotation=25)
+    plt.ylabel("Cost fraction")
+    plt.title("Cost composition by method")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
 def compute_speedup_vs_baseline(
     per_run_rows: List[Dict], baselines: List[str], target: Optional[float]
 ) -> List[Dict]:
@@ -662,15 +1001,99 @@ def main() -> None:
     write_csv(speedup_rows, out_dir / "speedup_vs_baseline.csv")
 
     p1 = plot_best_score_vs_cost(runs, out_dir / "best_score_vs_cost.png")
+    p1_obj = plot_best_score_vs_cost(runs, out_dir / "best_so_far_objective_vs_cost.png")
+    p1_combined = plot_best_score_vs_cost(runs, out_dir / "best_so_far_combined_score_vs_cost.png")
+    p1_iter = plot_best_objective_vs_iteration(runs, out_dir / "best_so_far_objective_vs_iteration.png")
+    p1_score_iter = plot_best_score_vs_iteration(runs, out_dir / "best_score_vs_iteration.png")
+    p1_iter_cost = plot_iteration_cost_vs_iteration(runs, out_dir / "iteration_cost_vs_iteration.png")
+    p1_cum_cost = plot_cumulative_cost_vs_iteration(runs, out_dir / "cumulative_cost_vs_iteration.png")
+    p1_avg_iter_cost = plot_avg_iteration_cost_vs_iteration(runs, out_dir / "avg_iteration_cost_vs_iteration.png")
+    p1_obj_gain_iter = plot_best_objective_gain_vs_iteration(
+        runs, out_dir / "best_objective_gain_vs_iteration.png"
+    )
+    p1_obj_gain_cost = plot_best_objective_gain_vs_cost(runs, out_dir / "best_objective_gain_vs_cost.png")
+    p12 = plot_trace_metric_vs_iteration(
+        runs,
+        out_dir / "local_best_vs_iteration.png",
+        y_keys=["local_best", "candidate_score"],
+        ylabel="Local best",
+        title="Local best vs iteration",
+    )
+    p13 = plot_trace_metric_vs_cost(
+        runs,
+        out_dir / "local_best_vs_cost.png",
+        y_keys=["local_best", "candidate_score"],
+        ylabel="Local best",
+        title="Local best vs cumulative cost",
+    )
+    p14 = plot_trace_metric_vs_iteration(
+        runs,
+        out_dir / "global_best_vs_iteration.png",
+        y_keys=["global_best", "global_best_after", "best_so_far_objective"],
+        ylabel="Global best",
+        title="Global best vs iteration",
+    )
+    p15 = plot_trace_metric_vs_cost(
+        runs,
+        out_dir / "global_best_vs_cost.png",
+        y_keys=["global_best", "global_best_after", "best_so_far_objective"],
+        ylabel="Global best",
+        title="Global best vs cumulative cost",
+    )
+    p16 = plot_trace_metric_vs_iteration(
+        runs,
+        out_dir / "local_gain_normalized_vs_iteration.png",
+        y_keys=["local_gain_normalized", "local_gain"],
+        ylabel="Local gain (normalized)",
+        title="Local gain (normalized) vs iteration",
+    )
+    p17 = plot_trace_metric_vs_cost(
+        runs,
+        out_dir / "local_gain_normalized_vs_cost.png",
+        y_keys=["local_gain_normalized", "local_gain"],
+        ylabel="Local gain (normalized)",
+        title="Local gain (normalized) vs cumulative cost",
+    )
+    p18 = plot_trace_metric_vs_iteration(
+        runs,
+        out_dir / "global_gain_normalized_vs_iteration.png",
+        y_keys=["global_gain_normalized", "global_gain"],
+        ylabel="Global gain (normalized)",
+        title="Global gain (normalized) vs iteration",
+    )
+    p19 = plot_trace_metric_vs_cost(
+        runs,
+        out_dir / "global_gain_normalized_vs_cost.png",
+        y_keys=["global_gain_normalized", "global_gain"],
+        ylabel="Global gain (normalized)",
+        title="Global gain (normalized) vs cumulative cost",
+    )
+    p20 = plot_trace_metric_vs_iteration(
+        runs,
+        out_dir / "utility_vs_iteration.png",
+        y_keys=["utility"],
+        ylabel="Utility",
+        title="Utility vs iteration",
+    )
+    p21 = plot_trace_metric_vs_cost(
+        runs,
+        out_dir / "utility_vs_cost.png",
+        y_keys=["utility"],
+        ylabel="Utility",
+        title="Utility vs cumulative cost",
+    )
     p1_alias = plot_best_score_vs_cost(runs, out_dir / "best_vs_cost.png")
     p2 = plot_success_vs_budget(agg_rows, out_dir / "success_vs_budget.png")
     p3 = plot_cost_to_target(agg_rows, out_dir / "cost_to_target.png")
     p4 = plot_budget_adherence(agg_rows, out_dir / "budget_adherence.png")
     p4_alias = plot_metric_vs_budget(agg_rows, "OOBRate", "OOB rate vs budget", out_dir / "oob_vs_budget.png")
+    p4_oob = plot_metric_vs_budget(agg_rows, "OOBRate", "OOB rate vs budget", out_dir / "oob_rate_vs_budget.png")
     p8 = plot_metric_vs_budget(
         agg_rows, "OvershootRatio", "Overshoot ratio vs budget", out_dir / "overshoot_ratio_vs_budget.png"
     )
     p9 = plot_metric_vs_budget(agg_rows, "AvgCost", "Average cost vs budget", out_dir / "avg_cost_vs_budget.png")
+    p10 = plot_performance_vs_avg_cost(agg_rows, out_dir / "performance_vs_avg_cost.png")
+    p11 = plot_cost_composition(runs, out_dir / "cost_composition.png")
     p5 = plot_tier_usage(runs, out_dir / "tier_usage.png")
     p6 = plot_meta_trigger_rate(agg_rows, out_dir / "meta_trigger_rate.png")
     p7 = plot_speedup_vs_baseline(speedup_rows, out_dir / "speedup_vs_baseline.png")
@@ -680,11 +1103,83 @@ def main() -> None:
     print(f"Wrote: {out_dir / 'per_run_metrics.csv'}")
     print(f"Wrote: {out_dir / 'aggregate_metrics.csv'}")
     print(f"Wrote: {out_dir / 'speedup_vs_baseline.csv'}")
-    if not any([p1, p1_alias, p2, p3, p4, p4_alias, p5, p6, p7, p8, p9]):
+    if not any([
+        p1,
+        p1_obj,
+        p1_combined,
+        p1_iter,
+        p1_score_iter,
+        p1_iter_cost,
+        p1_cum_cost,
+        p1_avg_iter_cost,
+        p1_obj_gain_iter,
+        p1_obj_gain_cost,
+        p12,
+        p13,
+        p14,
+        p15,
+        p16,
+        p17,
+        p18,
+        p19,
+        p20,
+        p21,
+        p1_alias,
+        p2,
+        p3,
+        p4,
+        p4_alias,
+        p4_oob,
+        p5,
+        p6,
+        p7,
+        p8,
+        p9,
+        p10,
+        p11,
+    ]):
         print("Skipped plotting (matplotlib unavailable).")
     else:
         if p1:
             print(f"Wrote: {out_dir / 'best_score_vs_cost.png'}")
+        if p1_obj:
+            print(f"Wrote: {out_dir / 'best_so_far_objective_vs_cost.png'}")
+        if p1_combined:
+            print(f"Wrote: {out_dir / 'best_so_far_combined_score_vs_cost.png'}")
+        if p1_iter:
+            print(f"Wrote: {out_dir / 'best_so_far_objective_vs_iteration.png'}")
+        if p1_score_iter:
+            print(f"Wrote: {out_dir / 'best_score_vs_iteration.png'}")
+        if p1_iter_cost:
+            print(f"Wrote: {out_dir / 'iteration_cost_vs_iteration.png'}")
+        if p1_cum_cost:
+            print(f"Wrote: {out_dir / 'cumulative_cost_vs_iteration.png'}")
+        if p1_avg_iter_cost:
+            print(f"Wrote: {out_dir / 'avg_iteration_cost_vs_iteration.png'}")
+        if p1_obj_gain_iter:
+            print(f"Wrote: {out_dir / 'best_objective_gain_vs_iteration.png'}")
+        if p1_obj_gain_cost:
+            print(f"Wrote: {out_dir / 'best_objective_gain_vs_cost.png'}")
+        if p12:
+            print(f"Wrote: {out_dir / 'local_best_vs_iteration.png'}")
+        if p13:
+            print(f"Wrote: {out_dir / 'local_best_vs_cost.png'}")
+        if p14:
+            print(f"Wrote: {out_dir / 'global_best_vs_iteration.png'}")
+        if p15:
+            print(f"Wrote: {out_dir / 'global_best_vs_cost.png'}")
+        if p16:
+            print(f"Wrote: {out_dir / 'local_gain_normalized_vs_iteration.png'}")
+        if p17:
+            print(f"Wrote: {out_dir / 'local_gain_normalized_vs_cost.png'}")
+        if p18:
+            print(f"Wrote: {out_dir / 'global_gain_normalized_vs_iteration.png'}")
+        if p19:
+            print(f"Wrote: {out_dir / 'global_gain_normalized_vs_cost.png'}")
+        if p20:
+            print(f"Wrote: {out_dir / 'utility_vs_iteration.png'}")
+        if p21:
+            print(f"Wrote: {out_dir / 'utility_vs_cost.png'}")
         if p1_alias:
             print(f"Wrote: {out_dir / 'best_vs_cost.png'}")
         if p2:
@@ -695,10 +1190,16 @@ def main() -> None:
             print(f"Wrote: {out_dir / 'budget_adherence.png'}")
         if p4_alias:
             print(f"Wrote: {out_dir / 'oob_vs_budget.png'}")
+        if p4_oob:
+            print(f"Wrote: {out_dir / 'oob_rate_vs_budget.png'}")
         if p8:
             print(f"Wrote: {out_dir / 'overshoot_ratio_vs_budget.png'}")
         if p9:
             print(f"Wrote: {out_dir / 'avg_cost_vs_budget.png'}")
+        if p10:
+            print(f"Wrote: {out_dir / 'performance_vs_avg_cost.png'}")
+        if p11:
+            print(f"Wrote: {out_dir / 'cost_composition.png'}")
         if p5:
             print(f"Wrote: {out_dir / 'tier_usage.png'}")
         if p6:
