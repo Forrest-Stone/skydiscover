@@ -888,6 +888,14 @@ class DiscoveryController:
         budget_record.meta["validity"] = objective.validity
         budget_record.meta["eval_time"] = float(result.eval_time or 0.0)
         budget_record.meta["metrics_raw"] = metrics
+        budget_record.meta.setdefault("method", self.config.search.type)
+        budget_record.meta.setdefault(
+            "task_family", Path(self.evaluation_file).parent.name if self.evaluation_file else ""
+        )
+        budget_record.meta.setdefault(
+            "task_name", Path(self.evaluation_file).stem if self.evaluation_file else ""
+        )
+        budget_record.meta.setdefault("seed", getattr(self.config.search.database, "random_seed", None))
         budget_record.meta["best_so_far_objective"] = best_obj
         budget_record.meta["best_so_far_objective_iteration"] = best_obj_iter
         budget_record.meta["best_so_far_target_ratio"] = best_ratio

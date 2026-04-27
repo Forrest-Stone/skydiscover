@@ -854,6 +854,159 @@ def plot_cost_composition(runs: List[Dict], out_png: Path) -> bool:
     return True
 
 
+def plot_tier_usage_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    by_method: Dict[str, Dict[int, Dict[str, int]]] = defaultdict(
+        lambda: defaultdict(lambda: {"cheap": 0, "standard": 0, "rich": 0})
+    )
+    for run in runs:
+        method = str(run["method"])
+        for i, row in enumerate(run.get("trace", [])):
+            it = int(row.get("iteration", i))
+            t = row.get("final_tier", row.get("base_tier", row.get("tier")))
+            if t in {"cheap", "standard", "rich"}:
+                by_method[method][it][t] += 1
+    if not by_method:
+        return False
+    plt.figure(figsize=(9, 5.5))
+    plotted = False
+    for method, by_it in sorted(by_method.items()):
+        xs = sorted(by_it.keys())
+        for tier, style in [("cheap", "-"), ("standard", "--"), ("rich", "-.")]:
+            ys = []
+            for it in xs:
+                total = sum(by_it[it].values())
+                ys.append((by_it[it][tier] / total) if total > 0 else 0.0)
+            if xs:
+                plt.plot(xs, ys, linestyle=style, linewidth=1.6, label=f"{method}:{tier}")
+                plotted = True
+    if not plotted:
+        plt.close()
+        return False
+    plt.xlabel("Iteration")
+    plt.ylabel("Tier share")
+    plt.title("Tier usage share vs iteration")
+    plt.legend(fontsize=7, ncol=2)
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_meta_trigger_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    by_method: Dict[str, Dict[int, List[float]]] = defaultdict(lambda: defaultdict(list))
+    for run in runs:
+        method = str(run["method"])
+        for i, row in enumerate(run.get("trace", [])):
+            if row.get("meta_triggered") is None:
+                continue
+            it = int(row.get("iteration", i))
+            by_method[method][it].append(1.0 if bool(row.get("meta_triggered")) else 0.0)
+    if not by_method:
+        return False
+    plt.figure(figsize=(8, 5))
+    plotted = False
+    for method, by_it in sorted(by_method.items()):
+        xs = sorted(by_it.keys())
+        ys = [mean(by_it[it]) if by_it[it] else 0.0 for it in xs]
+        if xs:
+            plt.plot(xs, ys, linewidth=1.8, marker="o", markersize=2.5, label=method)
+            plotted = True
+    if not plotted:
+        plt.close()
+        return False
+    plt.xlabel("Iteration")
+    plt.ylabel("Meta-trigger rate")
+    plt.title("Meta trigger vs iteration")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_frontier_selection_counts(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    by_method: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for run in runs:
+        method = str(run["method"])
+        for row in run.get("trace", []):
+            fid = row.get("frontier_id")
+            if fid is None:
+                continue
+            by_method[method][str(fid)] += 1
+    if not by_method:
+        return False
+    methods = sorted(by_method.keys())
+    all_frontiers = sorted({f for d in by_method.values() for f in d.keys()})
+    x = list(range(len(methods)))
+    width = max(0.12, 0.8 / max(len(all_frontiers), 1))
+    plt.figure(figsize=(9, 5))
+    for j, fid in enumerate(all_frontiers):
+        vals = [by_method[m].get(fid, 0) for m in methods]
+        xpos = [i + (j - (len(all_frontiers) - 1) / 2) * width for i in x]
+        plt.bar(xpos, vals, width=width, label=f"frontier {fid}")
+    plt.xticks(x, methods, rotation=20)
+    plt.ylabel("Selection count")
+    plt.title("Frontier selection counts")
+    plt.legend(fontsize=7, ncol=2)
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_frontier_selection_share(runs: List[Dict], out_png: Path) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    by_method: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for run in runs:
+        method = str(run["method"])
+        for row in run.get("trace", []):
+            fid = row.get("frontier_id")
+            if fid is None:
+                continue
+            by_method[method][str(fid)] += 1
+    if not by_method:
+        return False
+    methods = sorted(by_method.keys())
+    all_frontiers = sorted({f for d in by_method.values() for f in d.keys()})
+    x = list(range(len(methods)))
+    bottom = [0.0] * len(methods)
+    plt.figure(figsize=(9, 5))
+    plotted = False
+    for fid in all_frontiers:
+        vals = []
+        for m in methods:
+            total = sum(by_method[m].values())
+            vals.append((by_method[m].get(fid, 0) / total) if total > 0 else 0.0)
+        plt.bar(x, vals, bottom=bottom, label=f"frontier {fid}")
+        bottom = [bottom[i] + vals[i] for i in range(len(vals))]
+        plotted = True
+    if not plotted:
+        plt.close()
+        return False
+    plt.xticks(x, methods, rotation=20)
+    plt.ylabel("Selection share")
+    plt.title("Frontier selection share")
+    plt.legend(fontsize=7, ncol=2)
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
 def compute_speedup_vs_baseline(
     per_run_rows: List[Dict], baselines: List[str], target: Optional[float]
 ) -> List[Dict]:
@@ -1082,6 +1235,10 @@ def main() -> None:
         ylabel="Utility",
         title="Utility vs cumulative cost",
     )
+    p22 = plot_tier_usage_vs_iteration(runs, out_dir / "tier_usage_vs_iteration.png")
+    p23 = plot_meta_trigger_vs_iteration(runs, out_dir / "meta_trigger_vs_iteration.png")
+    p24 = plot_frontier_selection_counts(runs, out_dir / "frontier_selection_counts.png")
+    p25 = plot_frontier_selection_share(runs, out_dir / "frontier_selection_share.png")
     p1_alias = plot_best_score_vs_cost(runs, out_dir / "best_vs_cost.png")
     p2 = plot_success_vs_budget(agg_rows, out_dir / "success_vs_budget.png")
     p3 = plot_cost_to_target(agg_rows, out_dir / "cost_to_target.png")
@@ -1124,6 +1281,10 @@ def main() -> None:
         p19,
         p20,
         p21,
+        p22,
+        p23,
+        p24,
+        p25,
         p1_alias,
         p2,
         p3,
@@ -1180,6 +1341,14 @@ def main() -> None:
             print(f"Wrote: {out_dir / 'utility_vs_iteration.png'}")
         if p21:
             print(f"Wrote: {out_dir / 'utility_vs_cost.png'}")
+        if p22:
+            print(f"Wrote: {out_dir / 'tier_usage_vs_iteration.png'}")
+        if p23:
+            print(f"Wrote: {out_dir / 'meta_trigger_vs_iteration.png'}")
+        if p24:
+            print(f"Wrote: {out_dir / 'frontier_selection_counts.png'}")
+        if p25:
+            print(f"Wrote: {out_dir / 'frontier_selection_share.png'}")
         if p1_alias:
             print(f"Wrote: {out_dir / 'best_vs_cost.png'}")
         if p2:

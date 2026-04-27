@@ -21,6 +21,10 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
     row: Dict[str, Any] = {
         "iteration": record.iteration,
         "frontier_id": record.meta.get("frontier_id"),
+        "method": record.meta.get("method"),
+        "task_family": record.meta.get("task_family"),
+        "task_name": record.meta.get("task_name"),
+        "seed": record.meta.get("seed"),
         "generation_cost": record.generation_cost,
         "retry_cost": record.retry_cost,
         "guide_cost": record.guide_cost,
@@ -39,6 +43,12 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         "global_best_after": record.meta.get("global_best_after"),
         "global_best": record.meta.get("global_best", record.meta.get("global_best_after")),
         "tier": record.meta.get("tier"),
+        "base_tier": record.meta.get("base_tier", record.meta.get("tier")),
+        "final_tier": record.meta.get(
+            "final_tier", record.meta.get("action_tier", record.meta.get("tier"))
+        ),
+        "intensity": record.meta.get("intensity", record.meta.get("recent_improvement_avg")),
+        "lambda_t": record.meta.get("lambda_t"),
         "recent_improvement_avg": record.meta.get("recent_improvement_avg"),
         "stagnation_steps": record.meta.get("stagnation_steps"),
         "local_gain": record.meta.get("local_gain"),
@@ -56,6 +66,7 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
             if record.meta.get("routing_reward") is not None
             else record.meta.get("router_reward")
         ),
+        "routing_stat": record.meta.get("routing_stat", record.meta.get("router_reward")),
         "router_reward": record.meta.get("router_reward"),
         "meta_triggered": record.meta.get("meta_triggered", False),
         "attempts_used": record.meta.get("attempts_used", 1),
