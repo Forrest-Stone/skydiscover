@@ -480,6 +480,83 @@ def export_summary_csv(summary_path: Path, out_csv: Path | None = None) -> bool:
     )
 
 
+def _as_int(value: Any) -> int | None:
+    try:
+        if value is None:
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _find_budget_row_for_iteration(
+    rows: list[Dict[str, Any]],
+    iteration: int | None,
+) -> tuple[Dict[str, Any] | None, str | None]:
+    if iteration is None:
+        return None, None
+
+    for row in rows:
+        if _as_int(row.get("iteration")) == iteration:
+            return row, "iteration"
+
+    # Older summaries may only expose the iteration that first reached a best
+    # value.  Keep this fallback so best_program_info can still link to a trace.
+    for key in (
+        "best_so_far_combined_score_iteration",
+        "best_so_far_objective_iteration",
+    ):
+        for row in rows:
+            if _as_int(row.get(key)) == iteration:
+                return row, key
+
+    return None, None
+
+
+def best_program_budget_info(output_dir: Path | str, program_iteration: Any) -> Dict[str, Any]:
+    """Collect cost/budget context for the saved best program.
+
+    The returned dict is intended to be embedded into best_program_info.json.
+    It includes the run-level summary plus the exact iteration trace row for
+    the best program when that row is available.
+    """
+    root = Path(output_dir)
+    summary = load_summary(root / "summary.json")
+    rows = load_iterations(root / "iterations.jsonl")
+    iteration = _as_int(program_iteration)
+    best_row, matched_by = _find_budget_row_for_iteration(rows, iteration)
+
+    if not summary and best_row is None:
+        return {}
+
+    info: Dict[str, Any] = {
+        "program_iteration": iteration,
+        "matched_iteration_by": matched_by,
+    }
+    if summary:
+        info["run_summary"] = summary
+    if best_row is not None:
+        info["best_iteration_trace"] = best_row
+        info["cost_at_best"] = best_row.get("cumulative_cost")
+        info["iteration_cost_at_best"] = best_row.get("iteration_cost")
+        info["remaining_budget_ratio_at_best"] = best_row.get(
+            "remaining_budget_ratio_after",
+            best_row.get("remaining_budget_ratio"),
+        )
+        info["tokens_at_best"] = {
+            "input_tokens": best_row.get("input_tokens"),
+            "output_tokens": best_row.get("output_tokens"),
+            "total_tokens": best_row.get("total_tokens"),
+        }
+        info["call_counts_at_best"] = {
+            "num_calls": best_row.get("num_calls"),
+            "generation": best_row.get("num_generation_calls_this_iteration"),
+            "retry": best_row.get("num_retry_calls_this_iteration"),
+            "guide": best_row.get("num_guide_calls_this_iteration"),
+        }
+    return info
+
+
 def _load_plt():
     try:
         import matplotlib

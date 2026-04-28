@@ -7,6 +7,7 @@ import time
 import uuid
 from typing import Optional
 
+from skydiscover.budget import best_program_budget_info
 from skydiscover.config import Config, build_output_dir, load_config
 from skydiscover.search.base_database import Program
 from skydiscover.search.default_discovery_controller import (
@@ -426,16 +427,7 @@ class Runner:
                 from skydiscover.search.utils.checkpoint_manager import SafeJSONEncoder
 
                 json.dump(
-                    {
-                        "id": best.id,
-                        "generation": best.generation,
-                        "iteration": best.iteration_found,
-                        "current_iteration": iteration,
-                        "metrics": best.metrics,
-                        "language": best.language,
-                        "timestamp": best.timestamp,
-                        "saved_at": time.time(),
-                    },
+                    self._best_program_info_payload(best, current_iteration=iteration),
                     f,
                     indent=2,
                     cls=SafeJSONEncoder,
@@ -459,6 +451,31 @@ class Runner:
                 return prog
         return self.database.get_best_program()
 
+    def _best_program_info_payload(
+        self,
+        program: Program,
+        *,
+        current_iteration: Optional[int] = None,
+    ) -> dict:
+        """Build best_program_info.json with cost context when budget traces exist."""
+        payload = {
+            "id": program.id,
+            "generation": program.generation,
+            "iteration": program.iteration_found,
+            "timestamp": program.timestamp,
+            "parent_id": program.parent_id,
+            "metrics": program.metrics,
+            "language": program.language,
+            "saved_at": time.time(),
+        }
+        if current_iteration is not None:
+            payload["current_iteration"] = current_iteration
+
+        budget_info = best_program_budget_info(self.output_dir, program.iteration_found)
+        if budget_info:
+            payload["budget"] = budget_info
+        return payload
+
     def _save_best_program(self, program: Program) -> None:
         best_dir = os.path.join(self.output_dir, "best")
         os.makedirs(best_dir, exist_ok=True)
@@ -473,16 +490,7 @@ class Runner:
             from skydiscover.search.utils.checkpoint_manager import SafeJSONEncoder
 
             json.dump(
-                {
-                    "id": program.id,
-                    "generation": program.generation,
-                    "iteration": program.iteration_found,
-                    "timestamp": program.timestamp,
-                    "parent_id": program.parent_id,
-                    "metrics": program.metrics,
-                    "language": program.language,
-                    "saved_at": time.time(),
-                },
+                self._best_program_info_payload(program),
                 f,
                 indent=2,
                 cls=SafeJSONEncoder,

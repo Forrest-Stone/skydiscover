@@ -36,6 +36,7 @@ export_iterations_csv = _io.export_iterations_csv
 export_calls_csv = _io.export_calls_csv
 export_summary_csv = _io.export_summary_csv
 calls_from_iteration_row = _io.calls_from_iteration_row
+best_program_budget_info = _io.best_program_budget_info
 
 
 def test_iteration_cost_sums_generation_retry_and_guide_with_role_tokens(tmp_path):
@@ -135,6 +136,15 @@ def test_iteration_cost_sums_generation_retry_and_guide_with_role_tokens(tmp_pat
     assert call_rows[2]["input_tokens"] == "50"
     assert summary_rows[0]["method"] == "unit"
     assert summary_rows[0]["input_tokens_total"] == "180"
+
+    budget_info = best_program_budget_info(tmp_path, 4)
+    assert budget_info["program_iteration"] == 4
+    assert budget_info["matched_iteration_by"] == "iteration"
+    assert budget_info["cost_at_best"] == pytest.approx(0.0034)
+    assert budget_info["iteration_cost_at_best"] == pytest.approx(0.0034)
+    assert budget_info["tokens_at_best"]["input_tokens"] == 180
+    assert budget_info["call_counts_at_best"]["guide"] == 1
+    assert budget_info["run_summary"]["method"] == "unit"
 
 
 def test_calls_from_iteration_row_supports_legacy_arrays():
