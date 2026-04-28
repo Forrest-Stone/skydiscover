@@ -12,6 +12,7 @@ from skydiscover.context_builder.costada import CostAdaContextBuilder
 from skydiscover.search.adaevolve.controller import AdaEvolveController
 from skydiscover.search.base_database import Program
 from skydiscover.search.costada.adaptation import (
+    budget_mix,
     global_gain,
     local_gain,
     update_signal,
@@ -67,12 +68,13 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         self.frontier_states: Dict[int, FrontierState] = {
             i: FrontierState(frontier_id=i) for i in range(num_islands)
         }
-        self._recent_global_gains: deque[float] = deque(maxlen=self.improvement_window)
+        self._recent_frontier_improvements: deque[float] = deque(maxlen=self.improvement_window)
         self._recent_H_values: deque[float] = deque(maxlen=self.meta_window)
         self._current_tier: str = "standard"
         self._current_frontier_id: int = 0
         self._active_budget_record = None
-        self._active_call_role = CallRole.GENERATION
+        self._current_call_role = CallRole.GENERATION
+        self._pending_meta_intervention = False
 
     async def _call_llm(self, system_message: str, user_message: str, **kwargs):
         """Inject tier-specific output-token caps while preserving shared budget logging."""
@@ -92,7 +94,7 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         if "_budget_record" not in kwargs and self._active_budget_record is not None:
             kwargs["_budget_record"] = self._active_budget_record
         if "_call_role" not in kwargs:
-            kwargs["_call_role"] = self._active_call_role
+            kwargs["_call_role"] = self._current_call_role
         return await super()._call_llm(system_message, user_message, **kwargs)
 
     def _candidate_score(self, result: SerializableResult) -> Optional[float]:
@@ -108,9 +110,11 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         )
 
     def _recent_improvement_avg(self) -> float:
-        if not self._recent_global_gains:
+        if not self._recent_frontier_improvements:
             return 0.0
-        return float(sum(self._recent_global_gains) / len(self._recent_global_gains))
+        return float(
+            sum(self._recent_frontier_improvements) / len(self._recent_frontier_improvements)
+        )
 
     def _avg_recent_H(self) -> float:
         if not self._recent_H_values:
@@ -124,20 +128,55 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         )
 
     def _select_frontier(self) -> int:
+        self._sync_frontier_states()
         frontier_ids = list(self.frontier_states.keys())
         if not frontier_ids:
             return 0
         return self.router.select(frontier_ids)
 
-    def _select_tier(self, frontier_state: FrontierState) -> CompactControlState:
+    def _select_tier(
+        self,
+        frontier_state: FrontierState,
+        remaining_budget_ratio: float,
+    ) -> CompactControlState:
         compact = CompactControlState(
-            remaining_budget_ratio=self.budget_ledger.remaining_ratio(),
+            remaining_budget_ratio=remaining_budget_ratio,
             recent_improvement_avg=self._recent_improvement_avg(),
             stagnation_steps=frontier_state.stagnation_steps,
             frontier_signal=frontier_state.H,
         )
         self._current_tier = self.tier_scheduler.select(compact)
         return compact
+
+    def _frontier_actual_best(self, frontier_id: int) -> Optional[float]:
+        if not hasattr(self.database, "get_island_population"):
+            return None
+        try:
+            population = self.database.get_island_population(frontier_id)
+        except Exception:
+            return None
+        best_score: Optional[float] = None
+        for program in population or []:
+            try:
+                score = float(self.database.get_program_proxy_score(program))
+            except Exception:
+                score = None
+            if score is None:
+                continue
+            best_score = score if best_score is None else max(best_score, score)
+        return best_score
+
+    def _sync_frontier_states(self) -> None:
+        num_islands = int(getattr(self.database, "num_islands", len(self.frontier_states) or 1) or 1)
+        for fid in range(num_islands):
+            state = self.frontier_states.setdefault(fid, FrontierState(frontier_id=fid))
+            actual_best = self._frontier_actual_best(fid)
+            if actual_best is None:
+                continue
+            if state.last_update_iteration < 0:
+                state.local_best = float(actual_best)
+            else:
+                state.local_best = max(float(state.local_best), float(actual_best))
 
     def _frontier_intensity(self, frontier_signal: float) -> float:
         """Map frontier signal H to exploration intensity via deterministic scheduler."""
@@ -188,17 +227,26 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             frontier_state = self.frontier_states[frontier_id]
             self.database.current_island = frontier_id
 
-            compact_state = self._select_tier(frontier_state)
+            remaining_before = self.budget_ledger.remaining_ratio()
+            compact_state = self._select_tier(frontier_state, remaining_before)
+            tier_decision = self.tier_scheduler.last_decision()
 
             global_best_prev = self._best_score_or_zero()
+            local_best_prev = float(frontier_state.local_best)
             budget_record.meta["frontier_id"] = frontier_id
             budget_record.meta["global_best_before"] = global_best_prev
             budget_record.meta["tier"] = self._current_tier
             budget_record.meta["remaining_budget_ratio"] = compact_state.remaining_budget_ratio
+            budget_record.meta["remaining_budget_ratio_before"] = remaining_before
+            if tier_decision is not None:
+                budget_record.meta["intensity"] = float(tier_decision.intensity)
+                budget_record.meta["base_tier"] = tier_decision.base_tier
+                budget_record.meta["final_tier"] = tier_decision.final_tier
+                budget_record.meta["tier_override_reason"] = tier_decision.override_reason
 
-            # Optional paradigm generation follows AdaEvolve scaffold.
-            if self.database.use_paradigm_breakthrough and self.database.is_paradigm_stagnating():
-                await self._generate_paradigms_if_needed()
+            if self.database.use_paradigm_breakthrough and self._pending_meta_intervention:
+                await self._budget_generate_paradigms_if_needed(budget_record)
+                self._pending_meta_intervention = False
 
             result = await self._run_normal_step(iteration, budget_record=budget_record)
             iteration_time = time.time() - iteration_start_time
@@ -216,16 +264,28 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             )
             score_new = self._candidate_score(result)
             if score_new is None:
-                score_new = global_best_prev
-
-            d_local = local_gain(score_new, frontier_state.local_best)
-            g_global = global_gain(score_new, global_best_prev)
-            util = utility(d_local, g_global, raw_iteration_cost, compact_state.remaining_budget_ratio)
+                d_local = 0.0
+                g_global = 0.0
+                frontier_improvement = 0.0
+                global_best_after = global_best_prev
+            else:
+                d_local = local_gain(score_new, local_best_prev)
+                g_global = global_gain(score_new, global_best_prev)
+                frontier_improvement = max(float(score_new) - float(global_best_prev), 0.0)
+                global_best_after = max(float(global_best_prev), float(score_new))
+            nominal_budget = max(float(self.budget_ledger.config.nominal_budget), self.budget_ledger.config.eps)
+            remaining_after = max(
+                0.0,
+                1.0 - (float(self.budget_ledger.cumulative_cost) + raw_iteration_cost) / nominal_budget,
+            )
+            lambda_t = budget_mix(remaining_after)
+            util = utility(d_local, g_global, raw_iteration_cost, remaining_after)
             frontier_state.H = update_signal(frontier_state.H, util, alpha=self.alpha)
-            frontier_state.local_best = max(frontier_state.local_best, float(score_new))
+            if score_new is not None:
+                frontier_state.local_best = max(frontier_state.local_best, float(score_new))
             frontier_state.last_update_iteration = iteration
 
-            if g_global > self.meta_gain_eps:
+            if frontier_improvement > self.meta_gain_eps:
                 frontier_state.stagnation_steps = 0
             else:
                 frontier_state.stagnation_steps += 1
@@ -238,24 +298,32 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             frontier_state.routing_reward = self.router.get_reward(frontier_id)
             frontier_state.selection_count += 1
 
-            self._recent_global_gains.append(g_global)
+            self._recent_frontier_improvements.append(frontier_improvement)
             self._recent_H_values.append(frontier_state.H)
             self.tier_scheduler.update(compact_state, self._current_tier, util)
 
             meta_triggered = (
                 self._is_stagnant(frontier_state)
-                and compact_state.remaining_budget_ratio > self.meta_eta_min
+                and remaining_after > self.meta_eta_min
                 and self._avg_recent_H() < self.meta_h_threshold
             )
+            if meta_triggered:
+                self._pending_meta_intervention = True
 
+            budget_record.meta["remaining_budget_ratio_after"] = float(remaining_after)
+            budget_record.meta["lambda_t"] = float(lambda_t)
             budget_record.meta["recent_improvement_avg"] = float(self._recent_improvement_avg())
             budget_record.meta["stagnation_steps"] = int(frontier_state.stagnation_steps)
             budget_record.meta["local_gain"] = float(d_local)
             budget_record.meta["global_gain"] = float(g_global)
+            budget_record.meta["frontier_improvement"] = float(frontier_improvement)
+            budget_record.meta["global_best_after"] = float(global_best_after)
+            budget_record.meta["local_best"] = float(frontier_state.local_best)
             budget_record.meta["utility"] = float(util)
             budget_record.meta["frontier_signal"] = float(frontier_state.H)
             budget_record.meta["routing_reward"] = float(realized_router_reward)
             budget_record.meta["router_reward"] = float(realized_router_reward)  # backward-compatible alias
+            budget_record.meta["routing_stat"] = float(frontier_state.routing_reward)
             budget_record.meta["meta_triggered"] = bool(meta_triggered)
 
             # Keep default summary/trace pipeline from phase-1.

@@ -4,6 +4,9 @@ from statistics import mean
 from typing import Iterable, Optional
 
 
+BUDGET_REPORTING_PRECISION = 4
+
+
 def is_oob(total_cost: float, nominal_budget: float) -> bool:
     return total_cost > nominal_budget
 
@@ -62,3 +65,53 @@ def speedup_at_target(method_cost: Optional[float], baseline_cost: Optional[floa
     if m <= 0.0 or b <= 0.0:
         return None
     return b / m
+
+
+def rounded_metric_value(
+    value: Optional[float],
+    *,
+    precision: int = BUDGET_REPORTING_PRECISION,
+) -> float | None:
+    """Round metrics exactly as budget reports/plots present them."""
+    if value is None:
+        return None
+    try:
+        return round(float(value), int(precision))
+    except (TypeError, ValueError):
+        return None
+
+
+def best_so_far_with_iteration(
+    previous_value: Optional[float],
+    previous_iteration: Optional[int],
+    candidate_value: Optional[float],
+    candidate_iteration: int,
+    *,
+    precision: int = BUDGET_REPORTING_PRECISION,
+) -> tuple[float | None, int | None]:
+    """Update a best-so-far value while keeping first displayed-tie iteration.
+
+    The raw best value may improve by tiny amounts, but when the old and new
+    values round to the same displayed precision we keep the first iteration
+    that reached that displayed best. This matches the four-decimal reporting
+    semantics used in budget traces.
+    """
+    candidate_rounded = rounded_metric_value(candidate_value, precision=precision)
+    if candidate_rounded is None:
+        return previous_value, previous_iteration
+
+    previous_rounded = rounded_metric_value(previous_value, precision=precision)
+    if previous_rounded is None:
+        return float(candidate_value), int(candidate_iteration)
+
+    if candidate_rounded > previous_rounded:
+        return float(candidate_value), int(candidate_iteration)
+
+    if candidate_rounded == previous_rounded:
+        if previous_iteration is None:
+            return float(candidate_value), int(candidate_iteration)
+        raw_previous = float(previous_value) if previous_value is not None else float("-inf")
+        raw_candidate = float(candidate_value)
+        return max(raw_previous, raw_candidate), previous_iteration
+
+    return previous_value, previous_iteration

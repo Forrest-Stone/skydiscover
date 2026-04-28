@@ -51,7 +51,7 @@ class AdaEvolveBudgetController(BudgetIterationMixin, AdaEvolveController):
 
         try:
             if self.database.use_paradigm_breakthrough and self.database.is_paradigm_stagnating():
-                await self._generate_paradigms_if_needed()
+                await self._budget_generate_paradigms_if_needed(budget_record)
 
             result = await self._run_normal_step(iteration)
             result.iteration_time = max(float(result.iteration_time or 0.0), time.time() - iteration_start_time)

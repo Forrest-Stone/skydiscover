@@ -105,6 +105,10 @@ class BudgetLedger:
         total_guide_cost = 0.0
         total_prompt_tokens = 0
         total_completion_tokens = 0
+        role_token_totals: Dict[str, Dict[str, int]] = {
+            role.value: {"prompt": 0, "completion": 0, "total": 0}
+            for role in CallRole
+        }
 
         for record in self.records:
             total_generation_cost += float(record.generation_cost or 0.0)
@@ -113,6 +117,13 @@ class BudgetLedger:
             for call in record.calls:
                 total_prompt_tokens += int(call.prompt_tokens or 0)
                 total_completion_tokens += int(call.completion_tokens or 0)
+                role_key = call.role.value if isinstance(call.role, CallRole) else str(call.role)
+                role_totals = role_token_totals.setdefault(
+                    role_key, {"prompt": 0, "completion": 0, "total": 0}
+                )
+                role_totals["prompt"] += int(call.prompt_tokens or 0)
+                role_totals["completion"] += int(call.completion_tokens or 0)
+                role_totals["total"] += int(call.total_tokens or 0)
                 if call.role == CallRole.GENERATION:
                     num_generation_calls += 1
                 elif call.role == CallRole.RETRY:
@@ -143,6 +154,21 @@ class BudgetLedger:
             "input_tokens_total": total_prompt_tokens,
             "output_tokens_total": total_completion_tokens,
             "total_tokens": total_prompt_tokens + total_completion_tokens,
+            "generation_prompt_tokens_total": role_token_totals["generation"]["prompt"],
+            "generation_completion_tokens_total": role_token_totals["generation"]["completion"],
+            "generation_input_tokens_total": role_token_totals["generation"]["prompt"],
+            "generation_output_tokens_total": role_token_totals["generation"]["completion"],
+            "generation_total_tokens": role_token_totals["generation"]["total"],
+            "retry_prompt_tokens_total": role_token_totals["retry"]["prompt"],
+            "retry_completion_tokens_total": role_token_totals["retry"]["completion"],
+            "retry_input_tokens_total": role_token_totals["retry"]["prompt"],
+            "retry_output_tokens_total": role_token_totals["retry"]["completion"],
+            "retry_total_tokens": role_token_totals["retry"]["total"],
+            "guide_prompt_tokens_total": role_token_totals["guide"]["prompt"],
+            "guide_completion_tokens_total": role_token_totals["guide"]["completion"],
+            "guide_input_tokens_total": role_token_totals["guide"]["prompt"],
+            "guide_output_tokens_total": role_token_totals["guide"]["completion"],
+            "guide_total_tokens": role_token_totals["guide"]["total"],
             "avg_iteration_cost": (
                 self.cumulative_cost / len(self.records) if self.records else 0.0
             ),

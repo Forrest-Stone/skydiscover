@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from skydiscover.llm.base import LLMResponse
 from skydiscover.llm.openai import is_openai_reasoning_model
 from skydiscover.llm.responses_utils import (
     convert_messages_to_responses_input,
@@ -58,10 +59,12 @@ class AgenticGenerator:
     def __init__(self, llm_pool, config):
         self.llm_pool = llm_pool
         self.config = config
+        self.last_responses: List[LLMResponse] = []
 
     async def generate(self, system_message: str, user_message: str) -> Optional[str]:
         """Run the agent loop. Returns generated text, or None on failure."""
         cfg = self.config
+        self.last_responses = []
         files_read: set = set()
         conversation: List[Dict[str, Any]] = []
         t0 = time.time()
@@ -216,6 +219,7 @@ class AgenticGenerator:
             return await self._call_llm_responses(model, system_message, conversation)
 
         msg = resp.choices[0].message
+        self._record_usage_response(model, resp)
         out: Dict[str, Any] = {"role": "assistant", "content": msg.content or ""}
         if msg.tool_calls:
             out["tool_calls"] = [
@@ -263,10 +267,41 @@ class AgenticGenerator:
         )
 
         text, _, tool_calls = extract_responses_output(resp)
+        self._record_usage_response(model, resp)
         out: Dict[str, Any] = {"role": "assistant", "content": text}
         if tool_calls:
             out["tool_calls"] = tool_calls
         return out
+
+    def _record_usage_response(self, model, response: Any) -> None:
+        """Save provider usage for budget accounting in agentic mode."""
+        usage = getattr(response, "usage", None)
+        if usage is None and isinstance(response, dict):
+            usage = response.get("usage")
+
+        if hasattr(model, "_extract_usage_counts"):
+            prompt_tokens, completion_tokens, raw_usage = model._extract_usage_counts(usage)
+        else:
+            prompt_tokens = int(getattr(usage, "prompt_tokens", 0) or 0) if usage is not None else 0
+            completion_tokens = (
+                int(getattr(usage, "completion_tokens", 0) or 0) if usage is not None else 0
+            )
+            raw_usage = usage if isinstance(usage, dict) else None
+
+        estimated_cost = None
+        if (prompt_tokens or completion_tokens) and hasattr(model, "_estimate_cost"):
+            estimated_cost = model._estimate_cost(prompt_tokens, completion_tokens)
+
+        self.last_responses.append(
+            LLMResponse(
+                text="",
+                model_name=getattr(model, "model", None),
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                estimated_cost=estimated_cost,
+                usage_raw=raw_usage,
+            )
+        )
 
     # ------------------------------------------------------------------
     # Tools

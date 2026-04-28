@@ -20,11 +20,15 @@ from skydiscover.budget import (
     BudgetConfig,
     BudgetLedger,
     CallRole,
+    best_so_far_with_iteration,
     call_record_from_response,
     plot_run_budget_panels,
+    plot_run_cost_panels,
+    plot_run_diagnostic_panels,
     plot_run_best_score_vs_cost,
     plot_run_metric_vs_cost,
     plot_run_metric_vs_iteration,
+    plot_run_performance_panels,
     resolve_objective_from_metrics,
     write_iteration_record,
     write_summary,
@@ -197,6 +201,22 @@ class DiscoveryController:
         if self.agentic_generator and not kwargs.get("image_output"):
             text = await self.agentic_generator.generate(system_message, user_message)
             if text:
+                if budget_record is not None and call_role is not None:
+                    agentic_responses = getattr(self.agentic_generator, "last_responses", []) or []
+                    for response in agentic_responses:
+                        has_tokens = bool(
+                            int(getattr(response, "prompt_tokens", 0) or 0)
+                            or int(getattr(response, "completion_tokens", 0) or 0)
+                        )
+                        if has_tokens and getattr(response, "estimated_cost", None) is None:
+                            raise ValueError(
+                                "Agentic LLM call returned usage tokens without cost. "
+                                "Please configure model pricing for strict budget accounting."
+                            )
+                        self.budget_ledger.add_call(
+                            budget_record,
+                            call_record_from_response(response, call_role, source="agentic"),
+                        )
                 return LLMResponse(text=text)
         result = await self.llms.generate_with_usage(
             system_message, [{"role": "user", "content": user_message}], **kwargs
@@ -854,9 +874,28 @@ class DiscoveryController:
     ) -> tuple[Optional[float], Optional[int]]:
         if candidate_value is None:
             return previous_value, previous_iteration
-        if previous_value is None or float(candidate_value) > float(previous_value):
-            return float(candidate_value), int(candidate_iteration)
-        return previous_value, previous_iteration
+        return best_so_far_with_iteration(
+            previous_value,
+            previous_iteration,
+            candidate_value,
+            candidate_iteration,
+        )
+
+    def _best_from_iteration_rows(
+        self,
+        rows: List[Dict[str, Any]],
+        value_key: str,
+    ) -> tuple[Optional[float], Optional[int]]:
+        best_value: Optional[float] = None
+        best_iteration: Optional[int] = None
+        for row in rows:
+            best_value, best_iteration = best_so_far_with_iteration(
+                best_value,
+                best_iteration,
+                row.get(value_key),
+                int(row.get("iteration", 0) or 0),
+            )
+        return best_value, best_iteration
 
     def _finalize_budget_iteration(self, budget_record, result: SerializableResult) -> None:
         metrics = self._extract_metrics(result)
@@ -902,13 +941,23 @@ class DiscoveryController:
         budget_record.meta["best_so_far_target_ratio_iteration"] = best_ratio_iter
         budget_record.meta["best_so_far_combined_score"] = best_combined
         budget_record.meta["best_so_far_combined_score_iteration"] = best_combined_iter
-        budget_record.meta["global_best_after"] = self._best_score_or_zero()
         budget_record.meta["attempts_used"] = int(result.attempts_used or 1)
         budget_record.meta["candidate_score"] = self._extract_candidate_score(result)
+        candidate_score = budget_record.meta.get("candidate_score")
+        global_best_before = float(
+            budget_record.meta.get("global_best_before", prev_global_best) or 0.0
+        )
+        if candidate_score is None:
+            global_best_after = global_best_before
+        else:
+            global_best_after = max(global_best_before, float(candidate_score))
+        budget_record.meta["global_best_after"] = global_best_after
         budget_record.meta.setdefault("local_best", budget_record.meta.get("candidate_score"))
         budget_record.meta.setdefault("global_best_before", prev_global_best)
         budget_record.meta.setdefault("global_best", budget_record.meta.get("global_best_after"))
-        candidate_score = budget_record.meta.get("candidate_score")
+        budget_record.meta.setdefault(
+            "remaining_budget_ratio_before", self.budget_ledger.remaining_ratio()
+        )
         if candidate_score is not None:
             prev_best = float(budget_record.meta.get("global_best_before", 0.0) or 0.0)
             cur_best = float(budget_record.meta.get("global_best_after", 0.0) or 0.0)
@@ -920,8 +969,11 @@ class DiscoveryController:
             budget_record.meta.setdefault("local_gain_normalized", local_gain / denom)
             budget_record.meta.setdefault("global_gain_normalized", global_gain / denom)
             budget_record.meta.setdefault("utility", local_gain)
-        budget_record.meta["meta_triggered"] = False
+        budget_record.meta.setdefault("meta_triggered", False)
         self.budget_ledger.finalize_iteration(budget_record)
+        budget_record.meta.setdefault(
+            "remaining_budget_ratio_after", budget_record.remaining_budget_ratio
+        )
         write_iteration_record(self._budget_iterations_path, budget_record)
         # Keep summary fresh even if the run exits early/interrupted.
         write_summary(
@@ -1055,6 +1107,18 @@ class DiscoveryController:
             self._budget_iterations_path,
             self._budget_summary_path.parent / "budget_report.png",
         )
+        performance_panels_plotted = plot_run_performance_panels(
+            self._budget_iterations_path,
+            self._budget_summary_path.parent / "performance_report.png",
+        )
+        cost_panels_plotted = plot_run_cost_panels(
+            self._budget_iterations_path,
+            self._budget_summary_path.parent / "cost_report.png",
+        )
+        diagnostic_panels_plotted = plot_run_diagnostic_panels(
+            self._budget_iterations_path,
+            self._budget_summary_path.parent / "diagnostic_report.png",
+        )
         if panels_plotted:
             logger.info(
                 "Budget panel plot saved: %s",
@@ -1070,6 +1134,9 @@ class DiscoveryController:
             or not plotted_obj_iter
             or not plotted_score_iter
             or not panels_plotted
+            or not performance_panels_plotted
+            or not cost_panels_plotted
+            or not diagnostic_panels_plotted
         ):
             note_path = self._budget_summary_path.parent / "budget_plot_status.txt"
             note_path.write_text(
@@ -1099,47 +1166,14 @@ class DiscoveryController:
             except Exception:
                 rows = []
         objective_key = next((r.get("objective_key") for r in rows if r.get("objective_key")), None)
-        best_objective = max(
-            [float(r["best_so_far_objective"]) for r in rows if r.get("best_so_far_objective") is not None],
-            default=None,
+        best_objective, best_objective_iteration = self._best_from_iteration_rows(
+            rows, "objective_value"
         )
-        best_objective_iteration = next(
-            (
-                int(r["best_so_far_objective_iteration"])
-                for r in rows
-                if r.get("best_so_far_objective") is not None
-                and best_objective is not None
-                and float(r.get("best_so_far_objective")) == float(best_objective)
-            ),
-            None,
+        best_target_ratio, best_target_ratio_iteration = self._best_from_iteration_rows(
+            rows, "target_ratio"
         )
-        best_target_ratio = max(
-            [float(r["best_so_far_target_ratio"]) for r in rows if r.get("best_so_far_target_ratio") is not None],
-            default=None,
-        )
-        best_target_ratio_iteration = next(
-            (
-                int(r["best_so_far_target_ratio_iteration"])
-                for r in rows
-                if r.get("best_so_far_target_ratio") is not None
-                and best_target_ratio is not None
-                and float(r.get("best_so_far_target_ratio")) == float(best_target_ratio)
-            ),
-            None,
-        )
-        best_combined_score = max(
-            [float(r["best_so_far_combined_score"]) for r in rows if r.get("best_so_far_combined_score") is not None],
-            default=None,
-        )
-        best_combined_score_iteration = next(
-            (
-                int(r["best_so_far_combined_score_iteration"])
-                for r in rows
-                if r.get("best_so_far_combined_score") is not None
-                and best_combined_score is not None
-                and float(r.get("best_so_far_combined_score")) == float(best_combined_score)
-            ),
-            None,
+        best_combined_score, best_combined_score_iteration = self._best_from_iteration_rows(
+            rows, "combined_score"
         )
         cost_to_target = next(
             (
