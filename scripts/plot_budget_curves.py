@@ -19,6 +19,13 @@ from statistics import mean, median
 from typing import Dict, Iterable, List, Optional, Tuple
 
 
+def first_non_none(row: Dict, keys: List[str]):
+    for key in keys:
+        if row.get(key) is not None:
+            return row.get(key)
+    return None
+
+
 def best_score_at_budget(points: Iterable[tuple[float, float]], budget: float) -> float | None:
     best = None
     for cost, score in points:
@@ -96,9 +103,12 @@ def collect_runs(root: Path) -> List[Dict]:
         meta_flags = []
         for row in trace:
             cost = float(row.get("cumulative_cost", 0.0) or 0.0)
-            score = row.get("best_so_far_objective", row.get("global_best_after"))
+            score = first_non_none(
+                row,
+                ["best_so_far_objective", "objective_value", "global_best_after"],
+            )
             points.append((cost, score))
-            tier = row.get("tier")
+            tier = first_non_none(row, ["final_tier", "base_tier", "tier"])
             if tier:
                 tiers.append(str(tier))
             meta_flags.append(1.0 if row.get("meta_triggered") else 0.0)
@@ -234,7 +244,7 @@ def compute_metric_rows(runs: List[Dict], budgets: List[float], target: Optional
                     "BestObjective@Budget": bscore if bscore is not None else "",
                     "Success@Target": success,
                     "Cost-to-Target": c2t if c2t is not None else "",
-                    "AvgCost": total_cost,
+                    "AvgCost": float(summary.get("avg_iteration_cost", 0.0) or 0.0),
                     "OOBRate": 1.0 if total_cost > b else 0.0,
                     "OvershootRatio": overshoot_ratio(total_cost, b),
                     "TierEntropy": tier_entropy,
@@ -318,6 +328,9 @@ def write_csv(rows: List[Dict], out_csv: Path) -> None:
 
 def _load_plt():
     try:
+        import matplotlib
+
+        matplotlib.use("Agg", force=True)
         import matplotlib.pyplot as plt
 
         return plt
@@ -336,13 +349,16 @@ def plot_best_score_vs_cost(runs: List[Dict], out_png: Path) -> bool:
         if not trace:
             continue
         x = [float(row.get("cumulative_cost", 0.0) or 0.0) for row in trace]
-        y = [row.get("best_so_far_objective", row.get("global_best_after")) for row in trace]
+        y = [
+            first_non_none(row, ["global_best_after", "global_best", "best_so_far_combined_score"])
+            for row in trace
+        ]
         if all(v is None for v in y):
             continue
         plt.plot(x, y, linewidth=1.2, alpha=0.8, label=run["method"])
     plt.xlabel("Cumulative cost (USD)")
-    plt.ylabel("Best-so-far objective")
-    plt.title("Best-so-far objective vs cumulative cost")
+    plt.ylabel("Best score")
+    plt.title("Best score vs cumulative cost")
     plt.tight_layout()
     plt.savefig(out_png, dpi=180)
     plt.close()
@@ -369,10 +385,7 @@ def plot_trace_metric_vs_cost(
         y = []
         for row in trace:
             val = None
-            for key in y_keys:
-                if row.get(key) is not None:
-                    val = row.get(key)
-                    break
+            val = first_non_none(row, y_keys)
             y.append(val)
         if x and any(v is not None for v in y):
             plt.plot(x, y, linewidth=1.1, alpha=0.8, label=run["method"])
@@ -409,10 +422,7 @@ def plot_trace_metric_vs_iteration(
         y = []
         for row in trace:
             val = None
-            for key in y_keys:
-                if row.get(key) is not None:
-                    val = row.get(key)
-                    break
+            val = first_non_none(row, y_keys)
             y.append(val)
         if x and any(v is not None for v in y):
             plt.plot(x, y, linewidth=1.1, alpha=0.8, label=run["method"])
@@ -1154,8 +1164,20 @@ def main() -> None:
     write_csv(speedup_rows, out_dir / "speedup_vs_baseline.csv")
 
     p1 = plot_best_score_vs_cost(runs, out_dir / "best_score_vs_cost.png")
-    p1_obj = plot_best_score_vs_cost(runs, out_dir / "best_so_far_objective_vs_cost.png")
-    p1_combined = plot_best_score_vs_cost(runs, out_dir / "best_so_far_combined_score_vs_cost.png")
+    p1_obj = plot_trace_metric_vs_cost(
+        runs,
+        out_dir / "best_so_far_objective_vs_cost.png",
+        y_keys=["best_so_far_objective", "objective_value", "global_best_after"],
+        ylabel="Best-so-far objective",
+        title="Best-so-far objective vs cumulative cost",
+    )
+    p1_combined = plot_trace_metric_vs_cost(
+        runs,
+        out_dir / "best_so_far_combined_score_vs_cost.png",
+        y_keys=["best_so_far_combined_score", "combined_score", "global_best_after"],
+        ylabel="Best-so-far combined score",
+        title="Best-so-far combined score vs cumulative cost",
+    )
     p1_iter = plot_best_objective_vs_iteration(runs, out_dir / "best_so_far_objective_vs_iteration.png")
     p1_score_iter = plot_best_score_vs_iteration(runs, out_dir / "best_score_vs_iteration.png")
     p1_iter_cost = plot_iteration_cost_vs_iteration(runs, out_dir / "iteration_cost_vs_iteration.png")

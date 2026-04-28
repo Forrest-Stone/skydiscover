@@ -438,9 +438,13 @@ class OpenAILLM(LLMInterface):
                     self._call_api_full_response(params), timeout=timeout
                 )
                 content = self._extract_chat_text(response)
-                if not content:
-                    content = await self._call_api_via_responses(params)
                 usage = getattr(response, "usage", None)
+                if not content:
+                    response = await self._call_api_via_responses_full(params)
+                    content = self._extract_chat_text(response)
+                    if not content:
+                        content, _, _ = extract_responses_output(response)
+                    usage = getattr(response, "usage", None)
                 prompt_tokens, completion_tokens, raw_usage = self._extract_usage_counts(usage)
                 estimated_cost = self._estimate_cost(prompt_tokens, completion_tokens)
                 return LLMResponse(
@@ -527,6 +531,42 @@ class OpenAILLM(LLMInterface):
         text, _, _ = extract_responses_output(response)
         return text or ""
 
+    async def _call_api_via_responses_full(self, params: Dict[str, Any]):
+        """Translate Chat-Completions params into a Responses call and return the raw response."""
+        messages = params.get("messages", [])
+        if not isinstance(messages, list):
+            messages = []
+        input_items = convert_messages_to_responses_input(
+            [m for m in messages if isinstance(m, dict) and m.get("role") != "system"]
+        )
+        system_msg = next(
+            (
+                m.get("content")
+                for m in messages
+                if isinstance(m, dict) and m.get("role") == "system"
+            ),
+            None,
+        )
+        resp_params: Dict[str, Any] = {
+            "model": params.get("model", self.model),
+            "input": input_items,
+        }
+        if system_msg:
+            resp_params["instructions"] = system_msg
+        if params.get("max_tokens"):
+            resp_params["max_output_tokens"] = params["max_tokens"]
+        if params.get("max_completion_tokens"):
+            resp_params["max_output_tokens"] = params["max_completion_tokens"]
+        if params.get("temperature") is not None:
+            resp_params["temperature"] = params["temperature"]
+        if params.get("reasoning_effort") is not None:
+            resp_params["reasoning"] = {"effort": params["reasoning_effort"]}
+
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None, lambda: self.client.responses.create(**resp_params)
+        )
+
     async def _call_api_full_response(self, params: Dict[str, Any]):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, lambda: self.client.chat.completions.create(**params))
@@ -607,6 +647,9 @@ class OpenAILLM(LLMInterface):
         Strict billing behavior: if pricing is unavailable for the active model,
         raise an error instead of silently skipping cost accounting.
         """
+        if int(prompt_tokens or 0) == 0 and int(completion_tokens or 0) == 0:
+            return 0.0
+
         input_price = getattr(self, "input_price_per_1m", None)
         output_price = getattr(self, "output_price_per_1m", None)
 
@@ -691,7 +734,21 @@ class OpenAILLM(LLMInterface):
                         f.write(base64.b64decode(image_b64))
                     logger.info(f"Image saved: {image_path}")
 
-                return LLMResponse(text=text, image_path=image_path)
+                usage = getattr(response, "usage", None)
+                prompt_tokens, completion_tokens, raw_usage = self._extract_usage_counts(usage)
+                estimated_cost = None
+                if prompt_tokens or completion_tokens:
+                    estimated_cost = self._estimate_cost(prompt_tokens, completion_tokens)
+
+                return LLMResponse(
+                    text=text,
+                    image_path=image_path,
+                    model_name=self.model,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    estimated_cost=estimated_cost,
+                    usage_raw=raw_usage,
+                )
 
             except asyncio.TimeoutError:
                 if attempt < retries:

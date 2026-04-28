@@ -18,8 +18,10 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
     retry_completion = sum(c.completion_tokens for c in record.calls if c.role.value == "retry")
     guide_prompt = sum(c.prompt_tokens for c in record.calls if c.role.value == "guide")
     guide_completion = sum(c.completion_tokens for c in record.calls if c.role.value == "guide")
+    num_guide_calls = sum(1 for c in record.calls if c.role.value == "guide")
     row: Dict[str, Any] = {
         "iteration": record.iteration,
+        "source": record.meta.get("source", "iteration"),
         "frontier_id": record.meta.get("frontier_id"),
         "method": record.meta.get("method"),
         "task_family": record.meta.get("task_family"),
@@ -31,6 +33,14 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         "iteration_cost": record.iteration_cost,
         "cumulative_cost": record.cumulative_cost,
         "remaining_budget_ratio": record.remaining_budget_ratio,
+        "remaining_budget_ratio_before": record.meta.get(
+            "remaining_budget_ratio_before",
+            record.meta.get("remaining_budget_ratio"),
+        ),
+        "remaining_budget_ratio_after": record.meta.get(
+            "remaining_budget_ratio_after",
+            record.remaining_budget_ratio,
+        ),
         "prompt_tokens": prompt_tokens,
         "completion_tokens": completion_tokens,
         # Explicit aliases so downstream consumers can read in/out directly.
@@ -47,12 +57,16 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         "final_tier": record.meta.get(
             "final_tier", record.meta.get("action_tier", record.meta.get("tier"))
         ),
+        "tier_override_reason": record.meta.get("tier_override_reason"),
         "intensity": record.meta.get("intensity", record.meta.get("recent_improvement_avg")),
         "lambda_t": record.meta.get("lambda_t"),
         "recent_improvement_avg": record.meta.get("recent_improvement_avg"),
         "stagnation_steps": record.meta.get("stagnation_steps"),
         "local_gain": record.meta.get("local_gain"),
         "global_gain": record.meta.get("global_gain"),
+        "frontier_improvement": record.meta.get(
+            "frontier_improvement", record.meta.get("frontier_gain")
+        ),
         "local_gain_normalized": record.meta.get("local_gain_normalized"),
         "global_gain_normalized": record.meta.get("global_gain_normalized"),
         "utility": record.meta.get("utility"),
@@ -69,13 +83,16 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         "routing_stat": record.meta.get("routing_stat", record.meta.get("router_reward")),
         "router_reward": record.meta.get("router_reward"),
         "meta_triggered": record.meta.get("meta_triggered", False),
+        "guide_triggered": record.meta.get("guide_triggered", bool(num_guide_calls)),
+        "paradigm_triggered": record.meta.get("paradigm_triggered", False),
+        "paradigm_count": record.meta.get("paradigm_count", 0),
         "attempts_used": record.meta.get("attempts_used", 1),
         "num_calls": len(record.calls),
         "num_generation_calls_this_iteration": sum(
             1 for c in record.calls if c.role.value == "generation"
         ),
         "num_retry_calls_this_iteration": sum(1 for c in record.calls if c.role.value == "retry"),
-        "num_guide_calls_this_iteration": sum(1 for c in record.calls if c.role.value == "guide"),
+        "num_guide_calls_this_iteration": num_guide_calls,
         "total_tokens": prompt_tokens + completion_tokens,
         "generation_prompt_tokens": gen_prompt,
         "generation_completion_tokens": gen_completion,
@@ -113,6 +130,18 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         "call_output_tokens": [c.completion_tokens for c in record.calls],
         "call_total_tokens": [c.total_tokens for c in record.calls],
         "call_costs": [c.raw_cost for c in record.calls],
+        "calls": [
+            {
+                "role": c.role.value,
+                "model_name": c.model_name,
+                "input_tokens": c.prompt_tokens,
+                "output_tokens": c.completion_tokens,
+                "total_tokens": c.total_tokens,
+                "raw_cost": c.raw_cost,
+                "meta": c.meta,
+            }
+            for c in record.calls
+        ],
     }
     with path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
@@ -159,6 +188,29 @@ def load_summary(path: Path) -> Dict[str, Any]:
         return {}
 
 
+def _load_plt():
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg", force=True)
+        import matplotlib.pyplot as plt
+
+        return plt
+    except Exception:
+        return None
+
+
+def _first_present(row: Dict[str, Any], keys: list[str]) -> Any:
+    for key in keys:
+        if row.get(key) is not None:
+            return row.get(key)
+    return None
+
+
+def _series(rows: list[Dict[str, Any]], keys: list[str]) -> list[Any]:
+    return [_first_present(row, keys) for row in rows]
+
+
 def plot_run_metric_vs_cost(
     iterations_path: Path,
     out_png: Path,
@@ -171,9 +223,8 @@ def plot_run_metric_vs_cost(
 
     Returns False when plotting dependencies are unavailable.
     """
-    try:
-        import matplotlib.pyplot as plt
-    except Exception:
+    plt = _load_plt()
+    if plt is None:
         return False
 
     if not iterations_path.exists():
@@ -222,9 +273,8 @@ def plot_run_metric_vs_iteration(
     title: str,
 ) -> bool:
     """Plot a chosen metric vs iteration index for a single run."""
-    try:
-        import matplotlib.pyplot as plt
-    except Exception:
+    plt = _load_plt()
+    if plt is None:
         return False
 
     if not iterations_path.exists():
@@ -277,9 +327,8 @@ def plot_run_best_score_vs_cost(iterations_path: Path, out_png: Path) -> bool:
 
 def plot_run_budget_panels(iterations_path: Path, out_png: Path) -> bool:
     """Create a compact multi-panel budget report for one run."""
-    try:
-        import matplotlib.pyplot as plt
-    except Exception:
+    plt = _load_plt()
+    if plt is None:
         return False
 
     if not iterations_path.exists():
@@ -327,6 +376,159 @@ def plot_run_budget_panels(iterations_path: Path, out_png: Path) -> bool:
     axes[1, 1].set_title("Tokens per iteration")
     axes[1, 1].set_xlabel("Iteration")
     axes[1, 1].set_ylabel("Tokens")
+
+    fig.tight_layout()
+    fig.savefig(out_png, dpi=180)
+    plt.close(fig)
+    return True
+
+
+def plot_run_performance_panels(iterations_path: Path, out_png: Path) -> bool:
+    """Group score/objective vs cost/iteration views into one run-level figure."""
+    plt = _load_plt()
+    if plt is None:
+        return False
+    rows = load_iterations(iterations_path)
+    if not rows:
+        return False
+
+    x_iter = [int(r.get("iteration", i)) for i, r in enumerate(rows)]
+    x_cost = [float(r.get("cumulative_cost", 0.0) or 0.0) for r in rows]
+    best_score = _series(rows, ["global_best_after", "global_best", "best_so_far_combined_score"])
+    best_objective = _series(rows, ["best_so_far_objective", "objective_value", "global_best_after"])
+    best_combined = _series(rows, ["best_so_far_combined_score", "combined_score", "global_best_after"])
+
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(2, 2, figsize=(11, 7.5))
+    axes[0, 0].plot(x_cost, best_score, linewidth=1.7)
+    axes[0, 0].set_title("Best score vs cost")
+    axes[0, 0].set_xlabel("Cumulative cost (USD)")
+    axes[0, 0].set_ylabel("Best score")
+
+    axes[0, 1].plot(x_iter, best_score, linewidth=1.7)
+    axes[0, 1].set_title("Best score vs iteration")
+    axes[0, 1].set_xlabel("Iteration")
+    axes[0, 1].set_ylabel("Best score")
+
+    axes[1, 0].plot(x_cost, best_objective, linewidth=1.7)
+    axes[1, 0].set_title("Best objective vs cost")
+    axes[1, 0].set_xlabel("Cumulative cost (USD)")
+    axes[1, 0].set_ylabel("Best-so-far objective")
+
+    axes[1, 1].plot(x_cost, best_combined, linewidth=1.7)
+    axes[1, 1].set_title("Best combined score vs cost")
+    axes[1, 1].set_xlabel("Cumulative cost (USD)")
+    axes[1, 1].set_ylabel("Best-so-far combined score")
+
+    fig.tight_layout()
+    fig.savefig(out_png, dpi=180)
+    plt.close(fig)
+    return True
+
+
+def plot_run_cost_panels(iterations_path: Path, out_png: Path) -> bool:
+    """Group iteration/cumulative cost and token composition views."""
+    plt = _load_plt()
+    if plt is None:
+        return False
+    rows = load_iterations(iterations_path)
+    if not rows:
+        return False
+
+    x_iter = [int(r.get("iteration", i)) for i, r in enumerate(rows)]
+    gen = [float(r.get("generation_cost", 0.0) or 0.0) for r in rows]
+    retry = [float(r.get("retry_cost", 0.0) or 0.0) for r in rows]
+    guide = [float(r.get("guide_cost", 0.0) or 0.0) for r in rows]
+    iter_cost = [float(r.get("iteration_cost", 0.0) or 0.0) for r in rows]
+    cum_cost = [float(r.get("cumulative_cost", 0.0) or 0.0) for r in rows]
+    remain = [float(r.get("remaining_budget_ratio_after", r.get("remaining_budget_ratio", 0.0)) or 0.0) for r in rows]
+    in_tokens = [int(r.get("input_tokens", 0) or 0) for r in rows]
+    out_tokens = [int(r.get("output_tokens", 0) or 0) for r in rows]
+
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(2, 2, figsize=(11, 7.5))
+    axes[0, 0].plot(x_iter, iter_cost, linewidth=1.5)
+    axes[0, 0].set_title("Iteration cost")
+    axes[0, 0].set_xlabel("Iteration")
+    axes[0, 0].set_ylabel("USD")
+
+    axes[0, 1].stackplot(x_iter, gen, retry, guide, labels=["generation", "retry", "guide"])
+    axes[0, 1].set_title("Cost composition")
+    axes[0, 1].set_xlabel("Iteration")
+    axes[0, 1].set_ylabel("USD")
+    axes[0, 1].legend(fontsize=8)
+
+    axes[1, 0].plot(x_iter, cum_cost, linewidth=1.5, label="cumulative cost")
+    axes[1, 0].set_title("Cumulative cost")
+    axes[1, 0].set_xlabel("Iteration")
+    axes[1, 0].set_ylabel("USD")
+
+    axes[1, 1].plot(x_iter, in_tokens, linewidth=1.3, label="input")
+    axes[1, 1].plot(x_iter, out_tokens, linewidth=1.3, label="output")
+    axes[1, 1].plot(x_iter, remain, linewidth=1.3, label="remaining ratio")
+    axes[1, 1].set_title("Tokens and remaining budget")
+    axes[1, 1].set_xlabel("Iteration")
+    axes[1, 1].legend(fontsize=8)
+
+    fig.tight_layout()
+    fig.savefig(out_png, dpi=180)
+    plt.close(fig)
+    return True
+
+
+def plot_run_diagnostic_panels(iterations_path: Path, out_png: Path) -> bool:
+    """Group BCHD diagnostics: tiers, meta triggers, frontier share, utility chain."""
+    plt = _load_plt()
+    if plt is None:
+        return False
+    rows = load_iterations(iterations_path)
+    if not rows:
+        return False
+
+    x_iter = [int(r.get("iteration", i)) for i, r in enumerate(rows)]
+    tier_map = {"cheap": 0, "standard": 1, "rich": 2}
+    tiers = [
+        tier_map.get(str(r.get("final_tier", r.get("base_tier", r.get("tier", "")))), None)
+        for r in rows
+    ]
+    meta = [1.0 if r.get("meta_triggered") else 0.0 for r in rows]
+    utility_vals = _series(rows, ["utility"])
+    frontier_signal = _series(rows, ["frontier_signal"])
+    local_gain_vals = _series(rows, ["local_gain_normalized", "local_gain"])
+    global_gain_vals = _series(rows, ["global_gain_normalized", "global_gain"])
+    frontier_counts: Dict[str, int] = {}
+    for row in rows:
+        fid = row.get("frontier_id")
+        if fid is not None:
+            frontier_counts[str(fid)] = frontier_counts.get(str(fid), 0) + 1
+
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(2, 2, figsize=(11, 7.5))
+    axes[0, 0].plot(x_iter, tiers, drawstyle="steps-post", linewidth=1.5)
+    axes[0, 0].set_yticks([0, 1, 2], ["cheap", "standard", "rich"])
+    axes[0, 0].set_title("Tier usage vs iteration")
+    axes[0, 0].set_xlabel("Iteration")
+
+    axes[0, 1].plot(x_iter, meta, linewidth=1.5)
+    axes[0, 1].set_title("Meta trigger vs iteration")
+    axes[0, 1].set_xlabel("Iteration")
+    axes[0, 1].set_ylabel("Triggered")
+
+    if frontier_counts:
+        labels = sorted(frontier_counts.keys())
+        vals = [frontier_counts[k] for k in labels]
+        axes[1, 0].bar(labels, vals)
+    axes[1, 0].set_title("Frontier selection counts")
+    axes[1, 0].set_xlabel("Frontier")
+    axes[1, 0].set_ylabel("Count")
+
+    axes[1, 1].plot(x_iter, utility_vals, linewidth=1.2, label="utility")
+    axes[1, 1].plot(x_iter, frontier_signal, linewidth=1.2, label="frontier signal")
+    axes[1, 1].plot(x_iter, local_gain_vals, linewidth=1.0, label="local gain")
+    axes[1, 1].plot(x_iter, global_gain_vals, linewidth=1.0, label="global gain")
+    axes[1, 1].set_title("Utility chain")
+    axes[1, 1].set_xlabel("Iteration")
+    axes[1, 1].legend(fontsize=8)
 
     fig.tight_layout()
     fig.savefig(out_png, dpi=180)
