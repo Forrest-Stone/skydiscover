@@ -34,6 +34,7 @@ class AdaEvolveBudgetController(BudgetIterationMixin, AdaEvolveController):
             )
             result = await self._generate_child(iteration, error_context=last_error)
             if not result.error:
+                result.attempts_used = attempt + 1
                 return result
             last_error = result.error
 

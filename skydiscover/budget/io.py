@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 from typing import Any, Dict
@@ -83,6 +84,7 @@ def write_iteration_record(path: Path, record: IterationBudgetRecord) -> None:
         "routing_stat": record.meta.get("routing_stat", record.meta.get("router_reward")),
         "router_reward": record.meta.get("router_reward"),
         "meta_triggered": record.meta.get("meta_triggered", False),
+        "meta_sources": record.meta.get("meta_sources", []),
         "guide_triggered": record.meta.get("guide_triggered", bool(num_guide_calls)),
         "paradigm_triggered": record.meta.get("paradigm_triggered", False),
         "paradigm_count": record.meta.get("paradigm_count", 0),
@@ -186,6 +188,290 @@ def load_summary(path: Path) -> Dict[str, Any]:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return {}
+
+
+_ITERATION_CSV_PREFIX_FIELDS = [
+    "iteration",
+    "source",
+    "method",
+    "task_family",
+    "task_name",
+    "seed",
+    "frontier_id",
+    "objective_key",
+    "objective_value",
+    "best_so_far_objective",
+    "best_so_far_objective_iteration",
+    "combined_score",
+    "best_so_far_combined_score",
+    "best_so_far_combined_score_iteration",
+    "candidate_score",
+    "local_best",
+    "global_best_before",
+    "global_best_after",
+    "global_best",
+    "target_value",
+    "target_ratio",
+    "best_so_far_target_ratio",
+    "best_so_far_target_ratio_iteration",
+    "generation_cost",
+    "retry_cost",
+    "guide_cost",
+    "iteration_cost",
+    "cumulative_cost",
+    "remaining_budget_ratio",
+    "remaining_budget_ratio_before",
+    "remaining_budget_ratio_after",
+    "input_tokens",
+    "output_tokens",
+    "total_tokens",
+    "prompt_tokens",
+    "completion_tokens",
+    "generation_input_tokens",
+    "generation_output_tokens",
+    "retry_input_tokens",
+    "retry_output_tokens",
+    "guide_input_tokens",
+    "guide_output_tokens",
+    "num_calls",
+    "num_generation_calls_this_iteration",
+    "num_retry_calls_this_iteration",
+    "num_guide_calls_this_iteration",
+    "lambda_t",
+    "local_gain",
+    "global_gain",
+    "local_gain_normalized",
+    "global_gain_normalized",
+    "frontier_improvement",
+    "utility",
+    "frontier_signal",
+    "routing_reward",
+    "routing_stat",
+    "router_reward",
+    "recent_improvement_avg",
+    "stagnation_steps",
+    "intensity",
+    "tier",
+    "base_tier",
+    "final_tier",
+    "tier_override_reason",
+    "meta_triggered",
+    "guide_triggered",
+    "meta_sources",
+    "paradigm_triggered",
+    "paradigm_count",
+    "attempts_used",
+    "model_name",
+    "validity",
+    "eval_time",
+    "metrics_raw",
+    "calls",
+]
+
+_CALL_CSV_PREFIX_FIELDS = [
+    "iteration",
+    "source",
+    "method",
+    "task_family",
+    "task_name",
+    "seed",
+    "frontier_id",
+    "call_index",
+    "role",
+    "model_name",
+    "input_tokens",
+    "output_tokens",
+    "total_tokens",
+    "raw_cost",
+    "call_meta",
+    "objective_key",
+    "combined_score",
+    "objective_value",
+    "cumulative_cost_after_iteration",
+]
+
+_SUMMARY_CSV_PREFIX_FIELDS = [
+    "method",
+    "task_family",
+    "task_name",
+    "seed",
+    "nominal_budget",
+    "total_cost",
+    "avg_iteration_cost",
+    "oob",
+    "overshoot",
+    "overshoot_ratio",
+    "best_score",
+    "objective_key",
+    "best_objective",
+    "best_objective_iteration",
+    "best_combined_score",
+    "best_combined_score_iteration",
+    "best_target_ratio",
+    "best_target_ratio_iteration",
+    "target_value",
+    "success_target",
+    "cost_to_target",
+    "iteration_to_target",
+    "num_iterations",
+    "num_generation_calls",
+    "num_retry_calls",
+    "num_guide_calls",
+    "generation_cost_total",
+    "retry_cost_total",
+    "guide_cost_total",
+    "input_tokens_total",
+    "output_tokens_total",
+    "total_tokens",
+]
+
+
+def _csv_cell(value: Any) -> Any:
+    if value is None:
+        return ""
+    if isinstance(value, (dict, list, tuple)):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return value
+
+
+def _ordered_fields(rows: list[Dict[str, Any]], preferred: list[str]) -> list[str]:
+    seen: set[str] = set()
+    fields: list[str] = []
+    row_keys = {key for row in rows for key in row.keys()}
+    for key in preferred:
+        if key in row_keys and key not in seen:
+            fields.append(key)
+            seen.add(key)
+    for key in sorted(row_keys - seen):
+        fields.append(key)
+    return fields
+
+
+def _write_dict_rows_csv(
+    rows: list[Dict[str, Any]],
+    out_csv: Path,
+    preferred_fields: list[str],
+) -> bool:
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    if not rows:
+        out_csv.write_text("", encoding="utf-8")
+        return False
+    fields = _ordered_fields(rows, preferred_fields)
+    with out_csv.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fields)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({field: _csv_cell(row.get(field)) for field in fields})
+    return True
+
+
+def export_iterations_csv(iterations_path: Path, out_csv: Path | None = None) -> bool:
+    """Export iterations.jsonl to a flat CSV without dropping diagnostic fields."""
+    rows = load_iterations(iterations_path)
+    return _write_dict_rows_csv(
+        rows,
+        out_csv or iterations_path.with_suffix(".csv"),
+        _ITERATION_CSV_PREFIX_FIELDS,
+    )
+
+
+def _list_at(values: Any, idx: int, default: Any = None) -> Any:
+    if not isinstance(values, list) or idx >= len(values):
+        return default
+    return values[idx]
+
+
+def _calls_from_iteration_row(row: Dict[str, Any]) -> list[Dict[str, Any]]:
+    calls = row.get("calls")
+    if isinstance(calls, list) and calls:
+        out: list[Dict[str, Any]] = []
+        for idx, call in enumerate(calls):
+            if not isinstance(call, dict):
+                continue
+            out.append(
+                {
+                    "call_index": idx,
+                    "role": call.get("role"),
+                    "model_name": call.get("model_name"),
+                    "input_tokens": call.get("input_tokens", call.get("prompt_tokens")),
+                    "output_tokens": call.get(
+                        "output_tokens", call.get("completion_tokens")
+                    ),
+                    "total_tokens": call.get("total_tokens"),
+                    "raw_cost": call.get("raw_cost"),
+                    "call_meta": call.get("meta"),
+                }
+            )
+        return out
+
+    roles = row.get("call_roles")
+    models = row.get("call_model_names")
+    input_tokens = row.get("call_input_tokens", row.get("call_prompt_tokens"))
+    output_tokens = row.get("call_output_tokens", row.get("call_completion_tokens"))
+    total_tokens = row.get("call_total_tokens")
+    costs = row.get("call_costs")
+    lengths = [
+        len(v)
+        for v in (roles, models, input_tokens, output_tokens, total_tokens, costs)
+        if isinstance(v, list)
+    ]
+    if not lengths:
+        return []
+    out = []
+    for idx in range(max(lengths)):
+        out.append(
+            {
+                "call_index": idx,
+                "role": _list_at(roles, idx),
+                "model_name": _list_at(models, idx),
+                "input_tokens": _list_at(input_tokens, idx, 0),
+                "output_tokens": _list_at(output_tokens, idx, 0),
+                "total_tokens": _list_at(total_tokens, idx, 0),
+                "raw_cost": _list_at(costs, idx, 0.0),
+                "call_meta": None,
+            }
+        )
+    return out
+
+
+def export_calls_csv(iterations_path: Path, out_csv: Path | None = None) -> bool:
+    """Export one row per search-side LLM call from an iteration trace."""
+    rows = load_iterations(iterations_path)
+    call_rows: list[Dict[str, Any]] = []
+    for row in rows:
+        run_meta = {
+            "iteration": row.get("iteration"),
+            "source": row.get("source"),
+            "method": row.get("method"),
+            "task_family": row.get("task_family"),
+            "task_name": row.get("task_name"),
+            "seed": row.get("seed"),
+            "frontier_id": row.get("frontier_id"),
+            "objective_key": row.get("objective_key"),
+            "combined_score": row.get("combined_score"),
+            "objective_value": row.get("objective_value"),
+            "cumulative_cost_after_iteration": row.get("cumulative_cost"),
+        }
+        for call in _calls_from_iteration_row(row):
+            call_rows.append({**run_meta, **call})
+
+    default_out = iterations_path.with_name("calls.csv")
+    return _write_dict_rows_csv(call_rows, out_csv or default_out, _CALL_CSV_PREFIX_FIELDS)
+
+
+def export_summary_csv(summary_path: Path, out_csv: Path | None = None) -> bool:
+    """Export summary.json as a single-row CSV."""
+    summary = load_summary(summary_path)
+    if not summary:
+        out = out_csv or summary_path.with_suffix(".csv")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text("", encoding="utf-8")
+        return False
+    return _write_dict_rows_csv(
+        [summary],
+        out_csv or summary_path.with_suffix(".csv"),
+        _SUMMARY_CSV_PREFIX_FIELDS,
+    )
 
 
 def _load_plt():

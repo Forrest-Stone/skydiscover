@@ -11,6 +11,9 @@ from skydiscover.budget.hooks import (
     call_record_from_response,
 )
 from skydiscover.budget.io import (
+    export_calls_csv,
+    export_iterations_csv,
+    export_summary_csv,
     load_iterations,
     load_summary,
     plot_run_cost_panels,
@@ -35,6 +38,9 @@ __all__ = [
     "aggregate_tokens",
     "attach_call_to_iteration",
     "call_record_from_response",
+    "export_calls_csv",
+    "export_iterations_csv",
+    "export_summary_csv",
     "load_iterations",
     "load_summary",
     "plot_run_cost_panels",

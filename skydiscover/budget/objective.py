@@ -12,7 +12,9 @@ _EXCLUDE_KEYS = {
     "error",
     "error_message",
     "target",
+    "target_value",
     "ratio",
+    "target_ratio",
 }
 
 
@@ -38,8 +40,8 @@ def _to_float(v: Any) -> Optional[float]:
 def resolve_objective_from_metrics(metrics: Dict[str, Any] | None) -> ObjectiveSnapshot:
     metrics = metrics or {}
     combined = _to_float(metrics.get("combined_score", metrics.get("score")))
-    target_value = _to_float(metrics.get("target"))
-    target_ratio = _to_float(metrics.get("ratio"))
+    target_value = _to_float(metrics.get("target_value", metrics.get("target")))
+    target_ratio = _to_float(metrics.get("target_ratio", metrics.get("ratio")))
     validity = _to_float(metrics.get("validity"))
 
     objective_key = None

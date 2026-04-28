@@ -206,7 +206,11 @@ def write_runs_csv(runs: List[Dict], out_csv: Path, target: Optional[float] = No
                     "best_objective": s.get("best_objective", s.get("best_score")),
                     "objective_key": s.get("objective_key", run.get("objective_key")),
                     "success_target": (
-                        success_at_target(s.get("best_score"), target) if target is not None else ""
+                        success_at_target(
+                            s.get("best_objective", s.get("best_score")), target
+                        )
+                        if target is not None
+                        else ""
                     ),
                     "cost_to_target": (
                         cost_to_target(run["points"], target) if target is not None else ""
@@ -319,11 +323,118 @@ def write_csv(rows: List[Dict], out_csv: Path) -> None:
         out_csv.write_text("", encoding="utf-8")
         return
     headers = list(rows[0].keys())
+    seen = set(headers)
+    for row in rows[1:]:
+        for key in sorted(row.keys()):
+            if key not in seen:
+                headers.append(key)
+                seen.add(key)
     with out_csv.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=headers)
         writer.writeheader()
         for row in rows:
-            writer.writerow(row)
+            writer.writerow({key: csv_cell(row.get(key)) for key in headers})
+
+
+def csv_cell(value):
+    if value is None:
+        return ""
+    if isinstance(value, (dict, list, tuple)):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return value
+
+
+def calls_from_iteration_row(row: Dict) -> List[Dict]:
+    calls = row.get("calls")
+    if isinstance(calls, list) and calls:
+        out = []
+        for idx, call in enumerate(calls):
+            if not isinstance(call, dict):
+                continue
+            out.append(
+                {
+                    "call_index": idx,
+                    "role": call.get("role"),
+                    "model_name": call.get("model_name"),
+                    "input_tokens": call.get("input_tokens", call.get("prompt_tokens")),
+                    "output_tokens": call.get(
+                        "output_tokens", call.get("completion_tokens")
+                    ),
+                    "total_tokens": call.get("total_tokens"),
+                    "raw_cost": call.get("raw_cost"),
+                    "call_meta": call.get("meta"),
+                }
+            )
+        return out
+
+    arrays = {
+        "role": row.get("call_roles"),
+        "model_name": row.get("call_model_names"),
+        "input_tokens": row.get("call_input_tokens", row.get("call_prompt_tokens")),
+        "output_tokens": row.get("call_output_tokens", row.get("call_completion_tokens")),
+        "total_tokens": row.get("call_total_tokens"),
+        "raw_cost": row.get("call_costs"),
+    }
+    max_len = max((len(v) for v in arrays.values() if isinstance(v, list)), default=0)
+    out = []
+    for idx in range(max_len):
+        call = {"call_index": idx, "call_meta": None}
+        for key, values in arrays.items():
+            call[key] = values[idx] if isinstance(values, list) and idx < len(values) else ""
+        out.append(call)
+    return out
+
+
+def run_row_prefix(run: Dict) -> Dict:
+    return {
+        "run_dir": run["run_dir"],
+        "method": run["method"],
+        "task_family": run.get("task_family", "unknown"),
+        "task_name": run.get("task_name", ""),
+        "seed": run.get("seed", ""),
+    }
+
+
+def write_all_iterations_csv(runs: List[Dict], out_csv: Path) -> None:
+    rows = []
+    for run in runs:
+        prefix = run_row_prefix(run)
+        for row in run.get("trace", []):
+            merged = {
+                **prefix,
+                "trace_method": row.get("method"),
+                "trace_task_family": row.get("task_family"),
+                "trace_task_name": row.get("task_name"),
+                "trace_seed": row.get("seed"),
+            }
+            for key, value in row.items():
+                if key not in merged:
+                    merged[key] = value
+            rows.append(merged)
+    write_csv(rows, out_csv)
+
+
+def write_all_calls_csv(runs: List[Dict], out_csv: Path) -> None:
+    rows = []
+    for run in runs:
+        prefix = run_row_prefix(run)
+        for row in run.get("trace", []):
+            iteration_meta = {
+                **prefix,
+                "iteration": row.get("iteration"),
+                "source": row.get("source"),
+                "frontier_id": row.get("frontier_id"),
+                "objective_key": row.get("objective_key"),
+                "objective_value": row.get("objective_value"),
+                "combined_score": row.get("combined_score"),
+                "best_so_far_objective": row.get("best_so_far_objective"),
+                "best_so_far_combined_score": row.get("best_so_far_combined_score"),
+                "iteration_cost": row.get("iteration_cost"),
+                "cumulative_cost_after_iteration": row.get("cumulative_cost"),
+            }
+            for call in calls_from_iteration_row(row):
+                rows.append({**iteration_meta, **call})
+    write_csv(rows, out_csv)
 
 
 def _load_plt():
@@ -1144,6 +1255,8 @@ def main() -> None:
 
     runs = collect_runs(root)
     write_runs_csv(runs, out_dir / "runs.csv", target=args.target)
+    write_all_iterations_csv(runs, out_dir / "all_iterations.csv")
+    write_all_calls_csv(runs, out_dir / "all_calls.csv")
 
     default_budgets = sorted(
         {
@@ -1279,6 +1392,8 @@ def main() -> None:
 
     print(f"Found runs: {len(runs)}")
     print(f"Wrote: {out_dir / 'runs.csv'}")
+    print(f"Wrote: {out_dir / 'all_iterations.csv'}")
+    print(f"Wrote: {out_dir / 'all_calls.csv'}")
     print(f"Wrote: {out_dir / 'per_run_metrics.csv'}")
     print(f"Wrote: {out_dir / 'aggregate_metrics.csv'}")
     print(f"Wrote: {out_dir / 'speedup_vs_baseline.csv'}")

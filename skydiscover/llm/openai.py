@@ -386,6 +386,68 @@ class OpenAILLM(LLMInterface):
                     await asyncio.sleep(retry_delay)
                 else:
                     raise
+            except (openai.BadRequestError, openai.APIStatusError) as e:
+                if _is_region_restricted_error(e) and self._try_region_fallback():
+                    continue
+                if "unsupported" in str(e).lower() or "not found" in str(e).lower():
+                    try:
+                        response = await asyncio.wait_for(
+                            self._call_api_via_responses_full(params), timeout=timeout
+                        )
+                        content = self._extract_chat_text(response)
+                        if not content:
+                            content, _, _ = extract_responses_output(response)
+                        usage = getattr(response, "usage", None)
+                        prompt_tokens, completion_tokens, raw_usage = self._extract_usage_counts(usage)
+                        estimated_cost = self._estimate_cost(prompt_tokens, completion_tokens)
+                        return LLMResponse(
+                            text=content,
+                            model_name=self.model,
+                            prompt_tokens=prompt_tokens,
+                            completion_tokens=completion_tokens,
+                            estimated_cost=estimated_cost,
+                            usage_raw=raw_usage,
+                        )
+                    except Exception as fallback_exc:
+                        if attempt < retries:
+                            logger.warning(
+                                f"Responses fallback error attempt {attempt + 1}/{retries + 1}: {fallback_exc}, retrying..."
+                            )
+                            await asyncio.sleep(retry_delay)
+                            continue
+                        raise
+                if attempt < retries:
+                    logger.warning(f"Error attempt {attempt + 1}/{retries + 1}: {e}, retrying...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    raise
+            except (TypeError, KeyError, IndexError, AttributeError) as e:
+                try:
+                    response = await asyncio.wait_for(
+                        self._call_api_via_responses_full(params), timeout=timeout
+                    )
+                    content = self._extract_chat_text(response)
+                    if not content:
+                        content, _, _ = extract_responses_output(response)
+                    usage = getattr(response, "usage", None)
+                    prompt_tokens, completion_tokens, raw_usage = self._extract_usage_counts(usage)
+                    estimated_cost = self._estimate_cost(prompt_tokens, completion_tokens)
+                    return LLMResponse(
+                        text=content,
+                        model_name=self.model,
+                        prompt_tokens=prompt_tokens,
+                        completion_tokens=completion_tokens,
+                        estimated_cost=estimated_cost,
+                        usage_raw=raw_usage,
+                    )
+                except Exception as fallback_exc:
+                    if attempt < retries:
+                        logger.warning(
+                            f"Responses fallback error attempt {attempt + 1}/{retries + 1}: {fallback_exc}, retrying..."
+                        )
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        raise
             except Exception as e:
                 if _is_region_restricted_error(e) and self._try_region_fallback():
                     continue

@@ -1,3 +1,4 @@
+import csv
 import json
 import sys
 import types
@@ -30,6 +31,10 @@ BudgetLedger = _core.BudgetLedger
 CallCostRecord = _core.CallCostRecord
 CallRole = _core.CallRole
 write_iteration_record = _io.write_iteration_record
+write_summary = _io.write_summary
+export_iterations_csv = _io.export_iterations_csv
+export_calls_csv = _io.export_calls_csv
+export_summary_csv = _io.export_summary_csv
 
 
 def test_iteration_cost_sums_generation_retry_and_guide_with_role_tokens(tmp_path):
@@ -105,3 +110,27 @@ def test_iteration_cost_sums_generation_retry_and_guide_with_role_tokens(tmp_pat
     assert row["num_guide_calls_this_iteration"] == 1
     assert row["guide_triggered"] is True
     assert row["frontier_improvement"] == 0.5
+
+    iterations_csv = tmp_path / "iterations.csv"
+    calls_csv = tmp_path / "calls.csv"
+    summary_json = tmp_path / "summary.json"
+    summary_csv = tmp_path / "summary.csv"
+    write_summary(summary_json, ledger, best_score=0.5, extra={"method": "unit"})
+
+    assert export_iterations_csv(out, iterations_csv) is True
+    assert export_calls_csv(out, calls_csv) is True
+    assert export_summary_csv(summary_json, summary_csv) is True
+
+    with iterations_csv.open(newline="", encoding="utf-8") as f:
+        iteration_rows = list(csv.DictReader(f))
+    with calls_csv.open(newline="", encoding="utf-8") as f:
+        call_rows = list(csv.DictReader(f))
+    with summary_csv.open(newline="", encoding="utf-8") as f:
+        summary_rows = list(csv.DictReader(f))
+
+    assert float(iteration_rows[0]["iteration_cost"]) == pytest.approx(0.0034)
+    assert len(call_rows) == 3
+    assert [r["role"] for r in call_rows] == ["generation", "retry", "guide"]
+    assert call_rows[2]["input_tokens"] == "50"
+    assert summary_rows[0]["method"] == "unit"
+    assert summary_rows[0]["input_tokens_total"] == "180"
