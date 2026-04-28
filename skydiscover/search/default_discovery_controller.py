@@ -986,6 +986,10 @@ class DiscoveryController:
             extra=self._build_budget_summary_extra(),
         )
         self._export_budget_csv_artifacts()
+        self._log_budget_iteration(budget_record, objective)
+
+    def _log_budget_iteration(self, budget_record, objective) -> None:
+        """Emit human-readable diagnostics for one budgeted iteration."""
         logger.info(
             "Budget(iter=%s): gen=%.6f retry=%.6f guide=%.6f iter=%.6f cum=%.6f tokens=%s (in=%s out=%s) calls=%s remain=%.6f",
             budget_record.iteration,

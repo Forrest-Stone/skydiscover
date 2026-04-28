@@ -80,6 +80,7 @@ class CoEvolutionBudgetController(CoEvolutionController):
         *,
         source: str,
     ) -> None:
+        """Attach EvoX meta/search calls to the solution iteration they support."""
         if not calls:
             return
         record = self._find_solution_budget_record(iteration)

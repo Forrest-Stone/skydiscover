@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+# These fields describe validity, normalization, or target progress.  They are
+# recorded separately and should not be mistaken for the benchmark's raw
+# objective (for example ``sum_radii`` in circle packing).
 _EXCLUDE_KEYS = {
     "combined_score",
     "score",

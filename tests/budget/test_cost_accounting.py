@@ -35,6 +35,7 @@ write_summary = _io.write_summary
 export_iterations_csv = _io.export_iterations_csv
 export_calls_csv = _io.export_calls_csv
 export_summary_csv = _io.export_summary_csv
+calls_from_iteration_row = _io.calls_from_iteration_row
 
 
 def test_iteration_cost_sums_generation_retry_and_guide_with_role_tokens(tmp_path):
@@ -134,3 +135,39 @@ def test_iteration_cost_sums_generation_retry_and_guide_with_role_tokens(tmp_pat
     assert call_rows[2]["input_tokens"] == "50"
     assert summary_rows[0]["method"] == "unit"
     assert summary_rows[0]["input_tokens_total"] == "180"
+
+
+def test_calls_from_iteration_row_supports_legacy_arrays():
+    calls = calls_from_iteration_row(
+        {
+            "call_roles": ["generation", "guide"],
+            "call_model_names": ["m1", "m2"],
+            "call_input_tokens": [10, 20],
+            "call_output_tokens": [3, 4],
+            "call_total_tokens": [13, 24],
+            "call_costs": [0.1, 0.2],
+        }
+    )
+
+    assert calls == [
+        {
+            "call_index": 0,
+            "role": "generation",
+            "model_name": "m1",
+            "input_tokens": 10,
+            "output_tokens": 3,
+            "total_tokens": 13,
+            "raw_cost": 0.1,
+            "call_meta": None,
+        },
+        {
+            "call_index": 1,
+            "role": "guide",
+            "model_name": "m2",
+            "input_tokens": 20,
+            "output_tokens": 4,
+            "total_tokens": 24,
+            "raw_cost": 0.2,
+            "call_meta": None,
+        },
+    ]

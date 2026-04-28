@@ -381,7 +381,13 @@ def _list_at(values: Any, idx: int, default: Any = None) -> Any:
     return values[idx]
 
 
-def _calls_from_iteration_row(row: Dict[str, Any]) -> list[Dict[str, Any]]:
+def calls_from_iteration_row(row: Dict[str, Any]) -> list[Dict[str, Any]]:
+    """Return normalized per-call rows from one iteration JSON row.
+
+    New traces store a structured ``calls`` list. Older traces only have
+    parallel arrays such as ``call_roles`` and ``call_costs``; keeping that
+    fallback makes aggregate CSV export work for existing runs too.
+    """
     calls = row.get("calls")
     if isinstance(calls, list) and calls:
         out: list[Dict[str, Any]] = []
@@ -452,7 +458,7 @@ def export_calls_csv(iterations_path: Path, out_csv: Path | None = None) -> bool
             "objective_value": row.get("objective_value"),
             "cumulative_cost_after_iteration": row.get("cumulative_cost"),
         }
-        for call in _calls_from_iteration_row(row):
+        for call in calls_from_iteration_row(row):
             call_rows.append({**run_meta, **call})
 
     default_out = iterations_path.with_name("calls.csv")

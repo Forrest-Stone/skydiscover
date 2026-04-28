@@ -345,6 +345,12 @@ def csv_cell(value):
 
 
 def calls_from_iteration_row(row: Dict) -> List[Dict]:
+    """Normalize per-call data while keeping this script dependency-light.
+
+    The package has the same helper in ``skydiscover.budget.io``.  This script
+    intentionally keeps a small local copy so it can run from source without
+    importing the full package and optional config dependencies.
+    """
     calls = row.get("calls")
     if isinstance(calls, list) and calls:
         out = []
