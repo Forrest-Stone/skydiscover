@@ -35,14 +35,14 @@ budget_profiles:
 
 # CostAda/BCHD-specific budget/control knobs.
 costada_budget:
-  nominal_budget: 1000000000.0
+  nominal_budget: 1.0
 
 # AdaEvolve phase-1 budget instrumentation only (no budget-constrained behavior):
 # use a very large nominal budget so original search logic is effectively unchanged.
 adaevolve_budget:
-  nominal_budget: 1000000000.0
+  nominal_budget: 100.0
 
 # EvoX phase-1 budget instrumentation only (no budget-constrained behavior):
 # use a very large nominal budget so original search logic is effectively unchanged.
 evox_budget:
-  nominal_budget: 1000000000.0
+  nominal_budget: 100.0
