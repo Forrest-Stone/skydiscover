@@ -1,4 +1,4 @@
-"""CostAda (BCHD) search package."""
+"""CostAda search package."""
 
 from skydiscover.search.costada.controller import CostAdaController
 from skydiscover.search.costada.database import CostAdaDatabase

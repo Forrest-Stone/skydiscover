@@ -17,9 +17,10 @@ CostAda keeps:
 
 CostAda replaces the adaptation signal with budget-calibrated control and uses it to drive:
 
-1. **Step-level spending** (`cheap`, `standard`, `rich`)
+1. **Step-level local control** (intensity-conditioned local sampling)
 2. **Frontier-level allocation** (cost-aware reward routing)
 3. **Regime-level intervention trigger**
+4. **Budget-gated optional prompt components**
 
 ---
 
@@ -40,7 +41,15 @@ g_t = \max\left(\frac{f'_t - y_{t-1}}{\max(|y_{t-1}|,\epsilon)},0\right)
 \]
 
 \[
-u_t^{(k)} = \frac{\lambda_t g_t + (1-\lambda_t)\delta_t^{(k)}}{1+c_t}
+\tilde{c}_t = c_t / (\bar{c} + \epsilon_c)
+\quad
+\phi_t = \log(1+\tilde{c}_t)
+\quad
+d_t = 1+\lambda_t\phi_t
+\]
+
+\[
+u_t^{(k)} = \frac{\lambda_t g_t + (1-\lambda_t)\delta_t^{(k)}}{d_t}
 \]
 
 \[
@@ -50,13 +59,21 @@ H_t^{(k)} = \alpha H_{t-1}^{(k)} + (1-\alpha)u_t^{(k)}
 Frontier intensity mapping used for sampling:
 
 \[
-I_t^{(k)} = I_{\min} + \frac{I_{\max}-I_{\min}}{1+\sqrt{H_t^{(k)}+\epsilon}}
+I_t^{(k)} = I_{\min} + \frac{I_{\max}-I_{\min}}{1+\sqrt{H_{t-1}^{(k)}+\epsilon}}
+\]
+
+Local mode:
+
+\[
+\Pr(a_t=\mathrm{exploration}) = I_t^{(k)},\quad
+\Pr(a_t=\mathrm{exploitation}) = 0.7(1-I_t^{(k)}),\quad
+\Pr(a_t=\mathrm{balanced}) = 0.3(1-I_t^{(k)}).
 \]
 
 Cost-aware frontier reward:
 
 \[
-r_t^{(k)} = \frac{\max(f'_t-y_{t-1},0)}{1+c_t}
+r_t^{(k)} = \frac{g_t}{d_t}
 \]
 
 ---
@@ -71,10 +88,10 @@ Responsibilities:
 
 - initializes CostAda control components
 - selects frontier via `CostAwareFrontierRouter`
-- builds compact control state and selects tier via `TierScheduler`
-- samples with frontier/tier context
+- builds compact control state and samples the local search mode
+- samples with frontier and prompt-budget context
 - computes local/global gains and utility
-- updates `H`, router reward, scheduler stats
+- updates `H` and router reward
 - writes method metadata into budget iteration rows
 
 ### `adaptation.py`
@@ -97,16 +114,6 @@ Cost-aware UCB routing across frontiers.
 - visit counts
 - optimism bonus
 
-### `tier_scheduler.py`
-
-Deterministic step-level adaptation policy over tiers.
-
-- `compute_intensity`
-- `base_tier_from_intensity`
-- `apply_budget_override`
-- `select`
-- `update` (compatibility no-op)
-
 ### `state.py`
 
 State containers:
@@ -116,10 +123,11 @@ State containers:
 
 ### `database.py`
 
-Minimal extension over `AdaEvolveDatabase` for tier-aware sampling knobs:
+Minimal extension over `AdaEvolveDatabase` for CostAda sampling knobs:
 
-- context program count caps/floors by tier
-- feedback budget hints by tier
+- explicit exploration vs exploitation sampling
+- context program count caps/floors by prompt budget mode
+- feedback budget hints by prompt budget mode
 
 ### `__init__.py`
 
@@ -145,8 +153,11 @@ CostAda writes the same base artifacts as other methods:
 and fills CostAda-specific iteration fields (when available):
 
 - `frontier_id`
-- `tier`
+- `prompt_budget_mode`
+- `local_search_mode`
 - `remaining_budget_ratio`
+- `normalized_cost`
+- `cost_denominator`
 - `local_gain`
 - `global_gain`
 - `utility`

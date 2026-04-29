@@ -1,8 +1,8 @@
-"""Deterministic step-level spending policy for CostAda.
+"""Deprecated compatibility helpers for the older CostAda tier scheduler.
 
-Final method design:
-- step-level spending is deterministic local adaptation (no bandit/UCB)
-- frontier-level allocation remains bandit/UCB (in router.py)
+Current CostAda local control uses the continuous intensity directly to sample
+the local search mode.  This module is kept only for older imports and
+checkpoint/tooling compatibility.
 """
 
 from __future__ import annotations

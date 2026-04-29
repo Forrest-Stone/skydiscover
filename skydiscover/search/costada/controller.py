@@ -1,8 +1,10 @@
-"""CostAda controller implementing BCHD on top of AdaEvolve scaffold."""
+"""CostAda controller on top of the AdaEvolve search scaffold."""
 
 from __future__ import annotations
 
 import logging
+import math
+import random
 import time
 from collections import deque
 from typing import Dict, List, Optional
@@ -13,14 +15,17 @@ from skydiscover.search.adaevolve.controller import AdaEvolveController
 from skydiscover.search.base_database import Program
 from skydiscover.search.costada.adaptation import (
     budget_mix,
+    cost_denominator,
+    cost_transform,
     global_gain,
     local_gain,
+    normalized_cost,
+    routing_reward,
     update_signal,
     utility,
 )
 from skydiscover.search.costada.router import CostAwareFrontierRouter
 from skydiscover.search.costada.state import CompactControlState, FrontierState
-from skydiscover.search.costada.tier_scheduler import TierScheduler
 from skydiscover.search.default_discovery_controller import DiscoveryControllerInput
 from skydiscover.search.utils.budget_iteration import BudgetIterationMixin
 from skydiscover.search.utils.discovery_utils import SerializableResult
@@ -30,12 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class CostAdaController(BudgetIterationMixin, AdaEvolveController):
-    """Budget-calibrated hierarchical controller (BCHD / CostAda).
-
-    Final design split:
-    - step-level spending: deterministic local adaptation from H_t
-    - frontier-level allocation: UCB/bandit in CostAwareFrontierRouter
-    """
+    """Budget-calibrated controller with search-side token-cost accounting."""
 
     def __init__(self, controller_input: DiscoveryControllerInput):
         super().__init__(controller_input)
@@ -44,23 +44,28 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         db_cfg = self.config.search.database
         self.alpha = float(getattr(db_cfg, "costada_alpha", 0.9))
         self.router = CostAwareFrontierRouter(
-            beta=float(getattr(db_cfg, "costada_router_beta", 0.5)),
+            c_ucb=float(
+                getattr(db_cfg, "costada_c_ucb", getattr(db_cfg, "costada_router_beta", 0.5))
+            ),
             gamma=float(getattr(db_cfg, "costada_router_gamma", 0.9)),
         )
-        self.tier_scheduler = TierScheduler(
-            intensity_min=float(getattr(db_cfg, "intensity_min", 0.15)),
-            intensity_max=float(getattr(db_cfg, "intensity_max", 0.5)),
-            tau_1=float(getattr(db_cfg, "costada_tier_tau_1", 0.24)),
-            tau_2=float(getattr(db_cfg, "costada_tier_tau_2", 0.38)),
-            eta_low=float(getattr(db_cfg, "costada_eta_low", 0.12)),
-            rich_enable_min_budget=float(getattr(db_cfg, "costada_rich_enable_min_budget", 0.28)),
-            stagnation_threshold=int(getattr(db_cfg, "costada_stagnation_steps", 8)),
-            low_signal_threshold=float(getattr(db_cfg, "costada_meta_h_threshold", 0.01)),
+        self.intensity_min = float(getattr(db_cfg, "intensity_min", 0.15))
+        self.intensity_max = float(getattr(db_cfg, "intensity_max", 0.5))
+        self.intensity_eps = float(getattr(db_cfg, "costada_intensity_eps", 1e-8))
+        if self.intensity_min > self.intensity_max:
+            self.intensity_min, self.intensity_max = self.intensity_max, self.intensity_min
+
+        self.eps_c = float(getattr(db_cfg, "costada_eps_c", 1e-8))
+        self.ref_cost = self._resolve_ref_cost(db_cfg)
+        self.prompt_low_budget_ratio = float(getattr(db_cfg, "costada_eta_low", 0.12))
+        self.prompt_rich_min_budget_ratio = float(
+            getattr(db_cfg, "costada_rich_enable_min_budget", 0.28)
         )
         self.meta_eta_min = float(getattr(db_cfg, "costada_eta_min", 0.15))
         self.meta_h_threshold = float(getattr(db_cfg, "costada_meta_h_threshold", 0.01))
         self.meta_gain_eps = float(getattr(db_cfg, "costada_significant_gain_eps", 1e-6))
         self.meta_stagnation_steps = int(getattr(db_cfg, "costada_stagnation_steps", 8))
+        self.guide_min_cost = float(getattr(db_cfg, "costada_guide_min_cost", 2.0 * self.ref_cost))
         self.meta_window = int(getattr(db_cfg, "costada_meta_window", 8))
         self.improvement_window = int(getattr(db_cfg, "costada_improvement_window", 8))
 
@@ -70,27 +75,74 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         }
         self._recent_frontier_improvements: deque[float] = deque(maxlen=self.improvement_window)
         self._recent_H_values: deque[float] = deque(maxlen=self.meta_window)
-        self._current_tier: str = "standard"
+        self._recent_utility_values: deque[float] = deque(maxlen=self.meta_window)
+        self._current_prompt_budget_mode: str = "standard"
+        self._current_tier: str = "standard"  # Backward-compatible alias for old trace readers.
+        self._current_explore: bool = False
+        self._current_local_mode: str = "balanced"
+        self._current_intensity: float = self.intensity_max
         self._current_frontier_id: int = 0
         self._active_budget_record = None
         self._current_call_role = CallRole.GENERATION
         self._pending_meta_intervention = False
 
+    def _resolve_ref_cost(self, db_cfg) -> float:
+        """Resolve the benchmark-family reference generation cost."""
+        for key in (
+            "costada_ref_cost",
+            "ref_cost",
+            "reference_cost",
+            "median_standard_generation_cost",
+        ):
+            value = getattr(db_cfg, key, None)
+            if value is None:
+                continue
+            try:
+                parsed = float(value)
+            except (TypeError, ValueError):
+                continue
+            if parsed > 0.0:
+                return parsed
+
+        nominal = max(
+            float(getattr(db_cfg, "nominal_budget", 0.0) or self.budget_ledger.config.nominal_budget),
+            self.budget_ledger.config.eps,
+        )
+        max_iters = max(int(getattr(self.config, "max_iterations", 1) or 1), 1)
+        return max(nominal / max_iters, self.budget_ledger.config.eps)
+
+    def _max_output_tokens_for_prompt_mode(self, prompt_mode: str) -> int:
+        db_cfg = self.config.search.database
+        if prompt_mode == "lean":
+            return int(
+                getattr(
+                    db_cfg,
+                    "costada_lean_max_output_tokens",
+                    getattr(db_cfg, "cheap_max_output_tokens", 512),
+                )
+            )
+        if prompt_mode == "rich":
+            return int(
+                getattr(
+                    db_cfg,
+                    "costada_rich_max_output_tokens",
+                    getattr(db_cfg, "rich_max_output_tokens", 2048),
+                )
+            )
+        return int(
+            getattr(
+                db_cfg,
+                "costada_standard_max_output_tokens",
+                getattr(db_cfg, "standard_max_output_tokens", 1024),
+            )
+        )
+
     async def _call_llm(self, system_message: str, user_message: str, **kwargs):
-        """Inject tier-specific output-token caps while preserving shared budget logging."""
+        """Inject budget-gated output caps while preserving shared budget logging."""
         if "max_tokens" not in kwargs and not kwargs.get("image_output"):
-            if self._current_tier == "cheap":
-                kwargs["max_tokens"] = int(
-                    getattr(self.config.search.database, "cheap_max_output_tokens", 512)
-                )
-            elif self._current_tier == "rich":
-                kwargs["max_tokens"] = int(
-                    getattr(self.config.search.database, "rich_max_output_tokens", 2048)
-                )
-            else:
-                kwargs["max_tokens"] = int(
-                    getattr(self.config.search.database, "standard_max_output_tokens", 1024)
-                )
+            kwargs["max_tokens"] = self._max_output_tokens_for_prompt_mode(
+                self._current_prompt_budget_mode
+            )
         if "_budget_record" not in kwargs and self._active_budget_record is not None:
             kwargs["_budget_record"] = self._active_budget_record
         if "_call_role" not in kwargs:
@@ -109,6 +161,10 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             higher_is_better=getattr(self.config.search.database, "higher_is_better", {}) or {},
         )
 
+    def _extract_candidate_score(self, result: SerializableResult) -> Optional[float]:
+        """Keep budget rows aligned with CostAda's configured proxy score."""
+        return self._candidate_score(result)
+
     def _recent_improvement_avg(self) -> float:
         if not self._recent_frontier_improvements:
             return 0.0
@@ -121,11 +177,40 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             return 0.0
         return float(sum(self._recent_H_values) / len(self._recent_H_values))
 
+    def _avg_recent_utility(self) -> float:
+        if not self._recent_utility_values:
+            return 0.0
+        return float(sum(self._recent_utility_values) / len(self._recent_utility_values))
+
+    def _guidance_available(self) -> bool:
+        return bool(
+            getattr(self.database, "use_paradigm_breakthrough", False)
+            and getattr(self, "paradigm_generator", None) is not None
+        )
+
     def _is_stagnant(self, frontier_state: FrontierState) -> bool:
         return (
             frontier_state.stagnation_steps >= self.meta_stagnation_steps
             and self._recent_improvement_avg() <= self.meta_gain_eps
         )
+
+    def _affordable_guidance(self, remaining_ratio: float) -> bool:
+        remaining_budget = max(
+            0.0,
+            float(self.budget_ledger.config.nominal_budget) * float(remaining_ratio),
+        )
+        return remaining_ratio > self.meta_eta_min and remaining_budget >= self.guide_min_cost
+
+    def _remaining_ratio_including_active_record(self) -> float:
+        active_cost = 0.0
+        if self._active_budget_record is not None:
+            active_cost = (
+                float(self._active_budget_record.generation_cost)
+                + float(self._active_budget_record.retry_cost)
+                + float(self._active_budget_record.guide_cost)
+            )
+        nominal = max(float(self.budget_ledger.config.nominal_budget), self.budget_ledger.config.eps)
+        return max(0.0, 1.0 - (float(self.budget_ledger.cumulative_cost) + active_cost) / nominal)
 
     def _select_frontier(self) -> int:
         self._sync_frontier_states()
@@ -134,7 +219,30 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             return 0
         return self.router.select(frontier_ids)
 
-    def _select_tier(
+    def _prompt_budget_mode(
+        self,
+        frontier_state: FrontierState,
+        remaining_budget_ratio: float,
+    ) -> str:
+        remaining_budget = float(self.budget_ledger.config.nominal_budget) * float(
+            remaining_budget_ratio
+        )
+        low_budget = (
+            remaining_budget_ratio <= self.prompt_low_budget_ratio
+            or remaining_budget <= self.ref_cost
+        )
+        if low_budget:
+            return "lean"
+
+        low_utility = (
+            frontier_state.H <= self.meta_h_threshold
+            or self._avg_recent_H() <= self.meta_h_threshold
+        )
+        if remaining_budget_ratio >= self.prompt_rich_min_budget_ratio and low_utility:
+            return "rich"
+        return "standard"
+
+    def _select_local_control(
         self,
         frontier_state: FrontierState,
         remaining_budget_ratio: float,
@@ -145,8 +253,25 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             stagnation_steps=frontier_state.stagnation_steps,
             frontier_signal=frontier_state.H,
         )
-        self._current_tier = self.tier_scheduler.select(compact)
+        self._current_intensity = self._frontier_intensity(frontier_state.H)
+        self._current_local_mode = self._sample_local_mode(self._current_intensity)
+        self._current_explore = self._current_local_mode == "exploration"
+        self._current_prompt_budget_mode = self._prompt_budget_mode(
+            frontier_state, remaining_budget_ratio
+        )
+        self._current_tier = self._current_prompt_budget_mode
         return compact
+
+    @staticmethod
+    def _sample_local_mode(intensity: float) -> str:
+        """Sample the local search mode from the intensity-conditioned policy."""
+        p_explore = max(0.0, min(1.0, float(intensity)))
+        rand = random.random()
+        if rand < p_explore:
+            return "exploration"
+        if rand < p_explore + (1.0 - p_explore) * 0.7:
+            return "exploitation"
+        return "balanced"
 
     def _frontier_actual_best(self, frontier_id: int) -> Optional[float]:
         if not hasattr(self.database, "get_island_population"):
@@ -179,8 +304,12 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
                 state.local_best = max(float(state.local_best), float(actual_best))
 
     def _frontier_intensity(self, frontier_signal: float) -> float:
-        """Map frontier signal H to exploration intensity via deterministic scheduler."""
-        return self.tier_scheduler.compute_intensity(frontier_signal)
+        """Map frontier signal H to exploration intensity."""
+        H = max(float(frontier_signal), 0.0)
+        intensity = self.intensity_min + (self.intensity_max - self.intensity_min) / (
+            1.0 + math.sqrt(H + self.intensity_eps)
+        )
+        return max(0.0, min(1.0, float(intensity)))
 
     async def run_discovery(self, *args, **kwargs):
         out = await super().run_discovery(*args, **kwargs)
@@ -215,7 +344,7 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         )
 
     async def _run_iteration(self, iteration: int, checkpoint_callback) -> None:
-        """Execute one CostAda iteration with unified BCHD signal updates."""
+        """Execute one CostAda iteration with budget-calibrated signal updates."""
         iteration_start_time = time.time()
         budget_record = self._budget_start_iteration(iteration)
         result: Optional[SerializableResult] = None
@@ -228,24 +357,38 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             self.database.current_island = frontier_id
 
             remaining_before = self.budget_ledger.remaining_ratio()
-            compact_state = self._select_tier(frontier_state, remaining_before)
-            tier_decision = self.tier_scheduler.last_decision()
+            compact_state = self._select_local_control(frontier_state, remaining_before)
 
             global_best_prev = self._best_score_or_zero()
             local_best_prev = float(frontier_state.local_best)
             budget_record.meta["frontier_id"] = frontier_id
+            budget_record.meta["selected_frontier"] = frontier_id
             budget_record.meta["global_best_before"] = global_best_prev
-            budget_record.meta["tier"] = self._current_tier
+            budget_record.meta["prompt_budget_mode"] = self._current_prompt_budget_mode
+            budget_record.meta["tier"] = self._current_prompt_budget_mode
+            budget_record.meta["final_tier"] = self._current_prompt_budget_mode
             budget_record.meta["remaining_budget_ratio"] = compact_state.remaining_budget_ratio
             budget_record.meta["remaining_budget_ratio_before"] = remaining_before
-            if tier_decision is not None:
-                budget_record.meta["intensity"] = float(tier_decision.intensity)
-                budget_record.meta["base_tier"] = tier_decision.base_tier
-                budget_record.meta["final_tier"] = tier_decision.final_tier
-                budget_record.meta["tier_override_reason"] = tier_decision.override_reason
+            budget_record.meta["intensity"] = float(self._current_intensity)
+            budget_record.meta["explore"] = bool(self._current_explore)
+            budget_record.meta["local_search_mode"] = self._current_local_mode
+            budget_record.meta["explore_or_exploit"] = self._current_local_mode
+            budget_record.meta["base_tier"] = self._current_prompt_budget_mode
+            budget_record.meta["tier_override_reason"] = ""
+            budget_record.meta["ref_cost"] = float(self.ref_cost)
 
-            if self.database.use_paradigm_breakthrough and self._pending_meta_intervention:
+            if (
+                self._guidance_available()
+                and self._pending_meta_intervention
+                and self._affordable_guidance(remaining_before)
+            ):
                 await self._budget_generate_paradigms_if_needed(budget_record)
+                self._pending_meta_intervention = False
+            elif self._pending_meta_intervention and not self._guidance_available():
+                budget_record.meta["guide_skipped_reason"] = "guidance_disabled"
+                self._pending_meta_intervention = False
+            elif self._pending_meta_intervention and not self._affordable_guidance(remaining_before):
+                budget_record.meta["guide_skipped_reason"] = "not_affordable"
                 self._pending_meta_intervention = False
 
             result = await self._run_normal_step(iteration, budget_record=budget_record)
@@ -257,7 +400,7 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
                 self._process_result(result, iteration, checkpoint_callback)
 
             # Compute utility stats before finalize writes the iteration row.
-            raw_iteration_cost = (
+            step_cost = (
                 float(budget_record.generation_cost)
                 + float(budget_record.retry_cost)
                 + float(budget_record.guide_cost)
@@ -273,13 +416,25 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
                 g_global = global_gain(score_new, global_best_prev)
                 frontier_improvement = max(float(score_new) - float(global_best_prev), 0.0)
                 global_best_after = max(float(global_best_prev), float(score_new))
+                budget_record.meta["candidate_score"] = float(score_new)
             nominal_budget = max(float(self.budget_ledger.config.nominal_budget), self.budget_ledger.config.eps)
+            cumulative_after = float(self.budget_ledger.cumulative_cost) + step_cost
             remaining_after = max(
                 0.0,
-                1.0 - (float(self.budget_ledger.cumulative_cost) + raw_iteration_cost) / nominal_budget,
+                1.0 - cumulative_after / nominal_budget,
             )
+            ctilde = normalized_cost(step_cost, self.ref_cost, eps_c=self.eps_c)
+            phi_t = cost_transform(ctilde)
+            denom = cost_denominator(remaining_after, ctilde)
             lambda_t = budget_mix(remaining_after)
-            util = utility(d_local, g_global, raw_iteration_cost, remaining_after)
+            util = utility(
+                d_local,
+                g_global,
+                step_cost,
+                remaining_after,
+                self.ref_cost,
+                eps_c=self.eps_c,
+            )
             frontier_state.H = update_signal(frontier_state.H, util, alpha=self.alpha)
             if score_new is not None:
                 frontier_state.local_best = max(frontier_state.local_best, float(score_new))
@@ -290,32 +445,45 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             else:
                 frontier_state.stagnation_steps += 1
 
-            realized_router_reward = self.router.update(
-                frontier_id=frontier_id,
-                global_gain_value=g_global,
-                raw_iteration_cost=raw_iteration_cost,
-            )
+            realized_router_reward = routing_reward(g_global, denom)
+            self.router.update(frontier_id=frontier_id, routing_reward_value=realized_router_reward)
             frontier_state.routing_reward = self.router.get_reward(frontier_id)
             frontier_state.selection_count += 1
 
             self._recent_frontier_improvements.append(frontier_improvement)
             self._recent_H_values.append(frontier_state.H)
-            self.tier_scheduler.update(compact_state, self._current_tier, util)
+            self._recent_utility_values.append(util)
 
+            stagnant = self._is_stagnant(frontier_state)
+            low_recent_utility = self._avg_recent_H() < self.meta_h_threshold
+            affordable = self._affordable_guidance(remaining_after)
+            guidance_available = self._guidance_available()
             meta_triggered = (
-                self._is_stagnant(frontier_state)
-                and remaining_after > self.meta_eta_min
-                and self._avg_recent_H() < self.meta_h_threshold
+                stagnant
+                and low_recent_utility
+                and affordable
+                and guidance_available
             )
             if meta_triggered:
                 self._pending_meta_intervention = True
 
+            budget_record.meta["step_cost"] = float(step_cost)
+            budget_record.meta["cumulative_cost_after_step"] = float(cumulative_after)
             budget_record.meta["remaining_budget_ratio_after"] = float(remaining_after)
             budget_record.meta["lambda_t"] = float(lambda_t)
+            budget_record.meta["ref_cost"] = float(self.ref_cost)
+            budget_record.meta["normalized_cost"] = float(ctilde)
+            budget_record.meta["ctilde"] = float(ctilde)
+            budget_record.meta["cost_phi"] = float(phi_t)
+            budget_record.meta["cost_denominator"] = float(denom)
             budget_record.meta["recent_improvement_avg"] = float(self._recent_improvement_avg())
+            budget_record.meta["recent_H_avg"] = float(self._avg_recent_H())
+            budget_record.meta["recent_utility_avg"] = float(self._avg_recent_utility())
             budget_record.meta["stagnation_steps"] = int(frontier_state.stagnation_steps)
             budget_record.meta["local_gain"] = float(d_local)
             budget_record.meta["global_gain"] = float(g_global)
+            budget_record.meta["local_gain_normalized"] = float(d_local)
+            budget_record.meta["global_gain_normalized"] = float(g_global)
             budget_record.meta["frontier_improvement"] = float(frontier_improvement)
             budget_record.meta["global_best_after"] = float(global_best_after)
             budget_record.meta["local_best"] = float(frontier_state.local_best)
@@ -324,7 +492,17 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             budget_record.meta["routing_reward"] = float(realized_router_reward)
             budget_record.meta["router_reward"] = float(realized_router_reward)  # backward-compatible alias
             budget_record.meta["routing_stat"] = float(frontier_state.routing_reward)
+            budget_record.meta["stagnant"] = bool(stagnant)
+            budget_record.meta["low_recent_utility"] = bool(low_recent_utility)
+            budget_record.meta["affordable_guidance"] = bool(affordable)
+            budget_record.meta["guidance_available"] = bool(guidance_available)
+            budget_record.meta["guidance_scheduled"] = bool(meta_triggered)
             budget_record.meta["meta_triggered"] = bool(meta_triggered)
+            budget_record.meta["prompt_component_cost_composition"] = {
+                "generation": float(budget_record.generation_cost),
+                "retry": float(budget_record.retry_cost),
+                "guide": float(budget_record.guide_cost),
+            }
 
             # Keep default summary/trace pipeline from phase-1.
             self._budget_finalize_iteration(budget_record, result)
@@ -375,21 +553,21 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         force_exploration: bool = False,
         budget_record=None,
     ) -> SerializableResult:
-        """Generate/evaluate a child with tier-aware sampling + prompt context."""
+        """Generate/evaluate a child with CostAda sampling and budget-gated context."""
         try:
             if not self.database.programs:
                 return await self._run_from_scratch_iteration(iteration, budget_record=budget_record)
 
             self._ensure_all_islands_seeded()
 
+            local_mode = "exploration" if force_exploration else self._current_local_mode
             parent_dict, context_programs_dict = self.database.sample(
                 self.num_context_programs,
                 force_exploration=force_exploration,
                 island_id=self._current_frontier_id,
-                intensity=self._frontier_intensity(
-                    self.frontier_states[self._current_frontier_id].H
-                ),
-                tier=self._current_tier,
+                intensity=self._current_intensity,
+                local_mode=local_mode,
+                prompt_budget_mode=self._current_prompt_budget_mode,
             )
 
             if not parent_dict:
@@ -400,9 +578,7 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             sampling_mode = getattr(self.database, "_last_sampling_mode", None) or "balanced"
             self._last_sampling_mode = sampling_mode
 
-            self._last_sampling_intensity = self._frontier_intensity(
-                self.frontier_states[self._current_frontier_id].H
-            )
+            self._last_sampling_intensity = self._current_intensity
 
             paradigm = (
                 self.database.get_current_paradigm()
@@ -428,8 +604,12 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
                 "paradigm": paradigm,
                 "siblings": siblings,
                 "error_context": error_context,
-                "remaining_budget_ratio": self.budget_ledger.remaining_ratio(),
-                "costada_tier": self._current_tier,
+                "remaining_budget_ratio": self._remaining_ratio_including_active_record(),
+                "prompt_budget_mode": self._current_prompt_budget_mode,
+                "costada_tier": self._current_prompt_budget_mode,
+                "costada_explore": self._current_explore,
+                "costada_local_mode": local_mode,
+                "costada_intensity": self._current_intensity,
             }
             for k, v in self._prompt_context.items():
                 if k not in context:

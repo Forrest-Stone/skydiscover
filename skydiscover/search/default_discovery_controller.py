@@ -1035,10 +1035,15 @@ class DiscoveryController:
             )
         control_keys = (
             "lambda_t",
+            "ref_cost",
+            "normalized_cost",
+            "cost_denominator",
             "frontier_signal",
             "routing_reward",
             "routing_stat",
             "stagnation_steps",
+            "prompt_budget_mode",
+            "explore_or_exploit",
             "final_tier",
             "base_tier",
             "tier",
@@ -1047,12 +1052,17 @@ class DiscoveryController:
         )
         if any(key in budget_record.meta for key in control_keys):
             logger.info(
-                "Control(iter=%s): tier=%s base_tier=%s final_tier=%s lambda=%s remain_before=%s remain_after=%s stagnation=%s frontier_signal=%s routing_reward=%s routing_stat=%s meta_triggered=%s guide_triggered=%s meta_sources=%s",
+                "Control(iter=%s): prompt_mode=%s local_mode=%s tier=%s base_tier=%s final_tier=%s lambda=%s ref_cost=%s norm_cost=%s denom=%s remain_before=%s remain_after=%s stagnation=%s frontier_signal=%s routing_reward=%s routing_stat=%s meta_triggered=%s guide_triggered=%s meta_sources=%s",
                 budget_record.iteration,
+                budget_record.meta.get("prompt_budget_mode"),
+                budget_record.meta.get("explore_or_exploit"),
                 budget_record.meta.get("tier"),
                 budget_record.meta.get("base_tier"),
                 budget_record.meta.get("final_tier"),
                 budget_record.meta.get("lambda_t"),
+                budget_record.meta.get("ref_cost"),
+                budget_record.meta.get("normalized_cost"),
+                budget_record.meta.get("cost_denominator"),
                 budget_record.meta.get("remaining_budget_ratio_before"),
                 budget_record.meta.get("remaining_budget_ratio_after"),
                 budget_record.meta.get("stagnation_steps"),

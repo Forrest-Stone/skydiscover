@@ -1,14 +1,14 @@
 # CostAda Context Builder (`skydiscover.context_builder.costada`)
 
-This package adapts prompt construction for BCHD/CostAda while reusing AdaEvolve templates.
+This package adapts prompt construction for CostAda while reusing AdaEvolve templates.
 
 ---
 
 ## 1) Purpose
 
-`CostAdaContextBuilder` extends `AdaEvolveContextBuilder` and adds budget/tier-aware guidance without rewriting the whole prompt stack.
+`CostAdaContextBuilder` extends `AdaEvolveContextBuilder` and adds budget-aware guidance without rewriting the whole prompt stack.
 
-It allows step-level spending decisions to be reflected in prompts.
+It allows the prompt budget gate and local search mode to be reflected in prompts.
 
 ---
 
@@ -19,16 +19,17 @@ It allows step-level spending decisions to be reflected in prompts.
 Injected block includes:
 
 - remaining budget ratio
-- current spending tier
+- prompt budget mode
+- local search mode
 - concise spending preference text
 
-### B) Tier-conditioned verbosity
+### B) Budget-conditioned verbosity
 
-- `cheap`: minimal guidance (one-line style)
+- `lean`: minimal guidance
 - `standard`: compressed guidance
 - `rich`: full guidance
 
-This keeps prompt verbosity aligned with compute tier.
+This keeps optional prompt components aligned with the remaining budget.
 
 ---
 
@@ -37,7 +38,9 @@ This keeps prompt verbosity aligned with compute tier.
 Controller should pass:
 
 - `remaining_budget_ratio`
-- `costada_tier`
+- `prompt_budget_mode`
+- `costada_local_mode`
+- `costada_explore`
 
 plus standard AdaEvolve context keys:
 
@@ -58,9 +61,8 @@ plus standard AdaEvolve context keys:
 
 ## 5) Debug tips
 
-If budget/tier text is not visible in prompts:
+If budget text is not visible in prompts:
 
 1. verify `template: costada` in config
-2. verify controller passes `remaining_budget_ratio` and `costada_tier`
+2. verify controller passes `remaining_budget_ratio` and `prompt_budget_mode`
 3. confirm `default_discovery_controller` selects `CostAdaContextBuilder`
-

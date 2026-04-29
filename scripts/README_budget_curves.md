@@ -104,7 +104,7 @@ If matplotlib is unavailable, it prints:
   - includes method/task metadata and run-level budget fields
 - `all_iterations.csv`
   - one row per iteration across all discovered runs
-  - includes `iteration_cost`, `cumulative_cost`, objective/best-so-far metrics, tier/routing diagnostics, and raw call arrays
+  - includes `iteration_cost`, `cumulative_cost`, objective/best-so-far metrics, prompt-mode/routing diagnostics, and raw call arrays
 - `all_calls.csv`
   - one row per LLM call across all discovered runs
   - includes `raw_cost`, `iteration_cost_before_call`, `iteration_cost_after_call`, `cumulative_cost_before_call`, `cumulative_cost_after_call`, and `cumulative_cost_after_iteration`
@@ -137,7 +137,7 @@ If matplotlib is unavailable, it prints:
 - `global_gain_normalized_vs_cost.png`
 - `utility_vs_iteration.png`
 - `utility_vs_cost.png`
-- `tier_usage_vs_iteration.png`
+- `tier_usage_vs_iteration.png` (prompt budget mode usage for CostAda)
 - `meta_trigger_vs_iteration.png`
 - `frontier_selection_counts.png`
 - `frontier_selection_share.png`
@@ -150,7 +150,7 @@ If matplotlib is unavailable, it prints:
 - `budget_adherence.png`
 - `performance_vs_avg_cost.png`
 - `cost_composition.png`
-- `tier_usage.png`
+- `tier_usage.png` (prompt budget mode usage for CostAda)
 - `meta_trigger_rate.png`
 - `speedup_vs_baseline.png`
 

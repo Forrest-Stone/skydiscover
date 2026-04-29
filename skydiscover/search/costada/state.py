@@ -1,4 +1,4 @@
-"""State containers for CostAda / BCHD control."""
+"""State containers for CostAda control."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import List
 
 @dataclass
 class FrontierState:
-    """Persistent per-frontier control state used by BCHD."""
+    """Persistent per-frontier control state used by CostAda."""
 
     frontier_id: int
     local_best: float = 0.0
@@ -22,7 +22,7 @@ class FrontierState:
 
 @dataclass
 class CompactControlState:
-    """Compact state used for tier scheduling decisions.
+    """Compact pre-step control state used by CostAda.
 
     This aligns to the method tuple:
       (remaining_budget_ratio, recent_improvement_avg, stagnation_steps, frontier_signal)

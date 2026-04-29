@@ -11,7 +11,7 @@ All settings are YAML. Environment variables can be referenced with `${VAR}` syn
 | **default.yaml** | Top-K | Minimal starting template — good for first experiments |
 | **adaevolve.yaml** | AdaEvolve | Full multi-island config with adaptive intensity, migration, paradigm breakthroughs, and ablation flags |
 | **budgetevolve.yaml** | BudgetEvolve | Independent budget-aware controller over AdaEvolve scaffold (token/cost state-action control) |
-| **costada.yaml** | CostAda | BCHD controller with deterministic tier scheduling + frontier-level UCB routing |
+| **costada.yaml** | CostAda | Budget-calibrated utility, H-intensity local sampling, prompt budget gating, and frontier-level UCB routing |
 | **evox.yaml** | EvoX | Co-evolving solution generation and search strategies |
 | **openevolve_native.yaml** | OpenEvolve Native | Native port of OpenEvolve's island-based MAP-Elites search with ring migration |
 | **llm_judge.yaml** | - | Demonstrates LLM-as-a-judge evaluation (uses gpt-4o-mini for both generation and judging) |

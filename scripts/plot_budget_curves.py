@@ -108,7 +108,7 @@ def collect_runs(root: Path) -> List[Dict]:
                 ["best_so_far_objective", "objective_value", "global_best_after"],
             )
             points.append((cost, score))
-            tier = first_non_none(row, ["final_tier", "base_tier", "tier"])
+            tier = first_non_none(row, ["prompt_budget_mode", "final_tier", "base_tier", "tier"])
             if tier:
                 tiers.append(str(tier))
             meta_flags.append(1.0 if row.get("meta_triggered") else 0.0)
@@ -704,13 +704,14 @@ def plot_budget_adherence(agg_rows: List[Dict], out_png: Path) -> bool:
 
 
 def plot_tier_usage(runs: List[Dict], out_png: Path) -> bool:
-    """Plot aggregate tier usage per method."""
+    """Plot aggregate prompt budget mode usage per method."""
     plt = _load_plt()
     if plt is None:
         return False
     out_png.parent.mkdir(parents=True, exist_ok=True)
 
-    by_method: Dict[str, Dict[str, int]] = defaultdict(lambda: {"cheap": 0, "standard": 0, "rich": 0})
+    modes = ("lean", "cheap", "standard", "rich")
+    by_method: Dict[str, Dict[str, int]] = defaultdict(lambda: {mode: 0 for mode in modes})
     for run in runs:
         method = run["method"]
         for t in run.get("tiers", []):
@@ -721,17 +722,16 @@ def plot_tier_usage(runs: List[Dict], out_png: Path) -> bool:
 
     methods = sorted(by_method.keys())
     x = range(len(methods))
-    cheap = [by_method[m]["cheap"] for m in methods]
-    standard = [by_method[m]["standard"] for m in methods]
-    rich = [by_method[m]["rich"] for m in methods]
 
     plt.figure(figsize=(8, 5))
-    plt.bar(x, cheap, label="cheap")
-    plt.bar(x, standard, bottom=cheap, label="standard")
-    plt.bar(x, rich, bottom=[cheap[i] + standard[i] for i in range(len(methods))], label="rich")
+    bottom = [0] * len(methods)
+    for mode in modes:
+        vals = [by_method[m][mode] for m in methods]
+        plt.bar(x, vals, bottom=bottom, label=mode)
+        bottom = [bottom[i] + vals[i] for i in range(len(methods))]
     plt.xticks(list(x), methods, rotation=25)
-    plt.ylabel("Tier usage count")
-    plt.title("Tier usage by method")
+    plt.ylabel("Prompt budget mode count")
+    plt.title("Prompt budget mode usage by method")
     plt.legend()
     plt.tight_layout()
     plt.savefig(out_png, dpi=180)
@@ -1079,15 +1079,18 @@ def plot_tier_usage_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
     if plt is None:
         return False
     out_png.parent.mkdir(parents=True, exist_ok=True)
+    known_modes = ("lean", "cheap", "standard", "rich")
     by_method: Dict[str, Dict[int, Dict[str, int]]] = defaultdict(
-        lambda: defaultdict(lambda: {"cheap": 0, "standard": 0, "rich": 0})
+        lambda: defaultdict(lambda: {mode: 0 for mode in known_modes})
     )
     for run in runs:
         method = str(run["method"])
         for i, row in enumerate(run.get("trace", [])):
             it = int(row.get("iteration", i))
-            t = row.get("final_tier", row.get("base_tier", row.get("tier")))
-            if t in {"cheap", "standard", "rich"}:
+            t = row.get("prompt_budget_mode") or row.get(
+                "final_tier", row.get("base_tier", row.get("tier"))
+            )
+            if t in known_modes:
                 by_method[method][it][t] += 1
     if not by_method:
         return False
@@ -1095,7 +1098,7 @@ def plot_tier_usage_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
     plotted = False
     for method, by_it in sorted(by_method.items()):
         xs = sorted(by_it.keys())
-        for tier, style in [("cheap", "-"), ("standard", "--"), ("rich", "-.")]:
+        for tier, style in [("lean", ":"), ("cheap", "-"), ("standard", "--"), ("rich", "-.")]:
             ys = []
             for it in xs:
                 total = sum(by_it[it].values())
@@ -1107,8 +1110,8 @@ def plot_tier_usage_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
         plt.close()
         return False
     plt.xlabel("Iteration")
-    plt.ylabel("Tier share")
-    plt.title("Tier usage share vs iteration")
+    plt.ylabel("Prompt budget mode share")
+    plt.title("Prompt budget mode share vs iteration")
     plt.legend(fontsize=7, ncol=2)
     plt.tight_layout()
     plt.savefig(out_png, dpi=180)
