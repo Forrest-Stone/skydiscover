@@ -134,6 +134,13 @@ def test_iteration_cost_sums_generation_retry_and_guide_with_role_tokens(tmp_pat
     assert len(call_rows) == 3
     assert [r["role"] for r in call_rows] == ["generation", "retry", "guide"]
     assert call_rows[2]["input_tokens"] == "50"
+    assert float(call_rows[0]["iteration_cost_before_call"]) == pytest.approx(0.0)
+    assert float(call_rows[0]["iteration_cost_after_call"]) == pytest.approx(0.001)
+    assert float(call_rows[1]["cumulative_cost_after_call"]) == pytest.approx(0.0014)
+    assert float(call_rows[2]["cumulative_cost_before_call"]) == pytest.approx(0.0014)
+    assert float(call_rows[2]["cumulative_cost_after_call"]) == pytest.approx(0.0034)
+    assert float(call_rows[2]["cumulative_cost"]) == pytest.approx(0.0034)
+    assert float(call_rows[2]["cumulative_cost_after_iteration"]) == pytest.approx(0.0034)
     assert summary_rows[0]["method"] == "unit"
     assert summary_rows[0]["input_tokens_total"] == "180"
 
@@ -181,3 +188,62 @@ def test_calls_from_iteration_row_supports_legacy_arrays():
             "call_meta": None,
         },
     ]
+
+
+def test_calls_csv_cumulative_cost_continues_across_iterations(tmp_path):
+    ledger = BudgetLedger(BudgetConfig(nominal_budget=1.0))
+    out = tmp_path / "iterations.jsonl"
+
+    first = ledger.start_iteration(1)
+    ledger.add_call(
+        first,
+        CallCostRecord(
+            role=CallRole.GENERATION,
+            model_name="m",
+            prompt_tokens=1,
+            completion_tokens=1,
+            total_tokens=2,
+            raw_cost=0.1,
+        ),
+    )
+    ledger.finalize_iteration(first)
+    write_iteration_record(out, first)
+
+    second = ledger.start_iteration(2)
+    ledger.add_call(
+        second,
+        CallCostRecord(
+            role=CallRole.GENERATION,
+            model_name="m",
+            prompt_tokens=1,
+            completion_tokens=1,
+            total_tokens=2,
+            raw_cost=0.2,
+        ),
+    )
+    ledger.add_call(
+        second,
+        CallCostRecord(
+            role=CallRole.RETRY,
+            model_name="m",
+            prompt_tokens=1,
+            completion_tokens=1,
+            total_tokens=2,
+            raw_cost=0.3,
+        ),
+    )
+    ledger.finalize_iteration(second)
+    write_iteration_record(out, second)
+
+    calls_csv = tmp_path / "calls.csv"
+    assert export_calls_csv(out, calls_csv) is True
+    with calls_csv.open(newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+
+    assert len(rows) == 3
+    assert float(rows[1]["cumulative_cost_before_iteration"]) == pytest.approx(0.1)
+    assert float(rows[1]["cumulative_cost_before_call"]) == pytest.approx(0.1)
+    assert float(rows[1]["cumulative_cost_after_call"]) == pytest.approx(0.3)
+    assert float(rows[2]["cumulative_cost_before_call"]) == pytest.approx(0.3)
+    assert float(rows[2]["cumulative_cost_after_call"]) == pytest.approx(0.6)
+    assert float(rows[2]["cumulative_cost_after_iteration"]) == pytest.approx(0.6)

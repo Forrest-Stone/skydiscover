@@ -283,7 +283,17 @@ _CALL_CSV_PREFIX_FIELDS = [
     "output_tokens",
     "total_tokens",
     "raw_cost",
+    "iteration_cost_before_call",
+    "iteration_cost_after_call",
+    "cumulative_cost_before_call",
+    "cumulative_cost_after_call",
+    "cumulative_cost",
     "call_meta",
+    "generation_cost",
+    "retry_cost",
+    "guide_cost",
+    "iteration_cost",
+    "cumulative_cost_before_iteration",
     "objective_key",
     "combined_score",
     "objective_value",
@@ -381,6 +391,15 @@ def _list_at(values: Any, idx: int, default: Any = None) -> Any:
     return values[idx]
 
 
+def _float_or_zero(value: Any) -> float:
+    try:
+        if value is None or value == "":
+            return 0.0
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def calls_from_iteration_row(row: Dict[str, Any]) -> list[Dict[str, Any]]:
     """Return normalized per-call rows from one iteration JSON row.
 
@@ -444,7 +463,18 @@ def export_calls_csv(iterations_path: Path, out_csv: Path | None = None) -> bool
     """Export one row per search-side LLM call from an iteration trace."""
     rows = load_iterations(iterations_path)
     call_rows: list[Dict[str, Any]] = []
+    running_run_cost = 0.0
     for row in rows:
+        calls = calls_from_iteration_row(row)
+        iteration_cost = _float_or_zero(row.get("iteration_cost"))
+        if iteration_cost == 0.0 and calls:
+            iteration_cost = sum(_float_or_zero(call.get("raw_cost")) for call in calls)
+        if row.get("cumulative_cost") in (None, ""):
+            cumulative_before_iteration = running_run_cost
+            cumulative_after_iteration = cumulative_before_iteration + iteration_cost
+        else:
+            cumulative_after_iteration = _float_or_zero(row.get("cumulative_cost"))
+            cumulative_before_iteration = max(cumulative_after_iteration - iteration_cost, 0.0)
         run_meta = {
             "iteration": row.get("iteration"),
             "source": row.get("source"),
@@ -456,10 +486,39 @@ def export_calls_csv(iterations_path: Path, out_csv: Path | None = None) -> bool
             "objective_key": row.get("objective_key"),
             "combined_score": row.get("combined_score"),
             "objective_value": row.get("objective_value"),
-            "cumulative_cost_after_iteration": row.get("cumulative_cost"),
+            "generation_cost": row.get("generation_cost"),
+            "retry_cost": row.get("retry_cost"),
+            "guide_cost": row.get("guide_cost"),
+            "iteration_cost": (
+                row.get("iteration_cost")
+                if row.get("iteration_cost") not in (None, "")
+                else iteration_cost
+            ),
+            "cumulative_cost_before_iteration": cumulative_before_iteration,
+            "cumulative_cost_after_iteration": (
+                row.get("cumulative_cost")
+                if row.get("cumulative_cost") not in (None, "")
+                else cumulative_after_iteration
+            ),
         }
-        for call in calls_from_iteration_row(row):
-            call_rows.append({**run_meta, **call})
+        iteration_running_cost = 0.0
+        for call in calls:
+            raw_cost = _float_or_zero(call.get("raw_cost"))
+            before_call = iteration_running_cost
+            after_call = before_call + raw_cost
+            call_rows.append(
+                {
+                    **run_meta,
+                    **call,
+                    "iteration_cost_before_call": before_call,
+                    "iteration_cost_after_call": after_call,
+                    "cumulative_cost_before_call": cumulative_before_iteration + before_call,
+                    "cumulative_cost_after_call": cumulative_before_iteration + after_call,
+                    "cumulative_cost": cumulative_before_iteration + after_call,
+                }
+            )
+            iteration_running_cost = after_call
+        running_run_cost = cumulative_after_iteration
 
     default_out = iterations_path.with_name("calls.csv")
     return _write_dict_rows_csv(call_rows, out_csv or default_out, _CALL_CSV_PREFIX_FIELDS)

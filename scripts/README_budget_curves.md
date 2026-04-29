@@ -102,6 +102,12 @@ If matplotlib is unavailable, it prints:
 - `runs.csv`
   - one row per run
   - includes method/task metadata and run-level budget fields
+- `all_iterations.csv`
+  - one row per iteration across all discovered runs
+  - includes `iteration_cost`, `cumulative_cost`, objective/best-so-far metrics, tier/routing diagnostics, and raw call arrays
+- `all_calls.csv`
+  - one row per LLM call across all discovered runs
+  - includes `raw_cost`, `iteration_cost_before_call`, `iteration_cost_after_call`, `cumulative_cost_before_call`, `cumulative_cost_after_call`, and `cumulative_cost_after_iteration`
 - `per_run_metrics.csv`
   - one row per run x budget
 - `aggregate_metrics.csv`
@@ -115,6 +121,26 @@ If matplotlib is unavailable, it prints:
 - `best_so_far_objective_vs_cost.png`
 - `best_so_far_combined_score_vs_cost.png`
 - `best_so_far_objective_vs_iteration.png`
+- `best_score_vs_iteration.png`
+- `iteration_cost_vs_iteration.png`
+- `cumulative_cost_vs_iteration.png`
+- `avg_iteration_cost_vs_iteration.png`
+- `best_objective_gain_vs_iteration.png`
+- `best_objective_gain_vs_cost.png`
+- `local_best_vs_iteration.png`
+- `local_best_vs_cost.png`
+- `global_best_vs_iteration.png`
+- `global_best_vs_cost.png`
+- `local_gain_normalized_vs_iteration.png`
+- `local_gain_normalized_vs_cost.png`
+- `global_gain_normalized_vs_iteration.png`
+- `global_gain_normalized_vs_cost.png`
+- `utility_vs_iteration.png`
+- `utility_vs_cost.png`
+- `tier_usage_vs_iteration.png`
+- `meta_trigger_vs_iteration.png`
+- `frontier_selection_counts.png`
+- `frontier_selection_share.png`
 - `success_vs_budget.png`
 - `cost_to_target.png`
 - `avg_cost_vs_budget.png`
