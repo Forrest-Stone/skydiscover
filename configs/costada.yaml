@@ -66,9 +66,6 @@ search:
     costada_significant_gain_eps: 1.0e-6
 
     # Budget-gated optional prompt settings
-    costada_lean_max_output_tokens: 512
-    costada_standard_max_output_tokens: 1024
-    costada_rich_max_output_tokens: 2048
     costada_lean_context_programs: 2
     costada_rich_context_programs: 6
     costada_lean_feedback_chars: 300

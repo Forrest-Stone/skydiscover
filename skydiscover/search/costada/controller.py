@@ -110,38 +110,8 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         max_iters = max(int(getattr(self.config, "max_iterations", 1) or 1), 1)
         return max(nominal / max_iters, self.budget_ledger.config.eps)
 
-    def _max_output_tokens_for_prompt_mode(self, prompt_mode: str) -> int:
-        db_cfg = self.config.search.database
-        if prompt_mode == "lean":
-            return int(
-                getattr(
-                    db_cfg,
-                    "costada_lean_max_output_tokens",
-                    getattr(db_cfg, "cheap_max_output_tokens", 512),
-                )
-            )
-        if prompt_mode == "rich":
-            return int(
-                getattr(
-                    db_cfg,
-                    "costada_rich_max_output_tokens",
-                    getattr(db_cfg, "rich_max_output_tokens", 2048),
-                )
-            )
-        return int(
-            getattr(
-                db_cfg,
-                "costada_standard_max_output_tokens",
-                getattr(db_cfg, "standard_max_output_tokens", 1024),
-            )
-        )
-
     async def _call_llm(self, system_message: str, user_message: str, **kwargs):
-        """Inject budget-gated output caps while preserving shared budget logging."""
-        if "max_tokens" not in kwargs and not kwargs.get("image_output"):
-            kwargs["max_tokens"] = self._max_output_tokens_for_prompt_mode(
-                self._current_prompt_budget_mode
-            )
+        """Attach CostAda budget metadata while preserving AdaEvolve generation limits."""
         if "_budget_record" not in kwargs and self._active_budget_record is not None:
             kwargs["_budget_record"] = self._active_budget_record
         if "_call_role" not in kwargs:
