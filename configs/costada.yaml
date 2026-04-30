@@ -53,9 +53,9 @@ search:
     costada_router_gamma: 0.9
     costada_eta_min: 0.15
     costada_meta_h_threshold: 0.01
-    costada_meta_window: 8
-    costada_improvement_window: 8
-    costada_stagnation_steps: 8
+    costada_meta_window: 6
+    costada_improvement_window: 6
+    costada_stagnation_steps: 6
     costada_significant_gain_eps: 1.0e-6
 
 prompt:
