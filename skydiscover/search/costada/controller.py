@@ -267,10 +267,64 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         )
         return max(0.0, min(1.0, float(intensity)))
 
-    async def run_discovery(self, *args, **kwargs):
-        out = await super().run_discovery(*args, **kwargs)
+    def _budget_exhausted_before_iteration(self) -> bool:
+        nominal = max(
+            float(self.budget_ledger.config.nominal_budget),
+            self.budget_ledger.config.eps,
+        )
+        return float(self.budget_ledger.cumulative_cost) >= nominal
+
+    async def run_discovery(
+        self,
+        start_iteration: int,
+        max_iterations: int,
+        checkpoint_callback=None,
+    ) -> Optional[Program]:
+        """Run CostAda until iteration cap or pre-step budget exhaustion.
+
+        A step that starts under budget is allowed to finish even if it overshoots
+        the nominal budget. The next step is blocked once the ledger is exhausted.
+        """
+        total = start_iteration + max_iterations
+        logger.info(
+            f"CostAda: Running up to {max_iterations} iterations "
+            f"across {self.database.num_islands} frontiers"
+        )
+
+        self._setup_iteration_stats_logging()
+        self._ensure_all_islands_seeded()
+
+        for iteration in range(start_iteration, total):
+            if self.shutdown_event.is_set():
+                logger.info("Shutdown requested")
+                break
+            if self._budget_exhausted_before_iteration():
+                logger.info(
+                    "CostAda budget exhausted before iteration %s: "
+                    "cumulative=%.6f nominal=%.6f; stopping",
+                    iteration,
+                    float(self.budget_ledger.cumulative_cost),
+                    float(self.budget_ledger.config.nominal_budget),
+                )
+                break
+
+            try:
+                await self._run_iteration(iteration, checkpoint_callback)
+            except Exception as exc:
+                logger.exception(f"Iteration {iteration} failed: {exc}")
+            finally:
+                self.database.end_iteration(iteration)
+
+        logger.info("CostAda completed")
+        self.database.log_status()
+
+        if self._iteration_stats_log_path:
+            logger.info(
+                f"CostAda iteration stats saved to: {self._iteration_stats_log_path}"
+            )
+
         self._write_budget_summary()
-        return out
+        return self.database.get_best_program()
 
     async def _run_normal_step(
         self,
