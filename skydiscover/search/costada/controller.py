@@ -181,6 +181,12 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             return 0.0
         return float(sum(self._recent_utility_values) / len(self._recent_utility_values))
 
+    def _low_recent_utility(self) -> bool:
+        """Use realized recent utility, not smoothed H, for intervention gates."""
+        if not self._recent_utility_values:
+            return False
+        return self._avg_recent_utility() <= self.meta_h_threshold
+
     def _guidance_available(self) -> bool:
         return bool(
             getattr(self.database, "use_paradigm_breakthrough", False)
@@ -233,11 +239,12 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         if low_budget:
             return "lean"
 
-        low_utility = (
-            frontier_state.H <= self.meta_h_threshold
-            or self._avg_recent_H() <= self.meta_h_threshold
-        )
-        if remaining_budget_ratio >= self.prompt_rich_min_budget_ratio and low_utility:
+        if (
+            remaining_budget_ratio >= self.prompt_rich_min_budget_ratio
+            and self._is_stagnant(frontier_state)
+            and self._low_recent_utility()
+            and self._affordable_guidance(remaining_budget_ratio)
+        ):
             return "rich"
         return "standard"
 
@@ -450,7 +457,7 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             self._recent_utility_values.append(util)
 
             stagnant = self._is_stagnant(frontier_state)
-            low_recent_utility = self._avg_recent_H() < self.meta_h_threshold
+            low_recent_utility = self._low_recent_utility()
             affordable = self._affordable_guidance(remaining_after)
             guidance_available = self._guidance_available()
             meta_triggered = (

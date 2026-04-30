@@ -1,4 +1,5 @@
 import math
+from collections import deque
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
@@ -18,6 +19,10 @@ def _load_module(name: str, rel_path: str):
 
 _adaptation = _load_module("costada_adaptation", "skydiscover/search/costada/adaptation.py")
 _router = _load_module("costada_router", "skydiscover/search/costada/router.py")
+try:
+    _controller = _load_module("costada_controller", "skydiscover/search/costada/controller.py")
+except ModuleNotFoundError:
+    _controller = None
 
 
 def test_costada_utility_uses_budget_gated_normalized_cost():
@@ -69,3 +74,16 @@ def test_router_updates_from_precomputed_routing_reward():
 
     assert observed == pytest.approx(0.2)
     assert router.get_reward(3) == pytest.approx(0.1)
+
+
+def test_low_recent_utility_uses_realized_utility_window_not_h_signal():
+    if _controller is None:
+        pytest.skip("CostAdaController import requires optional runtime dependencies")
+    controller = _controller.CostAdaController.__new__(_controller.CostAdaController)
+    controller.meta_h_threshold = 0.01
+    controller._recent_utility_values = deque([0.0, 0.0, 0.0], maxlen=8)
+
+    assert controller._low_recent_utility() is True
+
+    controller._recent_utility_values = deque([0.0, 0.05], maxlen=8)
+    assert controller._low_recent_utility() is False
