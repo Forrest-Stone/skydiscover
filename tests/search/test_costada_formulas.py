@@ -2,6 +2,7 @@ import math
 from collections import deque
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -87,3 +88,21 @@ def test_low_recent_utility_uses_realized_utility_window_not_h_signal():
 
     controller._recent_utility_values = deque([0.0, 0.05], maxlen=8)
     assert controller._low_recent_utility() is False
+
+
+def test_budget_exhaustion_gate_blocks_only_next_iteration():
+    if _controller is None:
+        pytest.skip("CostAdaController import requires optional runtime dependencies")
+    controller = _controller.CostAdaController.__new__(_controller.CostAdaController)
+    controller.budget_ledger = SimpleNamespace(
+        config=SimpleNamespace(nominal_budget=1.0, eps=1e-8),
+        cumulative_cost=0.999999,
+    )
+
+    assert controller._budget_exhausted_before_iteration() is False
+
+    controller.budget_ledger.cumulative_cost = 1.0
+    assert controller._budget_exhausted_before_iteration() is True
+
+    controller.budget_ledger.cumulative_cost = 1.000111
+    assert controller._budget_exhausted_before_iteration() is True
