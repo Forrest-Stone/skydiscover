@@ -38,10 +38,16 @@ search:
     migration_interval: 15
     migration_count: 5
     use_paradigm_breakthrough: true
-    paradigm_window_size: 10
-    paradigm_improvement_threshold: 0.12
     paradigm_max_uses: 2
     paradigm_num_to_generate: 3
+
+    # AdaEvolve legacy paradigm-stagnation knobs.
+    # In CostAda, these do NOT decide when to generate guide/paradigm calls.
+    # CostAda guide scheduling is controlled by costada_meta_* below.
+    # Kept only for inherited ParadigmTracker state/statistics compatibility.
+    paradigm_window_size: 10
+    paradigm_improvement_threshold: 0.12
+
     enable_error_retry: true
     max_error_retries: 2
 
