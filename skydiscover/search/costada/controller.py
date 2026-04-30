@@ -57,10 +57,6 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
 
         self.eps_c = float(getattr(db_cfg, "costada_eps_c", 1e-8))
         self.ref_cost = self._resolve_ref_cost(db_cfg)
-        self.prompt_low_budget_ratio = float(getattr(db_cfg, "costada_eta_low", 0.12))
-        self.prompt_rich_min_budget_ratio = float(
-            getattr(db_cfg, "costada_rich_enable_min_budget", 0.28)
-        )
         self.meta_eta_min = float(getattr(db_cfg, "costada_eta_min", 0.15))
         self.meta_h_threshold = float(getattr(db_cfg, "costada_meta_h_threshold", 0.01))
         self.meta_gain_eps = float(getattr(db_cfg, "costada_significant_gain_eps", 1e-6))
@@ -199,23 +195,8 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         frontier_state: FrontierState,
         remaining_budget_ratio: float,
     ) -> str:
-        remaining_budget = float(self.budget_ledger.config.nominal_budget) * float(
-            remaining_budget_ratio
-        )
-        low_budget = (
-            remaining_budget_ratio <= self.prompt_low_budget_ratio
-            or remaining_budget <= self.ref_cost
-        )
-        if low_budget:
-            return "lean"
-
-        if (
-            remaining_budget_ratio >= self.prompt_rich_min_budget_ratio
-            and self._is_stagnant(frontier_state)
-            and self._low_recent_utility()
-            and self._affordable_guidance(remaining_budget_ratio)
-        ):
-            return "rich"
+        """Keep prompt construction at AdaEvolve parity for current experiments."""
+        _ = (frontier_state, remaining_budget_ratio)
         return "standard"
 
     def _select_local_control(
@@ -525,7 +506,7 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         force_exploration: bool = False,
         budget_record=None,
     ) -> SerializableResult:
-        """Generate/evaluate a child with CostAda sampling and budget-gated context."""
+        """Generate/evaluate a child with CostAda sampling and AdaEvolve prompt parity."""
         try:
             if not self.database.programs:
                 return await self._run_from_scratch_iteration(iteration, budget_record=budget_record)

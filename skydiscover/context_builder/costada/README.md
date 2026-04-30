@@ -1,48 +1,26 @@
 # CostAda Context Builder (`skydiscover.context_builder.costada`)
 
-This package adapts prompt construction for CostAda while reusing the shared evolutionary prompt templates.
+This package keeps CostAda prompt construction aligned with AdaEvolve while reusing the shared evolutionary prompt templates.
 
 ---
 
 ## 1) Purpose
 
-`CostAdaContextBuilder` extends the shared prompt builder and adds budget-aware guidance without rewriting the whole prompt stack.
+`CostAdaContextBuilder` currently aliases the AdaEvolve prompt builder.
 
-It allows the prompt budget gate and local search mode to be reflected in prompts.
+This keeps budget experiments from changing prompt verbosity, evaluator feedback length, or context shape.
 
 ---
 
 ## 2) Added behavior
 
-### A) Budget status block
-
-Injected block includes:
-
-- remaining budget ratio
-- prompt budget mode
-- local search mode
-- concise spending preference text
-
-### B) Budget-conditioned verbosity
-
-- `lean`: minimal guidance
-- `standard`: compressed guidance
-- `rich`: full guidance
-
-This keeps optional prompt components aligned with the remaining budget.
+None. The builder intentionally inherits AdaEvolve behavior as-is.
 
 ---
 
 ## 3) Expected controller context keys
 
-Controller should pass:
-
-- `remaining_budget_ratio`
-- `prompt_budget_mode`
-- `costada_local_mode`
-- `costada_explore`
-
-plus the standard evolutionary context keys:
+Controller may pass CostAda metadata for tracing, but prompt rendering consumes only the standard evolutionary context keys:
 
 - `paradigm`
 - `siblings`
@@ -61,8 +39,8 @@ plus the standard evolutionary context keys:
 
 ## 5) Debug tips
 
-If budget text is not visible in prompts:
+If prompt output differs from AdaEvolve:
 
-1. verify `template: costada` in config
-2. verify controller passes `remaining_budget_ratio` and `prompt_budget_mode`
-3. confirm `default_discovery_controller` selects `CostAdaContextBuilder`
+1. verify `CostAdaContextBuilder` still subclasses `AdaEvolveContextBuilder` without overriding rendering hooks
+2. verify no CostAda-specific templates are configured through `template_dir`
+3. compare rendered prompts with `template: adaevolve`

@@ -1,4 +1,4 @@
-"""CostAda database: archive sampling with budget-aware prompt controls."""
+"""CostAda database: AdaEvolve archive sampling with cost-aware local control."""
 
 from __future__ import annotations
 
@@ -6,7 +6,6 @@ import logging
 import random
 from typing import Dict, List, Optional, Tuple
 
-from skydiscover.config import DatabaseConfig
 from skydiscover.search.adaevolve.database import AdaEvolveDatabase
 from skydiscover.search.base_database import Program
 
@@ -14,11 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 class CostAdaDatabase(AdaEvolveDatabase):
-    """Archive DB with H-intensity local sampling and prompt budget gates."""
+    """Archive DB with H-intensity local sampling.
 
-    def __init__(self, name: str, config: DatabaseConfig):
-        super().__init__(name, config)
-        self._costada_feedback_chars: Optional[int] = None
+    Prompt shape and context volume intentionally stay aligned with AdaEvolve.
+    """
 
     def sample(
         self,
@@ -40,13 +38,11 @@ class CostAdaDatabase(AdaEvolveDatabase):
         exploration gets probability ``intensity``; the remaining mass is split
         between exploitation and balanced sampling.
         """
-        _ = (family, budget_bin, kwargs)
+        _ = (family, tier, prompt_budget_mode, budget_bin, kwargs)
         island_idx = self.current_island if island_id is None else int(island_id)
         self.current_island = island_idx
 
-        prompt_mode = self._resolve_prompt_budget_mode(prompt_budget_mode, tier)
-        num = self._context_count_for_prompt_mode(int(num_context_programs or 4), prompt_mode)
-        self._set_feedback_limit(prompt_mode)
+        num = int(num_context_programs or 4)
 
         mode = self._resolve_local_mode(local_mode)
         if mode is None and explore is not None:
@@ -93,38 +89,6 @@ class CostAdaDatabase(AdaEvolveDatabase):
         if rand < p_explore + (1.0 - p_explore) * 0.7:
             return "exploitation"
         return "balanced"
-
-    @staticmethod
-    def _resolve_prompt_budget_mode(prompt_budget_mode: Optional[str], tier: Optional[str]) -> str:
-        mode = (prompt_budget_mode or tier or "standard").strip().lower()
-        if mode == "cheap":
-            mode = "lean"
-        if mode not in {"lean", "standard", "rich"}:
-            mode = "standard"
-        return mode
-
-    def _context_count_for_prompt_mode(self, requested: int, prompt_mode: str) -> int:
-        if prompt_mode == "lean":
-            return min(requested, int(getattr(self.config, "costada_lean_context_programs", 2)))
-        if prompt_mode == "rich":
-            return max(requested, int(getattr(self.config, "costada_rich_context_programs", 6)))
-        return requested
-
-    def _set_feedback_limit(self, prompt_mode: str) -> None:
-        if prompt_mode == "lean":
-            self._costada_feedback_chars = int(
-                getattr(
-                    self.config,
-                    "costada_lean_feedback_chars",
-                    getattr(self.config, "costada_cheap_feedback_chars", 300),
-                )
-            )
-        elif prompt_mode == "rich":
-            self._costada_feedback_chars = int(getattr(self.config, "costada_rich_feedback_chars", 1500))
-        else:
-            self._costada_feedback_chars = int(
-                getattr(self.config, "costada_standard_feedback_chars", 800)
-            )
 
     def _sample_from_archive_costada(
         self,

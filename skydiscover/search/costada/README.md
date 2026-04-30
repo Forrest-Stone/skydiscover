@@ -20,7 +20,9 @@ CostAda replaces the adaptation signal with budget-calibrated control and uses i
 1. **Step-level local control** (intensity-conditioned local sampling)
 2. **Frontier-level allocation** (cost-aware reward routing)
 3. **Regime-level intervention trigger**
-4. **Budget-gated optional prompt components**
+
+Prompt construction currently stays aligned with AdaEvolve; CostAda does not
+inject budget prompt text or truncate prompt-side context.
 
 ---
 
@@ -89,7 +91,7 @@ Responsibilities:
 - initializes CostAda control components
 - selects frontier via `CostAwareFrontierRouter`
 - builds compact control state and samples the local search mode
-- samples with frontier and prompt-budget context
+- samples with frontier-local control while preserving AdaEvolve context volume
 - computes local/global gains and utility
 - updates `H` and router reward
 - writes method metadata into budget iteration rows
@@ -126,8 +128,7 @@ State containers:
 Database layer for CostAda sampling knobs:
 
 - intensity-conditioned local-mode sampling
-- context program count caps/floors by prompt budget mode
-- feedback budget hints by prompt budget mode
+- AdaEvolve-aligned context program count and feedback rendering
 
 ### `__init__.py`
 

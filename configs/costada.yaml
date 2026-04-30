@@ -11,11 +11,6 @@ llm:
       weight: 1.0
       input_price_per_1m: 0.72
       output_price_per_1m: 2.3
-  guide_models:
-    - name: "gpt-5-mini"
-      weight: 1.0
-      input_price_per_1m: 0.25
-      output_price_per_1m: 1.0
   api_base: "https://api.openai.com/v1"
   temperature: 0.7
   max_tokens: 32000
@@ -56,21 +51,12 @@ search:
     costada_alpha: 0.9
     costada_c_ucb: 0.5
     costada_router_gamma: 0.9
-    costada_eta_low: 0.12
-    costada_rich_enable_min_budget: 0.28
     costada_eta_min: 0.15
     costada_meta_h_threshold: 0.01
     costada_meta_window: 8
     costada_improvement_window: 8
     costada_stagnation_steps: 8
     costada_significant_gain_eps: 1.0e-6
-
-    # Budget-gated optional prompt settings
-    costada_lean_context_programs: 2
-    costada_rich_context_programs: 6
-    costada_lean_feedback_chars: 300
-    costada_standard_feedback_chars: 800
-    costada_rich_feedback_chars: 1500
 
 prompt:
   template: "costada"
