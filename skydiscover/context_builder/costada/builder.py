@@ -1,6 +1,6 @@
 """CostAda context builder.
 
-Extends AdaEvolve guidance with budget-aware optional prompt gating.
+Extends the shared evolutionary guidance with budget-aware optional prompt gating.
 """
 
 from __future__ import annotations

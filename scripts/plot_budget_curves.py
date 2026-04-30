@@ -26,6 +26,36 @@ def first_non_none(row: Dict, keys: List[str]):
     return None
 
 
+def normalize_local_mode(value) -> Optional[str]:
+    if value is None:
+        return None
+    mode = str(value).strip().lower()
+    aliases = {
+        "explore": "exploration",
+        "exploration": "exploration",
+        "exploit": "exploitation",
+        "exploitation": "exploitation",
+        "refine": "exploitation",
+        "balanced": "balanced",
+    }
+    return aliases.get(mode)
+
+
+def local_mode_from_row(row: Dict) -> Optional[str]:
+    mode = normalize_local_mode(
+        first_non_none(
+            row,
+            ["local_search_mode", "sampling_mode", "mode", "explore_or_exploit"],
+        )
+    )
+    if mode is not None:
+        return mode
+    explore = row.get("explore")
+    if isinstance(explore, bool):
+        return "exploration" if explore else "exploitation"
+    return None
+
+
 def best_score_at_budget(points: Iterable[tuple[float, float]], budget: float) -> float | None:
     best = None
     for cost, score in points:
@@ -99,7 +129,7 @@ def collect_runs(root: Path) -> List[Dict]:
             continue
         trace = load_jsonl(iter_path)
         points = []
-        tiers = []
+        local_modes = []
         meta_flags = []
         for row in trace:
             cost = float(row.get("cumulative_cost", 0.0) or 0.0)
@@ -108,9 +138,9 @@ def collect_runs(root: Path) -> List[Dict]:
                 ["best_so_far_objective", "objective_value", "global_best_after"],
             )
             points.append((cost, score))
-            tier = first_non_none(row, ["prompt_budget_mode", "final_tier", "base_tier", "tier"])
-            if tier:
-                tiers.append(str(tier))
+            local_mode = local_mode_from_row(row)
+            if local_mode:
+                local_modes.append(local_mode)
             meta_flags.append(1.0 if row.get("meta_triggered") else 0.0)
         runs.append(
             {
@@ -126,7 +156,9 @@ def collect_runs(root: Path) -> List[Dict]:
                     (r.get("objective_key") for r in trace if r.get("objective_key")),
                     "combined_score",
                 ),
-                "tiers": tiers,
+                "local_modes": local_modes,
+                # Backward-compatible name for older analysis code.
+                "tiers": local_modes,
                 "meta_trigger_rate": (sum(meta_flags) / len(meta_flags)) if meta_flags else 0.0,
             }
         )
@@ -230,7 +262,7 @@ def compute_metric_rows(runs: List[Dict], budgets: List[float], target: Optional
         total_cost = float(summary.get("total_cost", 0.0) or 0.0)
         nominal = float(summary.get("nominal_budget", 0.0) or 0.0)
         points: Iterable[Tuple[float, float]] = run["points"]
-        tier_entropy = compute_tier_entropy(run.get("tiers", []))
+        local_mode_entropy = compute_categorical_entropy(run.get("local_modes", []))
         meta_trigger_rate = float(run.get("meta_trigger_rate", 0.0) or 0.0)
 
         for b in budgets:
@@ -251,7 +283,9 @@ def compute_metric_rows(runs: List[Dict], budgets: List[float], target: Optional
                     "AvgCost": float(summary.get("avg_iteration_cost", 0.0) or 0.0),
                     "OOBRate": 1.0 if total_cost > b else 0.0,
                     "OvershootRatio": overshoot_ratio(total_cost, b),
-                    "TierEntropy": tier_entropy,
+                    "LocalModeEntropy": local_mode_entropy,
+                    # Backward-compatible metric name for older notebooks.
+                    "TierEntropy": local_mode_entropy,
                     "MetaTriggerRate": meta_trigger_rate,
                     "SummaryNominalBudget": nominal,
                 }
@@ -281,6 +315,7 @@ def aggregate_metric_rows(rows: List[Dict]) -> List[Dict]:
         avg_cost_vals = _vals("AvgCost")
         oob_vals = _vals("OOBRate")
         over_vals = _vals("OvershootRatio")
+        local_mode_entropy_vals = _vals("LocalModeEntropy")
         tier_entropy_vals = _vals("TierEntropy")
         meta_trigger_vals = _vals("MetaTriggerRate")
 
@@ -294,6 +329,9 @@ def aggregate_metric_rows(rows: List[Dict]) -> List[Dict]:
                 "AvgCost": mean(avg_cost_vals) if avg_cost_vals else "",
                 "OOBRate": mean(oob_vals) if oob_vals else "",
                 "OvershootRatio": mean(over_vals) if over_vals else "",
+                "LocalModeEntropy": (
+                    mean(local_mode_entropy_vals) if local_mode_entropy_vals else ""
+                ),
                 "TierEntropy": mean(tier_entropy_vals) if tier_entropy_vals else "",
                 "MetaTriggerRate": mean(meta_trigger_vals) if meta_trigger_vals else "",
                 "num_runs": len(items),
@@ -302,14 +340,14 @@ def aggregate_metric_rows(rows: List[Dict]) -> List[Dict]:
     return out
 
 
-def compute_tier_entropy(tiers: List[str]) -> float:
-    """Compute entropy of tier usage distribution for one run."""
-    if not tiers:
+def compute_categorical_entropy(values: List[str]) -> float:
+    """Compute entropy of a categorical usage distribution for one run."""
+    if not values:
         return 0.0
     counts: Dict[str, int] = defaultdict(int)
-    for t in tiers:
-        counts[t] += 1
-    n = len(tiers)
+    for value in values:
+        counts[value] += 1
+    n = len(values)
     entropy = 0.0
     for c in counts.values():
         p = c / n
@@ -704,19 +742,19 @@ def plot_budget_adherence(agg_rows: List[Dict], out_png: Path) -> bool:
 
 
 def plot_tier_usage(runs: List[Dict], out_png: Path) -> bool:
-    """Plot aggregate prompt budget mode usage per method."""
+    """Plot aggregate local sampling mode usage per method."""
     plt = _load_plt()
     if plt is None:
         return False
     out_png.parent.mkdir(parents=True, exist_ok=True)
 
-    modes = ("lean", "cheap", "standard", "rich")
+    modes = ("exploration", "exploitation", "balanced")
     by_method: Dict[str, Dict[str, int]] = defaultdict(lambda: {mode: 0 for mode in modes})
     for run in runs:
         method = run["method"]
-        for t in run.get("tiers", []):
-            if t in by_method[method]:
-                by_method[method][t] += 1
+        for mode in run.get("local_modes", run.get("tiers", [])):
+            if mode in by_method[method]:
+                by_method[method][mode] += 1
     if not by_method:
         return False
 
@@ -730,8 +768,8 @@ def plot_tier_usage(runs: List[Dict], out_png: Path) -> bool:
         plt.bar(x, vals, bottom=bottom, label=mode)
         bottom = [bottom[i] + vals[i] for i in range(len(methods))]
     plt.xticks(list(x), methods, rotation=25)
-    plt.ylabel("Prompt budget mode count")
-    plt.title("Prompt budget mode usage by method")
+    plt.ylabel("Local mode count")
+    plt.title("Local sampling mode usage by method")
     plt.legend()
     plt.tight_layout()
     plt.savefig(out_png, dpi=180)
@@ -1079,7 +1117,7 @@ def plot_tier_usage_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
     if plt is None:
         return False
     out_png.parent.mkdir(parents=True, exist_ok=True)
-    known_modes = ("lean", "cheap", "standard", "rich")
+    known_modes = ("exploration", "exploitation", "balanced")
     by_method: Dict[str, Dict[int, Dict[str, int]]] = defaultdict(
         lambda: defaultdict(lambda: {mode: 0 for mode in known_modes})
     )
@@ -1087,31 +1125,29 @@ def plot_tier_usage_vs_iteration(runs: List[Dict], out_png: Path) -> bool:
         method = str(run["method"])
         for i, row in enumerate(run.get("trace", [])):
             it = int(row.get("iteration", i))
-            t = row.get("prompt_budget_mode") or row.get(
-                "final_tier", row.get("base_tier", row.get("tier"))
-            )
-            if t in known_modes:
-                by_method[method][it][t] += 1
+            mode = local_mode_from_row(row)
+            if mode in known_modes:
+                by_method[method][it][mode] += 1
     if not by_method:
         return False
     plt.figure(figsize=(9, 5.5))
     plotted = False
     for method, by_it in sorted(by_method.items()):
         xs = sorted(by_it.keys())
-        for tier, style in [("lean", ":"), ("cheap", "-"), ("standard", "--"), ("rich", "-.")]:
+        for mode, style in [("exploration", "-"), ("exploitation", "--"), ("balanced", "-.")]:
             ys = []
             for it in xs:
                 total = sum(by_it[it].values())
-                ys.append((by_it[it][tier] / total) if total > 0 else 0.0)
+                ys.append((by_it[it][mode] / total) if total > 0 else 0.0)
             if xs:
-                plt.plot(xs, ys, linestyle=style, linewidth=1.6, label=f"{method}:{tier}")
+                plt.plot(xs, ys, linestyle=style, linewidth=1.6, label=f"{method}:{mode}")
                 plotted = True
     if not plotted:
         plt.close()
         return False
     plt.xlabel("Iteration")
-    plt.ylabel("Prompt budget mode share")
-    plt.title("Prompt budget mode share vs iteration")
+    plt.ylabel("Local mode share")
+    plt.title("Local sampling mode share vs iteration")
     plt.legend(fontsize=7, ncol=2)
     plt.tight_layout()
     plt.savefig(out_png, dpi=180)

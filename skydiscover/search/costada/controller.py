@@ -1,4 +1,4 @@
-"""CostAda controller on top of the AdaEvolve search scaffold."""
+"""CostAda controller on top of the shared evolutionary search scaffold."""
 
 from __future__ import annotations
 
@@ -77,7 +77,6 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         self._recent_H_values: deque[float] = deque(maxlen=self.meta_window)
         self._recent_utility_values: deque[float] = deque(maxlen=self.meta_window)
         self._current_prompt_budget_mode: str = "standard"
-        self._current_tier: str = "standard"  # Backward-compatible alias for old trace readers.
         self._current_explore: bool = False
         self._current_local_mode: str = "balanced"
         self._current_intensity: float = self.intensity_max
@@ -259,7 +258,6 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         self._current_prompt_budget_mode = self._prompt_budget_mode(
             frontier_state, remaining_budget_ratio
         )
-        self._current_tier = self._current_prompt_budget_mode
         return compact
 
     @staticmethod
@@ -347,6 +345,7 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
         """Execute one CostAda iteration with budget-calibrated signal updates."""
         iteration_start_time = time.time()
         budget_record = self._budget_start_iteration(iteration)
+        budget_record.meta.pop("tier", None)
         result: Optional[SerializableResult] = None
         finalized = False
 
@@ -365,16 +364,12 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
             budget_record.meta["selected_frontier"] = frontier_id
             budget_record.meta["global_best_before"] = global_best_prev
             budget_record.meta["prompt_budget_mode"] = self._current_prompt_budget_mode
-            budget_record.meta["tier"] = self._current_prompt_budget_mode
-            budget_record.meta["final_tier"] = self._current_prompt_budget_mode
             budget_record.meta["remaining_budget_ratio"] = compact_state.remaining_budget_ratio
             budget_record.meta["remaining_budget_ratio_before"] = remaining_before
             budget_record.meta["intensity"] = float(self._current_intensity)
             budget_record.meta["explore"] = bool(self._current_explore)
             budget_record.meta["local_search_mode"] = self._current_local_mode
             budget_record.meta["explore_or_exploit"] = self._current_local_mode
-            budget_record.meta["base_tier"] = self._current_prompt_budget_mode
-            budget_record.meta["tier_override_reason"] = ""
             budget_record.meta["ref_cost"] = float(self.ref_cost)
 
             if (
@@ -606,7 +601,6 @@ class CostAdaController(BudgetIterationMixin, AdaEvolveController):
                 "error_context": error_context,
                 "remaining_budget_ratio": self._remaining_ratio_including_active_record(),
                 "prompt_budget_mode": self._current_prompt_budget_mode,
-                "costada_tier": self._current_prompt_budget_mode,
                 "costada_explore": self._current_explore,
                 "costada_local_mode": local_mode,
                 "costada_intensity": self._current_intensity,

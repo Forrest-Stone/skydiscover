@@ -1,12 +1,12 @@
 # CostAda Context Builder (`skydiscover.context_builder.costada`)
 
-This package adapts prompt construction for CostAda while reusing AdaEvolve templates.
+This package adapts prompt construction for CostAda while reusing the shared evolutionary prompt templates.
 
 ---
 
 ## 1) Purpose
 
-`CostAdaContextBuilder` extends `AdaEvolveContextBuilder` and adds budget-aware guidance without rewriting the whole prompt stack.
+`CostAdaContextBuilder` extends the shared prompt builder and adds budget-aware guidance without rewriting the whole prompt stack.
 
 It allows the prompt budget gate and local search mode to be reflected in prompts.
 
@@ -42,7 +42,7 @@ Controller should pass:
 - `costada_local_mode`
 - `costada_explore`
 
-plus standard AdaEvolve context keys:
+plus the standard evolutionary context keys:
 
 - `paradigm`
 - `siblings`
@@ -53,9 +53,9 @@ plus standard AdaEvolve context keys:
 
 ## 4) Design constraints
 
-1. Reuse existing AdaEvolve scaffold and templates.
+1. Reuse existing scaffold and templates.
 2. Keep CostAda-specific additions small and explicit.
-3. Avoid duplicating default/adaevolve template pipelines.
+3. Avoid duplicating the default template pipelines.
 
 ---
 

@@ -959,8 +959,34 @@ def plot_run_cost_panels(iterations_path: Path, out_png: Path) -> bool:
     return True
 
 
+def _normalize_local_mode(value: Any) -> str | None:
+    if value is None:
+        return None
+    mode = str(value).strip().lower()
+    aliases = {
+        "explore": "exploration",
+        "exploration": "exploration",
+        "exploit": "exploitation",
+        "exploitation": "exploitation",
+        "refine": "exploitation",
+        "balanced": "balanced",
+    }
+    return aliases.get(mode)
+
+
+def _local_mode_from_row(row: Dict[str, Any]) -> str | None:
+    for key in ("local_search_mode", "sampling_mode", "mode", "explore_or_exploit"):
+        mode = _normalize_local_mode(row.get(key))
+        if mode is not None:
+            return mode
+    explore = row.get("explore")
+    if isinstance(explore, bool):
+        return "exploration" if explore else "exploitation"
+    return None
+
+
 def plot_run_diagnostic_panels(iterations_path: Path, out_png: Path) -> bool:
-    """Group BCHD diagnostics: tiers, meta triggers, frontier share, utility chain."""
+    """Group CostAda diagnostics: local mode, meta triggers, frontier share, utility chain."""
     plt = _load_plt()
     if plt is None:
         return False
@@ -969,11 +995,8 @@ def plot_run_diagnostic_panels(iterations_path: Path, out_png: Path) -> bool:
         return False
 
     x_iter = [int(r.get("iteration", i)) for i, r in enumerate(rows)]
-    tier_map = {"cheap": 0, "standard": 1, "rich": 2}
-    tiers = [
-        tier_map.get(str(r.get("final_tier", r.get("base_tier", r.get("tier", "")))), None)
-        for r in rows
-    ]
+    mode_map = {"exploration": 0, "exploitation": 1, "balanced": 2}
+    local_modes = [mode_map.get(_local_mode_from_row(r), None) for r in rows]
     meta = [1.0 if r.get("meta_triggered") else 0.0 for r in rows]
     utility_vals = _series(rows, ["utility"])
     frontier_signal = _series(rows, ["frontier_signal"])
@@ -987,9 +1010,9 @@ def plot_run_diagnostic_panels(iterations_path: Path, out_png: Path) -> bool:
 
     out_png.parent.mkdir(parents=True, exist_ok=True)
     fig, axes = plt.subplots(2, 2, figsize=(11, 7.5))
-    axes[0, 0].plot(x_iter, tiers, drawstyle="steps-post", linewidth=1.5)
-    axes[0, 0].set_yticks([0, 1, 2], ["cheap", "standard", "rich"])
-    axes[0, 0].set_title("Tier usage vs iteration")
+    axes[0, 0].plot(x_iter, local_modes, drawstyle="steps-post", linewidth=1.5)
+    axes[0, 0].set_yticks([0, 1, 2], ["exploration", "exploitation", "balanced"])
+    axes[0, 0].set_title("Local mode vs iteration")
     axes[0, 0].set_xlabel("Iteration")
 
     axes[0, 1].plot(x_iter, meta, linewidth=1.5)
