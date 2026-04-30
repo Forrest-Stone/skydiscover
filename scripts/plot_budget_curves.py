@@ -3,7 +3,8 @@
 Usage:
   python scripts/plot_budget_curves.py --root outputs \
       --out-dir outputs/aggregate_budget \
-      --budgets 0.5,1.0,2.0 --target 0.92 --baselines adaevolve,evox
+      --common-budget 1.0 --budget-multipliers 0.25,0.5,1.0,1.5,2.0 \
+      --target 0.92 --baselines adaevolve,evox
 """
 
 from __future__ import annotations
@@ -62,6 +63,110 @@ def best_score_at_budget(points: Iterable[tuple[float, float]], budget: float) -
         if cost <= budget:
             best = score if best is None else max(best, score)
     return best
+
+
+def float_or_none(value) -> Optional[float]:
+    try:
+        if value is None or value == "":
+            return None
+        out = float(value)
+        if math.isnan(out):
+            return None
+        return out
+    except (TypeError, ValueError):
+        return None
+
+
+def trace_metric_points(run: Dict, y_keys: List[str]) -> List[Tuple[float, float]]:
+    points: List[Tuple[float, float]] = []
+    for row in run.get("trace", []):
+        cost = float_or_none(row.get("cumulative_cost"))
+        value = float_or_none(first_non_none(row, y_keys))
+        if cost is None or value is None:
+            continue
+        points.append((cost, value))
+    return sorted(points, key=lambda x: x[0])
+
+
+def best_trace_value_at_budget(points: Iterable[Tuple[float, float]], budget: float) -> Optional[float]:
+    best = None
+    for cost, value in points:
+        if cost > budget:
+            continue
+        best = value if best is None else max(best, value)
+    return best
+
+
+def read_default_nominal_budget(config_path: Path) -> Optional[float]:
+    """Read budget_defaults.nominal_budget without requiring PyYAML."""
+    value = read_yaml_section_value(config_path, "budget_defaults", "nominal_budget")
+    return float_or_none(value)
+
+
+def read_default_budget_multipliers(config_path: Path) -> List[float]:
+    """Read budget_comparison.budget_multipliers without requiring PyYAML."""
+    value = read_yaml_section_value(config_path, "budget_comparison", "budget_multipliers")
+    if value is None:
+        value = read_yaml_section_value(
+            config_path,
+            "budget_defaults",
+            "comparison_budget_multipliers",
+        )
+    if value is None:
+        return []
+    if value.startswith("[") and value.endswith("]"):
+        chunks = value.strip("[]").split(",")
+    else:
+        chunks = value.split(",")
+    out = []
+    for chunk in chunks:
+        parsed = float_or_none(chunk.strip())
+        if parsed is not None and parsed >= 0:
+            out.append(parsed)
+    return out
+
+
+def read_yaml_section_value(config_path: Path, section: str, key: str) -> Optional[str]:
+    """Read a scalar or inline-list value from one top-level YAML section."""
+    if not config_path.exists():
+        return None
+    in_section = False
+    section_indent = 0
+    try:
+        lines = config_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+    for raw_line in lines:
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(raw_line) - len(raw_line.lstrip(" "))
+        if re.match(rf"^{re.escape(section)}\s*:\s*(?:#.*)?$", stripped):
+            in_section = True
+            section_indent = indent
+            continue
+        if not in_section:
+            continue
+        if indent <= section_indent:
+            break
+        if stripped.startswith(f"{key}:"):
+            value = stripped.split(":", 1)[1].split("#", 1)[0].strip()
+            return value
+    return None
+
+
+def default_budget_config_path() -> Path:
+    return Path(__file__).resolve().parents[1] / "configs" / "model_pricing.yaml"
+
+
+def resolve_common_budget(cli_budget: float, fallback_budgets: List[float]) -> float:
+    if cli_budget and cli_budget > 0:
+        return float(cli_budget)
+    configured = read_default_nominal_budget(default_budget_config_path())
+    if configured is not None and configured > 0:
+        return configured
+    positives = [float(b) for b in fallback_budgets if b > 0]
+    return min(positives) if positives else 1.0
 
 
 def success_at_target(best_score: Optional[float], target: float) -> float:
@@ -255,7 +360,12 @@ def write_runs_csv(runs: List[Dict], out_csv: Path, target: Optional[float] = No
             )
 
 
-def compute_metric_rows(runs: List[Dict], budgets: List[float], target: Optional[float]) -> List[Dict]:
+def compute_metric_rows(
+    runs: List[Dict],
+    budgets: List[float],
+    target: Optional[float],
+    budget_reference: Optional[float] = None,
+) -> List[Dict]:
     rows: List[Dict] = []
     for run in runs:
         summary = run["summary"]
@@ -277,6 +387,11 @@ def compute_metric_rows(runs: List[Dict], budgets: List[float], target: Optional
                     "task_name": run.get("task_name", ""),
                     "seed": run.get("seed", ""),
                     "budget": b,
+                    "BudgetMultiplier": (
+                        b / budget_reference
+                        if budget_reference is not None and budget_reference > 0
+                        else ""
+                    ),
                     "BestObjective@Budget": bscore if bscore is not None else "",
                     "Success@Target": success,
                     "Cost-to-Target": c2t if c2t is not None else "",
@@ -313,6 +428,7 @@ def aggregate_metric_rows(rows: List[Dict]) -> List[Dict]:
         success_vals = _vals("Success@Target")
         c2t_vals = _vals("Cost-to-Target")
         avg_cost_vals = _vals("AvgCost")
+        budget_multiplier_vals = _vals("BudgetMultiplier")
         oob_vals = _vals("OOBRate")
         over_vals = _vals("OvershootRatio")
         local_mode_entropy_vals = _vals("LocalModeEntropy")
@@ -327,6 +443,9 @@ def aggregate_metric_rows(rows: List[Dict]) -> List[Dict]:
                 "Success@Target": mean(success_vals) if success_vals else "",
                 "Cost-to-Target": mean(c2t_vals) if c2t_vals else "",
                 "AvgCost": mean(avg_cost_vals) if avg_cost_vals else "",
+                "BudgetMultiplier": (
+                    mean(budget_multiplier_vals) if budget_multiplier_vals else ""
+                ),
                 "OOBRate": mean(oob_vals) if oob_vals else "",
                 "OvershootRatio": mean(over_vals) if over_vals else "",
                 "LocalModeEntropy": (
@@ -338,6 +457,88 @@ def aggregate_metric_rows(rows: List[Dict]) -> List[Dict]:
             }
         )
     return out
+
+
+def compute_common_budget_curve_rows(
+    runs: List[Dict],
+    common_budget: float,
+    grid_size: int = 101,
+    max_fraction: float = 1.0,
+) -> Tuple[List[Dict], List[Dict]]:
+    """Compute fair same-budget curves by truncating every run at one shared budget."""
+    common_budget = max(float(common_budget), 0.0)
+    grid_size = max(int(grid_size), 2)
+    max_fraction = max(float(max_fraction), 0.0)
+    fractions = [max_fraction * i / (grid_size - 1) for i in range(grid_size)]
+
+    per_run_rows: List[Dict] = []
+    grouped: Dict[Tuple[str, float, float], Dict[str, List[float]]] = defaultdict(
+        lambda: {"objective": [], "combined": []}
+    )
+
+    for run in runs:
+        objective_points = trace_metric_points(
+            run,
+            ["best_so_far_objective", "objective_value", "global_best_after"],
+        )
+        combined_points = trace_metric_points(
+            run,
+            ["best_so_far_combined_score", "combined_score", "global_best_after"],
+        )
+
+        for fraction in fractions:
+            budget = common_budget * fraction
+            objective = best_trace_value_at_budget(objective_points, budget)
+            combined = best_trace_value_at_budget(combined_points, budget)
+            row = {
+                "run_dir": run["run_dir"],
+                "method": run["method"],
+                "task_family": run.get("task_family", "unknown"),
+                "task_name": run.get("task_name", ""),
+                "seed": run.get("seed", ""),
+                "common_budget": common_budget,
+                "budget_fraction": fraction,
+                "budget": budget,
+                "best_so_far_objective": objective if objective is not None else "",
+                "best_so_far_combined_score": combined if combined is not None else "",
+            }
+            per_run_rows.append(row)
+
+            key = (str(run["method"]), fraction, budget)
+            if objective is not None:
+                grouped[key]["objective"].append(objective)
+            if combined is not None:
+                grouped[key]["combined"].append(combined)
+
+    aggregate_rows: List[Dict] = []
+    for (method, fraction, budget), values in sorted(
+        grouped.items(), key=lambda x: (x[0][0], x[0][1])
+    ):
+        objective_vals = values["objective"]
+        combined_vals = values["combined"]
+        aggregate_rows.append(
+            {
+                "method": method,
+                "common_budget": common_budget,
+                "budget_fraction": fraction,
+                "budget": budget,
+                "best_so_far_objective_mean": (
+                    mean(objective_vals) if objective_vals else ""
+                ),
+                "best_so_far_objective_median": (
+                    median(objective_vals) if objective_vals else ""
+                ),
+                "best_so_far_objective_n": len(objective_vals),
+                "best_so_far_combined_score_mean": (
+                    mean(combined_vals) if combined_vals else ""
+                ),
+                "best_so_far_combined_score_median": (
+                    median(combined_vals) if combined_vals else ""
+                ),
+                "best_so_far_combined_score_n": len(combined_vals),
+            }
+        )
+    return per_run_rows, aggregate_rows
 
 
 def compute_categorical_entropy(values: List[str]) -> float:
@@ -826,6 +1027,47 @@ def plot_metric_vs_budget(agg_rows: List[Dict], metric_key: str, title: str, out
         plt.plot([p[0] for p in pts], [p[1] for p in pts], marker="o", label=method)
     plt.xlabel("Budget")
     plt.ylabel(metric_key)
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=180)
+    plt.close()
+    return True
+
+
+def plot_common_budget_curve(
+    common_rows: List[Dict],
+    out_png: Path,
+    *,
+    metric_key: str,
+    ylabel: str,
+    title: str,
+    x_key: str,
+    xlabel: str,
+) -> bool:
+    plt = _load_plt()
+    if plt is None:
+        return False
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    by_method: Dict[str, List[Tuple[float, float]]] = defaultdict(list)
+    mean_key = f"{metric_key}_mean"
+    for row in common_rows:
+        value = row.get(mean_key)
+        x_val = row.get(x_key)
+        if value in ("", None) or x_val in ("", None):
+            continue
+        by_method[str(row["method"])].append((float(x_val), float(value)))
+    if not by_method:
+        return False
+
+    plt.figure(figsize=(7.5, 5))
+    for method, pts in sorted(by_method.items()):
+        pts.sort(key=lambda x: x[0])
+        plt.plot([x for x, _ in pts], [y for _, y in pts], linewidth=1.8, label=method)
+    if x_key == "budget_fraction":
+        max_x = max((x for pts in by_method.values() for x, _ in pts), default=1.0)
+        plt.xlim(0.0, max(1.0, max_x))
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     plt.title(title)
     plt.tight_layout()
     plt.savefig(out_png, dpi=180)
@@ -1366,6 +1608,25 @@ def parse_budgets(text: str, fallback: List[float]) -> List[float]:
     return out or fallback
 
 
+def resolve_metric_budgets(
+    budgets_text: str,
+    multipliers_text: str,
+    common_budget: float,
+) -> List[float]:
+    """Resolve metric-slice budgets.
+
+    ``--budgets`` is absolute cost. ``--budget-multipliers`` is relative to the
+    shared common nominal budget and is used only when absolute budgets are not
+    provided.
+    """
+    if budgets_text:
+        return parse_budgets(budgets_text, [common_budget])
+    default_multipliers = read_default_budget_multipliers(default_budget_config_path()) or [1.0]
+    multipliers = parse_budgets(multipliers_text, default_multipliers)
+    out = [float(common_budget) * float(mult) for mult in multipliers if float(mult) >= 0]
+    return out or [common_budget]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default="outputs", help="Root outputs directory")
@@ -1373,7 +1634,31 @@ def main() -> None:
     parser.add_argument(
         "--budgets",
         default="",
-        help="Comma-separated nominal budgets for metric slicing, e.g. 0.5,1.0,2.0",
+        help="Comma-separated absolute budgets for metric slicing, e.g. 0.5,1.0,2.0",
+    )
+    parser.add_argument(
+        "--budget-multipliers",
+        default="",
+        help=(
+            "Comma-separated multiples of the shared common budget for metric "
+            "slicing, e.g. 0.25,0.5,1.0,1.5,2.0. Ignored when --budgets is provided. "
+            "Defaults to configs/model_pricing.yaml budget_comparison.budget_multipliers."
+        ),
+    )
+    parser.add_argument(
+        "--common-budget",
+        type=float,
+        default=0.0,
+        help=(
+            "Shared nominal budget for fair truncated curves. "
+            "Defaults to configs/model_pricing.yaml budget_defaults.nominal_budget."
+        ),
+    )
+    parser.add_argument(
+        "--common-budget-grid",
+        type=int,
+        default=101,
+        help="Number of points in the common-budget curve grid.",
     )
     parser.add_argument(
         "--target",
@@ -1398,6 +1683,10 @@ def main() -> None:
     if not runs:
         write_csv([], out_dir / "per_run_metrics.csv")
         write_csv([], out_dir / "aggregate_metrics.csv")
+        write_csv([], out_dir / "summary_budget_per_run_metrics.csv")
+        write_csv([], out_dir / "summary_budget_aggregate_metrics.csv")
+        write_csv([], out_dir / "common_budget_per_run.csv")
+        write_csv([], out_dir / "common_budget_curves.csv")
         write_csv([], out_dir / "speedup_vs_baseline.csv")
         print(f"Found runs: {len(runs)}")
         print(f"Wrote: {out_dir / 'runs.csv'}")
@@ -1405,6 +1694,10 @@ def main() -> None:
         print(f"Wrote: {out_dir / 'all_calls.csv'}")
         print(f"Wrote: {out_dir / 'per_run_metrics.csv'}")
         print(f"Wrote: {out_dir / 'aggregate_metrics.csv'}")
+        print(f"Wrote: {out_dir / 'summary_budget_per_run_metrics.csv'}")
+        print(f"Wrote: {out_dir / 'summary_budget_aggregate_metrics.csv'}")
+        print(f"Wrote: {out_dir / 'common_budget_per_run.csv'}")
+        print(f"Wrote: {out_dir / 'common_budget_curves.csv'}")
         print(f"Wrote: {out_dir / 'speedup_vs_baseline.csv'}")
         print("Skipped plotting (no runs found).")
         return
@@ -1416,13 +1709,38 @@ def main() -> None:
             if float((r["summary"] or {}).get("nominal_budget", 0.0) or 0.0) > 0
         }
     )
-    budgets = parse_budgets(args.budgets, default_budgets or [1.0])
+    common_budget = resolve_common_budget(args.common_budget, default_budgets)
+    budgets = resolve_metric_budgets(
+        args.budgets,
+        args.budget_multipliers,
+        common_budget,
+    )
+    max_budget_multiplier = max(
+        [budget / common_budget for budget in budgets if common_budget > 0] or [1.0]
+    )
 
-    per_run_rows = compute_metric_rows(runs, budgets, args.target)
+    per_run_rows = compute_metric_rows(
+        runs,
+        budgets,
+        args.target,
+        budget_reference=common_budget,
+    )
     agg_rows = aggregate_metric_rows(per_run_rows)
+    summary_budget_rows = compute_metric_rows(runs, default_budgets, args.target)
+    summary_budget_agg_rows = aggregate_metric_rows(summary_budget_rows)
+    common_per_run_rows, common_agg_rows = compute_common_budget_curve_rows(
+        runs,
+        common_budget,
+        args.common_budget_grid,
+        max_fraction=max_budget_multiplier,
+    )
 
     write_csv(per_run_rows, out_dir / "per_run_metrics.csv")
     write_csv(agg_rows, out_dir / "aggregate_metrics.csv")
+    write_csv(summary_budget_rows, out_dir / "summary_budget_per_run_metrics.csv")
+    write_csv(summary_budget_agg_rows, out_dir / "summary_budget_aggregate_metrics.csv")
+    write_csv(common_per_run_rows, out_dir / "common_budget_per_run.csv")
+    write_csv(common_agg_rows, out_dir / "common_budget_curves.csv")
     baselines = [x.strip() for x in args.baselines.split(",") if x.strip()]
     speedup_rows = compute_speedup_vs_baseline(per_run_rows, baselines, args.target)
     write_csv(speedup_rows, out_dir / "speedup_vs_baseline.csv")
@@ -1441,6 +1759,42 @@ def main() -> None:
         y_keys=["best_so_far_combined_score", "combined_score", "global_best_after"],
         ylabel="Best-so-far combined score",
         title="Best-so-far combined score vs cumulative cost",
+    )
+    p_common_obj = plot_common_budget_curve(
+        common_agg_rows,
+        out_dir / "best_so_far_objective_vs_common_budget.png",
+        metric_key="best_so_far_objective",
+        ylabel="Best-so-far objective",
+        title=f"Best-so-far objective vs common budget (B={common_budget:g})",
+        x_key="budget",
+        xlabel="Cumulative cost under common budget (USD)",
+    )
+    p_common_obj_frac = plot_common_budget_curve(
+        common_agg_rows,
+        out_dir / "best_so_far_objective_vs_common_budget_fraction.png",
+        metric_key="best_so_far_objective",
+        ylabel="Best-so-far objective",
+        title=f"Best-so-far objective vs common budget fraction (B={common_budget:g})",
+        x_key="budget_fraction",
+        xlabel="Fraction of common nominal budget",
+    )
+    p_common_combined = plot_common_budget_curve(
+        common_agg_rows,
+        out_dir / "best_so_far_combined_score_vs_common_budget.png",
+        metric_key="best_so_far_combined_score",
+        ylabel="Best-so-far combined score",
+        title=f"Best-so-far combined score vs common budget (B={common_budget:g})",
+        x_key="budget",
+        xlabel="Cumulative cost under common budget (USD)",
+    )
+    p_common_combined_frac = plot_common_budget_curve(
+        common_agg_rows,
+        out_dir / "best_so_far_combined_score_vs_common_budget_fraction.png",
+        metric_key="best_so_far_combined_score",
+        ylabel="Best-so-far combined score",
+        title=f"Best-so-far combined score vs common budget fraction (B={common_budget:g})",
+        x_key="budget_fraction",
+        xlabel="Fraction of common nominal budget",
     )
     p1_iter = plot_best_objective_vs_iteration(runs, out_dir / "best_so_far_objective_vs_iteration.png")
     p1_score_iter = plot_best_score_vs_iteration(runs, out_dir / "best_score_vs_iteration.png")
@@ -1547,11 +1901,19 @@ def main() -> None:
     print(f"Wrote: {out_dir / 'all_calls.csv'}")
     print(f"Wrote: {out_dir / 'per_run_metrics.csv'}")
     print(f"Wrote: {out_dir / 'aggregate_metrics.csv'}")
+    print(f"Wrote: {out_dir / 'summary_budget_per_run_metrics.csv'}")
+    print(f"Wrote: {out_dir / 'summary_budget_aggregate_metrics.csv'}")
+    print(f"Wrote: {out_dir / 'common_budget_per_run.csv'}")
+    print(f"Wrote: {out_dir / 'common_budget_curves.csv'}")
     print(f"Wrote: {out_dir / 'speedup_vs_baseline.csv'}")
     if not any([
         p1,
         p1_obj,
         p1_combined,
+        p_common_obj,
+        p_common_obj_frac,
+        p_common_combined,
+        p_common_combined_frac,
         p1_iter,
         p1_score_iter,
         p1_iter_cost,
@@ -1595,6 +1957,14 @@ def main() -> None:
             print(f"Wrote: {out_dir / 'best_so_far_objective_vs_cost.png'}")
         if p1_combined:
             print(f"Wrote: {out_dir / 'best_so_far_combined_score_vs_cost.png'}")
+        if p_common_obj:
+            print(f"Wrote: {out_dir / 'best_so_far_objective_vs_common_budget.png'}")
+        if p_common_obj_frac:
+            print(f"Wrote: {out_dir / 'best_so_far_objective_vs_common_budget_fraction.png'}")
+        if p_common_combined:
+            print(f"Wrote: {out_dir / 'best_so_far_combined_score_vs_common_budget.png'}")
+        if p_common_combined_frac:
+            print(f"Wrote: {out_dir / 'best_so_far_combined_score_vs_common_budget_fraction.png'}")
         if p1_iter:
             print(f"Wrote: {out_dir / 'best_so_far_objective_vs_iteration.png'}")
         if p1_score_iter:

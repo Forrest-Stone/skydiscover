@@ -19,6 +19,12 @@ model_pricing:
 budget_defaults:
   nominal_budget: 1.0
 
+# Fair-comparison reporting defaults. These are consumed by aggregation scripts,
+# not by the search controllers.
+budget_comparison:
+  # Budget grid expressed as multiples of budget_defaults.nominal_budget.
+  budget_multipliers: [0.25, 0.5, 1.0, 1.5, 2.0]
+
 # Optional profile overlay for different regimes.
 # Select by:
 #   - search.database.budget_profile in task config, or
@@ -38,12 +44,14 @@ costada_budget:
   nominal_budget: 1.0
   costada_ref_cost: 0.01
 
-# AdaEvolve phase-1 budget instrumentation only (no budget-constrained behavior):
-# use a very large nominal budget so original search logic is effectively unchanged.
+# AdaEvolve budget instrumentation only (no budget-constrained behavior):
+# nominal_budget is the largest default comparison budget, used for reporting.
+# Fair plots/metrics still compare truncated prefixes at 0.25x/0.5x/1.0x/1.5x/2.0x.
 adaevolve_budget:
-  nominal_budget: 100.0
+  nominal_budget: 2.0
 
-# EvoX phase-1 budget instrumentation only (no budget-constrained behavior):
-# use a very large nominal budget so original search logic is effectively unchanged.
+# EvoX budget instrumentation only (no budget-constrained behavior):
+# nominal_budget is the largest default comparison budget, used for reporting.
+# Fair plots/metrics still compare truncated prefixes at 0.25x/0.5x/1.0x/1.5x/2.0x.
 evox_budget:
-  nominal_budget: 100.0
+  nominal_budget: 2.0

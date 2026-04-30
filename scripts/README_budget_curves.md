@@ -68,7 +68,8 @@ python scripts/plot_budget_curves.py --root outputs --out-dir outputs/aggregate
 python scripts/plot_budget_curves.py \
   --root outputs \
   --out-dir outputs/aggregate \
-  --budgets 0.5,1.0,2.0 \
+  --common-budget 1.0 \
+  --budget-multipliers 0.25,0.5,1.0,1.5,2.0 \
   --target 0.92 \
   --baselines adaevolve,evox
 ```
@@ -77,7 +78,14 @@ python scripts/plot_budget_curves.py \
 
 - `--root`: root directory containing all run outputs.
 - `--out-dir`: where aggregated CSV/plots are written.
-- `--budgets`: budget grid for sliced metrics (comma-separated).
+- `--budgets`: absolute budget grid for sliced metrics (comma-separated).
+- `--budget-multipliers`: budget grid as multiples of the shared common budget,
+  e.g. `0.25,0.5,1.0,1.5,2.0`. Ignored when `--budgets` is provided. If both are omitted,
+  the script uses `configs/model_pricing.yaml`
+  `budget_comparison.budget_multipliers`, not each run's own summary budget.
+- `--common-budget`: shared nominal budget for fair truncated curves. If omitted,
+  the script uses `configs/model_pricing.yaml` `budget_defaults.nominal_budget`.
+- `--common-budget-grid`: number of points in the common-budget curve grid.
 - `--target`: target threshold `tau` for `Success@Target` and `Cost-to-Target`.
 - `--baselines`: one or multiple baselines for pairwise speedup.
 
@@ -111,7 +119,16 @@ If matplotlib is unavailable, it prints:
 - `per_run_metrics.csv`
   - one row per run x budget
 - `aggregate_metrics.csv`
-  - method x budget aggregates
+  - method x shared budget aggregates; by default these are computed at the
+    common nominal budget so OOB/overshoot metrics are comparable across methods
+- `summary_budget_per_run_metrics.csv`
+  - compatibility view using the set of `summary.json` nominal budgets found in runs
+- `summary_budget_aggregate_metrics.csv`
+  - method x summary-budget aggregates for the compatibility view
+- `common_budget_per_run.csv`
+  - run x common-budget-fraction best-so-far values, truncated to the shared budget
+- `common_budget_curves.csv`
+  - method x common-budget-fraction aggregate curves for fair same-budget comparison
 - `speedup_vs_baseline.csv`
   - pairwise speedup output
 
@@ -120,6 +137,10 @@ If matplotlib is unavailable, it prints:
 - `best_score_vs_cost.png`
 - `best_so_far_objective_vs_cost.png`
 - `best_so_far_combined_score_vs_cost.png`
+- `best_so_far_objective_vs_common_budget.png`
+- `best_so_far_objective_vs_common_budget_fraction.png`
+- `best_so_far_combined_score_vs_common_budget.png`
+- `best_so_far_combined_score_vs_common_budget_fraction.png`
 - `best_so_far_objective_vs_iteration.png`
 - `best_score_vs_iteration.png`
 - `iteration_cost_vs_iteration.png`
