@@ -1,0 +1,13 @@
+{
+  "iteration": 5,
+  "failed_attempts": [
+    {
+      "attempt_number": 1,
+      "solution_iter": 87,
+      "error": "LLM generation failed: ",
+      "stage": "generation",
+      "solution": "",
+      "program_id": "unknown"
+    }
+  ]
+}

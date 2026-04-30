@@ -1,0 +1,199 @@
+{
+  "num_islands": 2,
+  "current_island": 1,
+  "iteration_count": 9,
+  "global_best_score": 0.36423689449571406,
+  "decay": 0.9,
+  "intensity_min": 0.15,
+  "intensity_max": 0.5,
+  "migration_interval": 15,
+  "diversity_strategy_type": "code",
+  "use_unified_archive": true,
+  "use_adaptive_search": true,
+  "use_ucb_selection": true,
+  "fixed_intensity": 0.4,
+  "adapter": {
+    "states": [
+      {
+        "accumulated_signal": 0.09999999999999998,
+        "best_score": 0.36423689449571406,
+        "improvement_count": 1,
+        "total_evaluations": 6,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      },
+      {
+        "accumulated_signal": 0.09999999999999998,
+        "best_score": 0.36423689449571406,
+        "improvement_count": 0,
+        "total_evaluations": 5,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      }
+    ],
+    "dimension_visits": [
+      6,
+      5
+    ],
+    "dimension_rewards": [
+      0.5904900000000002,
+      0.0
+    ],
+    "decayed_visits": [
+      4.68559,
+      4.0951
+    ],
+    "global_best_score": 0.36423689449571406,
+    "ucb_exploration": 1.41,
+    "min_visits": 3,
+    "decay": 0.9,
+    "epsilon": 1e-08
+  },
+  "island_config_names": [
+    "balanced",
+    "balanced"
+  ],
+  "islands": [
+    [
+      "33dde9f7-471c-4762-a986-4af8bf4d3003",
+      "c681a2cb-0dc8-448c-b3ba-9eeae096860a",
+      "d5889283-7c05-42c4-b425-1ee92e6fad51",
+      "53eac54f-39ee-4008-8b36-e5909429c10b",
+      "872aba21-301a-4fbf-9166-4a06da75273d",
+      "b2921571-4f20-41ec-89c0-083a47b1cac5"
+    ],
+    [
+      "12c4244b-14d2-466b-9d78-461f9aad4afd",
+      "73eeb647-1dc8-4475-9ee9-e1173cc89fd3",
+      "f489dedf-20b3-402e-8dd2-07784814076b",
+      "14ec2456-f434-4f79-a1cb-ff325dc36b5e",
+      "601ea051-11d1-47dd-82ff-8f5d4f0e61e2",
+      "f8564c2e-a306-410f-9758-d4066bfa4ca8"
+    ]
+  ],
+  "archive_genealogies": [
+    {
+      "parents": {
+        "33dde9f7-471c-4762-a986-4af8bf4d3003": [],
+        "c681a2cb-0dc8-448c-b3ba-9eeae096860a": [
+          "33dde9f7-471c-4762-a986-4af8bf4d3003"
+        ],
+        "d5889283-7c05-42c4-b425-1ee92e6fad51": [
+          "c681a2cb-0dc8-448c-b3ba-9eeae096860a"
+        ],
+        "53eac54f-39ee-4008-8b36-e5909429c10b": [
+          "33dde9f7-471c-4762-a986-4af8bf4d3003"
+        ],
+        "872aba21-301a-4fbf-9166-4a06da75273d": [
+          "53eac54f-39ee-4008-8b36-e5909429c10b"
+        ],
+        "b2921571-4f20-41ec-89c0-083a47b1cac5": [
+          "33dde9f7-471c-4762-a986-4af8bf4d3003"
+        ]
+      },
+      "children": {
+        "33dde9f7-471c-4762-a986-4af8bf4d3003": [
+          "c681a2cb-0dc8-448c-b3ba-9eeae096860a",
+          "53eac54f-39ee-4008-8b36-e5909429c10b",
+          "b2921571-4f20-41ec-89c0-083a47b1cac5"
+        ],
+        "c681a2cb-0dc8-448c-b3ba-9eeae096860a": [
+          "d5889283-7c05-42c4-b425-1ee92e6fad51"
+        ],
+        "53eac54f-39ee-4008-8b36-e5909429c10b": [
+          "872aba21-301a-4fbf-9166-4a06da75273d"
+        ]
+      }
+    },
+    {
+      "parents": {
+        "12c4244b-14d2-466b-9d78-461f9aad4afd": [],
+        "73eeb647-1dc8-4475-9ee9-e1173cc89fd3": [
+          "12c4244b-14d2-466b-9d78-461f9aad4afd"
+        ],
+        "f489dedf-20b3-402e-8dd2-07784814076b": [
+          "12c4244b-14d2-466b-9d78-461f9aad4afd"
+        ],
+        "14ec2456-f434-4f79-a1cb-ff325dc36b5e": [
+          "73eeb647-1dc8-4475-9ee9-e1173cc89fd3"
+        ],
+        "601ea051-11d1-47dd-82ff-8f5d4f0e61e2": [
+          "12c4244b-14d2-466b-9d78-461f9aad4afd"
+        ],
+        "f8564c2e-a306-410f-9758-d4066bfa4ca8": [
+          "33dde9f7-471c-4762-a986-4af8bf4d3003"
+        ]
+      },
+      "children": {
+        "12c4244b-14d2-466b-9d78-461f9aad4afd": [
+          "73eeb647-1dc8-4475-9ee9-e1173cc89fd3",
+          "f489dedf-20b3-402e-8dd2-07784814076b",
+          "601ea051-11d1-47dd-82ff-8f5d4f0e61e2"
+        ],
+        "73eeb647-1dc8-4475-9ee9-e1173cc89fd3": [
+          "14ec2456-f434-4f79-a1cb-ff325dc36b5e"
+        ],
+        "33dde9f7-471c-4762-a986-4af8bf4d3003": [
+          "f8564c2e-a306-410f-9758-d4066bfa4ca8"
+        ]
+      }
+    }
+  ],
+  "use_dynamic_islands": true,
+  "max_islands": 5,
+  "last_spawn_iteration": -30,
+  "use_paradigm_breakthrough": true,
+  "paradigm_tracker": {
+    "window_size": 10,
+    "improvement_threshold": 0.12,
+    "max_paradigm_uses": 2,
+    "max_tried_paradigms": 10,
+    "num_paradigms_to_generate": 3,
+    "improvement_history": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "active_paradigms": [
+      {
+        "idea": "Use scipy.optimize.minimize with trust-constr method",
+        "description": "Formulate as constrained optimization: 52 variables (26 circle centers), radii computed analytically from positions. Objective: maximize sum of min(x, y, 1-x, 1-y, min_dist/2). Use trust-constr which handles nonlinear constraints robustly. Initialize with hexagonal lattice: place circles in rows with alternating offsets, row spacing = sqrt(3)/2 * estimated_diameter. Use multiple random perturbations of initial positions to escape local minima.",
+        "what_to_optimize": "Circle center positions (52 variables), radii derived from constraints",
+        "cautions": "Trust-constr requires constraint Jacobians - use finite differences or define explicitly. Set tol=1e-6, maxiter=2000. The objective is non-smooth due to min() operations - may need smooth approximation. Initialize centers away from boundaries (use 0.05 to 0.95 range).",
+        "approach_type": "scipy.optimize.minimize"
+      },
+      {
+        "idea": "Use scipy.optimize.differential_evolution for global search",
+        "description": "Differential evolution is population-based global optimizer that handles non-convex objectives well. Define 52-variable problem with bounds [0.05, 0.95] for each coordinate. Objective: negative sum of computed radii (minimize to maximize). Handle constraints via penalty: add large penalty (e.g., 1000) times sum of constraint violations. Use strategy='best1bin', popsize=20, maxiter=500, mutation=(0.5, 1), recombination=0.7. Set seed=42 for reproducibility.",
+        "what_to_optimize": "Global search over position space avoiding local minima",
+        "cautions": "DE doesn't natively support constraints - must use penalty or barrier methods. Population size affects runtime significantly. For 52 variables, popsize=15-25 is reasonable. May timeout if settings too aggressive - start conservative.",
+        "approach_type": "scipy.optimize.differential_evolution"
+      },
+      {
+        "idea": "Geometric corner-first construction with SLSQP refinement",
+        "description": "Phase 1: Place 4 corner circles at (r,r), (1-r, r), (r, 1-r), (1-r, 1-r) with r\u22480.15. Phase 2: Place 8 edge circles along each side between corners, equally spaced. Phase 3: Fill interior with hexagonal pattern (rows of 4-5 circles, offset by half-spacing). Phase 4: Use scipy.optimize.minimize with SLSQP method to refine all positions simultaneously, starting from geometric arrangement. This combines geometric insight (corners/edges valuable) with numerical optimization.",
+        "what_to_optimize": "Initial geometric placement + subsequent numerical refinement",
+        "cautions": "SLSQP needs smooth objective - approximate min() with soft-min: -log(sum(exp(-k*values)))/k. Geometric initialization must be valid (no overlaps) or SLSQP may fail. Corner radius ~0.15 allows edge circles r~0.08-0.1.",
+        "approach_type": "scipy.optimize.minimize"
+      }
+    ],
+    "paradigm_usage_counts": {
+      "0": 1
+    },
+    "current_paradigm_index": 1,
+    "tried_paradigms": [],
+    "best_score_at_paradigm_gen": 0.36423689449571406,
+    "best_score_during_paradigm": 0.36423689449571406
+  }
+}

@@ -1,0 +1,113 @@
+iteration,source,method,task_family,task_name,seed,frontier_id,call_index,role,model_name,input_tokens,output_tokens,total_tokens,raw_cost,call_meta,objective_key,combined_score,objective_value,cumulative_cost_after_iteration
+1,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,3013,16384,19397,0.039852559999999995,{},sum_radii,0.38123745545034804,1.004560695111667,0.04534377999999999
+1,iteration,adaevolve,circle_packing,evaluator,,0,1,retry,z-ai/glm-5,2966,1459,4425,0.005491219999999999,{},sum_radii,0.38123745545034804,1.004560695111667,0.04534377999999999
+2,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,4023,2102,6125,0.00773116,{},sum_radii,0.4835405422478695,1.2741293288231361,0.053074939999999994
+3,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,4748,5267,10015,0.015532659999999998,{},sum_radii,0.36423689449571406,0.9597642169962064,0.06860759999999999
+4,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,4933,1699,6632,0.007459459999999999,{},sum_radii,0.0,0.0,0.07606705999999999
+5,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,6083,15146,21229,0.03921556,{},sum_radii,0.4835405422478695,1.2741293288231361,0.11528261999999999
+6,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,5672,12698,18370,0.03328924,{},sum_radii,0.4835405422478695,1.2741293288231361,0.14857186
+7,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,5486,2459,7945,0.009605619999999999,{},sum_radii,0.0,0.0,0.15817748
+8,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,5554,682,6236,0.00556748,{},combined_score,0.0,0.0,0.16374496
+9,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,5563,2571,8134,0.00991866,{},sum_radii,0.0,0.0,0.17366362
+10,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,5773,12014,17787,0.03178875999999999,{},sum_radii,0.7472495808821792,1.969002645624542,0.20545238
+11,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,5689,16384,22073,0.04177928,{},combined_score,0.0,0.0,0.24723166
+12,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,5845,1767,7612,0.0082725,{},sum_radii,0.7655630555793439,2.017258651451571,0.25550416
+13,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,5891,2437,8328,0.009846619999999999,{},sum_radii,0.6474684252337833,1.7060793004910189,0.26535077999999995
+14,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,6212,1860,8072,0.008750639999999999,{},sum_radii,0.0,0.0,0.27410141999999993
+15,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,6086,1871,7957,0.008685219999999999,{},sum_radii,0.7655630555793439,2.017258651451571,0.2827866399999999
+16,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,5909,1536,7445,0.007787279999999999,{},sum_radii,0.7396392509780416,1.9489494263271396,0.29057391999999993
+17,iteration,adaevolve,circle_packing,evaluator,,1,0,guide,z-ai/glm-5,5340,974,6314,0.006085,"{""attempt"": 1, ""source"": ""paradigm_generation""}",combined_score,0.0,0.0,0.3096931599999999
+17,iteration,adaevolve,circle_packing,evaluator,,1,1,generation,z-ai/glm-5,6092,3760,9852,0.013034239999999999,{},combined_score,0.0,0.0,0.3096931599999999
+18,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,6562,11828,18390,0.03192904,{},sum_radii,0.8045996897147341,2.120120182398324,0.34162219999999993
+19,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,6976,6362,13338,0.01965532,{},sum_radii,0.6850653947242729,1.8051473150984587,0.3612775199999999
+20,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8249,4101,12350,0.015371579999999998,{},sum_radii,0.9903256428866484,2.6095080690063184,0.3766490999999999
+21,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,7275,2913,10188,0.0119379,{},sum_radii,0.7484024560444286,1.972040471677069,0.3885869999999999
+22,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8377,3434,11811,0.01392964,{},sum_radii,0.7696755457602515,2.0280950630782626,0.4025166399999999
+23,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,6811,6479,13290,0.01980562,{},sum_radii,0.0,0.0,0.42232225999999995
+24,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8844,2689,11533,0.012552379999999998,{},sum_radii,0.7514617819303964,1.9801017953865943,0.4348746399999999
+25,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,7196,3517,10713,0.01327022,{},sum_radii,0.0,0.0,0.4481448599999999
+26,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8203,1244,9447,0.00876736,{},combined_score,0.0,0.0,0.4569122199999999
+27,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,6635,2506,9141,0.010541,{},sum_radii,0.9876101379747577,2.6023527135634863,0.46745321999999995
+28,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,7123,2169,9292,0.010117259999999998,{},combined_score,0.0,0.0,0.47757047999999996
+29,iteration,adaevolve,circle_packing,evaluator,,1,0,guide,z-ai/glm-5,5715,2370,8085,0.0095658,"{""attempt"": 1, ""source"": ""paradigm_generation""}",combined_score,0.0,0.0,0.50122272
+29,iteration,adaevolve,circle_packing,evaluator,,1,1,generation,z-ai/glm-5,8467,3474,11941,0.014086439999999999,{},combined_score,0.0,0.0,0.50122272
+30,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8558,3135,11693,0.013372259999999999,{},combined_score,0.0,0.0,0.51459498
+31,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8259,4726,12985,0.01681628,{},sum_radii,0.9835455919079273,2.591642634677388,0.53141126
+32,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,8105,1227,9332,0.008657699999999999,{},combined_score,0.0,0.0,0.54006896
+33,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,8679,3466,12145,0.01422068,{},,,,0.55428964
+34,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8259,1819,10078,0.01013018,{},combined_score,0.0,0.0,0.56441982
+35,iteration,adaevolve,circle_packing,evaluator,,1,0,guide,z-ai/glm-5,6036,1173,7209,0.00704382,"{""attempt"": 1, ""source"": ""paradigm_generation""}",,,,0.5838122
+35,iteration,adaevolve,circle_packing,evaluator,,1,1,generation,z-ai/glm-5,8743,2632,11375,0.01234856,{},,,,0.5838122
+36,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8243,3908,12151,0.01492336,{},combined_score,0.0,0.0,0.59873556
+37,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,8230,2506,10736,0.011689399999999997,{},sum_radii,0.9758764525977118,2.5714344525949704,0.61042496
+38,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8766,1871,10637,0.01061482,{},combined_score,0.0,0.0,0.62103978
+39,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8651,5622,14273,0.01915932,{},sum_radii,0.990004944222408,2.608663028026045,0.6401991
+40,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,8718,3097,11815,0.01340006,{},sum_radii,0.9952561430624576,2.6224999369695756,0.6535991600000001
+41,iteration,adaevolve,circle_packing,evaluator,,1,0,guide,z-ai/glm-5,6479,6497,12976,0.01960798,"{""attempt"": 1, ""source"": ""paradigm_generation""}",sum_radii,0.9830176816328108,2.590251591102456,0.6898452
+41,iteration,adaevolve,circle_packing,evaluator,,1,1,generation,z-ai/glm-5,9318,4317,13635,0.016638059999999996,{},sum_radii,0.9830176816328108,2.590251591102456,0.6898452
+42,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,7989,4660,12649,0.01647008,{},sum_radii,0.0,0.0,0.7063152800000001
+43,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9931,2610,12541,0.01315332,{},combined_score,0.0,0.0,0.7194686000000001
+44,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,9482,11302,20784,0.03282164,{},sum_radii,0.9982613695878785,2.6304187088640596,0.7522902400000001
+45,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8650,936,9586,0.008380799999999999,{},combined_score,0.0,0.0,0.7606710400000001
+46,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8895,9288,18183,0.027766799999999994,{},,,,0.7884378400000001
+47,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,9695,4371,14066,0.017033699999999995,{},sum_radii,0.9905193988190064,2.6100186158880816,0.8054715400000001
+48,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,9676,7838,17514,0.024994119999999995,{},,,,0.8304656600000001
+49,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9597,13947,23544,0.038987940000000006,{},sum_radii,0.0,0.0,0.8694536000000002
+50,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9592,4323,13915,0.01684914,{},sum_radii,0.0,0.0,0.8863027400000002
+51,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8458,1926,10384,0.010519559999999999,{},combined_score,0.0,0.0,0.8968223000000002
+52,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8103,1835,9938,0.01005466,{},combined_score,0.0,0.0,0.9068769600000002
+53,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,8817,2095,10912,0.01116674,{},combined_score,0.0,0.0,0.9180437000000001
+54,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,8957,4235,13192,0.016189540000000002,{},sum_radii,0.9982613695870804,2.630418708861957,0.9342332400000002
+55,iteration,adaevolve,circle_packing,evaluator,,1,0,guide,z-ai/glm-5,6385,4480,10865,0.0149012,"{""attempt"": 1, ""source"": ""paradigm_generation""}",,,,0.9887577000000002
+55,iteration,adaevolve,circle_packing,evaluator,,1,1,generation,z-ai/glm-5,9323,14309,23632,0.039623259999999993,{},,,,0.9887577000000002
+56,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9660,12866,22526,0.036547,{},sum_radii,1.000370927800555,2.6359773947544625,1.0253047000000002
+57,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,9522,7819,17341,0.024839539999999997,{},sum_radii,0.987869229247408,2.60303541906692,1.0501442400000003
+58,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10150,2358,12508,0.0127314,{},combined_score,0.0,0.0,1.0628756400000003
+59,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,9531,7771,17302,0.02473562,{},sum_radii,0.0,0.0,1.0876112600000003
+60,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,9906,4870,14776,0.01833332,{},sum_radii,0.983142189460064,2.5905796692272687,1.1059445800000003
+61,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,9342,2090,11432,0.01153324,{},combined_score,0.0,0.0,1.1174778200000004
+62,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9045,1882,10927,0.010841,{},sum_radii,0.0,0.0,1.1283188200000005
+63,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9089,2661,11750,0.01266438,{},combined_score,0.0,0.0,1.1409832000000004
+64,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,8056,1736,9792,0.009793119999999999,{},combined_score,0.0,0.0,1.1507763200000005
+65,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,9985,4558,14543,0.0176726,{},sum_radii,0.9952561430624576,2.6224999369695756,1.1684489200000006
+66,iteration,adaevolve,circle_packing,evaluator,,1,0,guide,z-ai/glm-5,6562,5273,11835,0.01685254,"{""attempt"": 1, ""source"": ""paradigm_generation""}",combined_score,0.0,0.0,1.1996726400000006
+66,iteration,adaevolve,circle_packing,evaluator,,1,1,generation,z-ai/glm-5,9134,3389,12523,0.01437118,{},combined_score,0.0,0.0,1.1996726400000006
+67,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9196,6052,15248,0.02054072,{},,,,1.2202133600000007
+68,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9716,3188,12904,0.014327919999999997,{},,,,1.2345412800000006
+69,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9407,10249,19656,0.03034574,{},sum_radii,0.0,0.0,1.2648870200000006
+70,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9001,4132,13133,0.015984319999999996,{},sum_radii,0.0,0.0,1.2808713400000007
+71,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9218,8164,17382,0.025414159999999995,{},,,,1.3062855000000007
+72,iteration,adaevolve,circle_packing,evaluator,,1,0,guide,z-ai/glm-5,6564,3591,10155,0.01298538,"{""attempt"": 1, ""source"": ""paradigm_generation""}",combined_score,0.0,0.0,1.3346221600000006
+72,iteration,adaevolve,circle_packing,evaluator,,1,1,generation,z-ai/glm-5,9029,3848,12877,0.015351279999999998,{},combined_score,0.0,0.0,1.3346221600000006
+73,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9261,5818,15079,0.02004932,{},combined_score,0.0,0.0,1.3546714800000006
+74,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9615,12811,22426,0.0363881,{},combined_score,0.0,0.0,1.3910595800000005
+75,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10264,3147,13411,0.014628180000000001,{},combined_score,0.0,0.0,1.4056877600000006
+76,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10338,16384,26722,0.045126559999999996,{},combined_score,0.0,0.0,1.4508143200000005
+77,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10463,4835,15298,0.01865386,{},combined_score,0.0,0.0,1.4694681800000005
+78,iteration,adaevolve,circle_packing,evaluator,,0,0,guide,z-ai/glm-5,6564,5083,11647,0.01641698,"{""attempt"": 1, ""source"": ""paradigm_generation""}",sum_radii,0.986484621367749,2.599386977304018,1.5020268600000004
+78,iteration,adaevolve,circle_packing,evaluator,,0,1,generation,z-ai/glm-5,10360,3775,14135,0.016141700000000002,{},sum_radii,0.986484621367749,2.599386977304018,1.5020268600000004
+79,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10359,11827,22186,0.03466058,{},combined_score,0.0,0.0,1.5366874400000003
+80,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10365,13770,24135,0.039133799999999996,{},combined_score,0.0,0.0,1.5758212400000002
+81,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,9277,1987,11264,0.011249539999999999,{},combined_score,0.0,0.0,1.5870707800000001
+82,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10439,3957,14396,0.01661718,{},combined_score,0.0,0.0,1.60368796
+83,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10283,2388,12671,0.01289616,{},combined_score,0.0,0.0,1.61658412
+84,iteration,adaevolve,circle_packing,evaluator,,0,0,guide,z-ai/glm-5,6581,875,7456,0.006750819999999999,"{""attempt"": 1, ""source"": ""paradigm_generation""}",,,,1.63924058
+84,iteration,adaevolve,circle_packing,evaluator,,0,1,generation,z-ai/glm-5,8502,4254,12756,0.01590564,{},,,,1.63924058
+85,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10444,3018,13462,0.014461079999999998,{},combined_score,0.0,0.0,1.65370166
+86,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10426,2369,12795,0.012955419999999999,{},sum_radii,0.9914854923473726,2.6125642723353266,1.66665708
+87,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9800,1841,11641,0.0112903,{},combined_score,0.0,0.0,1.67794738
+88,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10482,4385,14867,0.017632540000000002,{},combined_score,0.0,0.0,1.69557992
+89,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10464,3369,13833,0.01528278,{},combined_score,0.0,0.0,1.7108626999999998
+90,iteration,adaevolve,circle_packing,evaluator,,0,0,guide,z-ai/glm-5,6586,6215,12801,0.01903642,"{""attempt"": 1, ""source"": ""paradigm_generation""}",combined_score,0.0,0.0,1.77126938
+90,iteration,adaevolve,circle_packing,evaluator,,0,1,generation,z-ai/glm-5,10363,14743,25106,0.04137025999999999,{},combined_score,0.0,0.0,1.77126938
+91,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,9518,2942,12460,0.01361956,{},sum_radii,0.9925539450581601,2.6153796452282516,1.7848889399999999
+92,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10510,4600,15110,0.018147200000000002,{},sum_radii,0.0,0.0,1.80303614
+93,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10363,4347,14710,0.01745946,{},sum_radii,0.0,0.0,1.8204955999999999
+94,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10250,5885,16135,0.0209155,{},combined_score,0.0,0.0,1.8414111
+95,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10505,4183,14688,0.0171845,{},combined_score,0.0,0.0,1.8585956
+96,iteration,adaevolve,circle_packing,evaluator,,0,0,guide,z-ai/glm-5,6590,9551,16141,0.0267121,"{""attempt"": 1, ""source"": ""paradigm_generation""}",,,,1.90431106
+96,iteration,adaevolve,circle_packing,evaluator,,0,1,generation,z-ai/glm-5,10383,5012,15395,0.019003359999999997,{},,,,1.90431106
+97,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10439,6165,16604,0.02169558,{},sum_radii,0.0,0.0,1.92600664
+98,iteration,adaevolve,circle_packing,evaluator,,0,0,generation,z-ai/glm-5,10211,12608,22819,0.03635032,{},combined_score,0.0,0.0,1.96235696
+99,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9826,5665,15491,0.02010422,{},combined_score,0.0,0.0,1.9824611799999998
+100,iteration,adaevolve,circle_packing,evaluator,,1,0,generation,z-ai/glm-5,9263,8418,17681,0.02603076,{},sum_radii,0.9920306460131478,2.6140007522446442,2.00849194

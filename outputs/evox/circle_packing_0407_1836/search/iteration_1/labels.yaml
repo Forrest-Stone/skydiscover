@@ -1,0 +1,69 @@
+iteration: 1
+diverge_label_length: 2494
+refine_label_length: 2119
+
+diverge_label: |
+  ## IMPORTANT: YOU MUST FOLLOW THE FOLLOWING IN YOUR GENERATION, OTHERWISE THE SOLUTION WILL BE REJECTED.
+  
+  ### Goal
+  You MUST USE a FUNDAMENTALLY DIFFERENT APPROACH to the following code, NOT JUST parameter tweaks or local changes.
+  This may mean using different solver, function, or library, a different algorithm, or a different method entirely; or adding new components that have never been used before.
+  You can replace partial or the entire code if needed (i.e., rewrite a simpler solution from scratch), or build upon / complement it.
+  Think through what is needed to achieve a BREAKTHROUGH SCORE.
+  
+  **Tools Available:**
+  You have access to a list of libraries. Use these tools to your advantage.
+  - Choose library functions appropriate to the problem's structure and constraints.
+  - Feel free to break from the existing code entirely — focus on correct library usage for the problem, not on preserving the current code's structure.
+  - **Prioritize libraries and functions not already used by the parent program.** Adding new components or changing how existing ones are combined is fine, but prefer approaches that introduce something the parent has never tried.
+  
+  **CRITICAL: IF A LIBRARY EXISTS FOR AN ALGORITHM, USE IT. DO NOT REIMPLEMENT MANUALLY. SEE THE EXAMPLES BELOW FOR RELEVANT LIBRARIES.**
+  
+  ### Examples
+  EXAMPLES OF DIFFERENT approaches (NOT LIMITED TO, PROPOSE YOUR OWN):
+  - **Libraries / solvers**: `scipy.optimize: minimize(method='SLSQP'), minimize(method='trust-constr'), differential_evolution, basinhopping, shgo` ↔ `scipy.spatial: Voronoi, distance_matrix` for geometric analysis
+  - **Constructive patterns**: Hexagonal lattice templates ↔ Corner-first greedy placement ↔ Layer-by-layer shell construction ↔ Symmetry-based arrangements (4-fold, 2-fold)
+  - **Multi-phase pipeline**: Pattern initialization → local optimization refinement ↔ Random multi-start → best selection ↔ Coarse grid search → fine-tuning
+  - **Radius assignment strategies**: Equal radii (uniform packing) ↔ Graded radii by layer (larger near corners/edges) ↔ Optimized radii given fixed centers ↔ Joint center-radius optimization
+  - **Constraint handling**: Penalty-based soft constraints ↔ Projection/repair after each move ↔ Barrier methods for boundary handling ↔ Feasibility maintenance during search
+  
+  ---
+  
+  ### Output
+  Your solution MUST still be VALID / CORRECT for the same problem. A broken "creative" solution is worthless.
+  
+  Format:
+  1. APPROACH: Describe your different approach.
+  2. CODE: Implementation.
+
+refine_label: |
+  ## IMPORTANT: YOU MUST FOLLOW THE FOLLOWING IN YOUR GENERATION, OTHERWISE THE SOLUTION WILL BE REJECTED.
+  
+  ### Goal
+  You should keep the same fundamental approach and algorithm structure.
+  DO NOT switch to a different problem formulation.
+  Focus on REFINING / EXPLOITING the current approach: better inputs, additional polish, etc.
+  Think through what is needed to SQUEEZE the last few percent of performance.
+  Use sufficient computational budget for refinement.
+  
+  **Tools Available:**
+  You have access to a list of libraries. Use these tools to your advantage.
+  - Choose library functions appropriate to the problem's structure and constraints.
+  - Feel free to break from the existing code entirely — focus on correct library usage for the problem, not on preserving the current code's structure.
+  
+  **CRITICAL: IF A LIBRARY EXISTS FOR AN ALGORITHM, USE IT. DO NOT REIMPLEMENT MANUALLY. SEE THE EXAMPLES BELOW FOR RELEVANT LIBRARIES.**
+  
+  ### Examples
+  EXAMPLES OF REFINEMENT strategies (NOT LIMITED TO, PROPOSE YOUR OWN):
+  - **Libraries / tools for refinement**: `scipy.optimize: minimize(method='SLSQP'), minimize(method='trust-constr'), differential_evolution` ↔ `scipy.optimize: minimize(method='L-BFGS-B')` for unconstrained polish
+  - **Computational budget**: Increase maxiter/iterations ↔ Increase population size for evolutionary methods ↔ More basinhopping hops ↔ Multiple restarts from different seeds
+  - **Solver tolerances / convergence**: Tighter ftol/xtol thresholds ↔ Smaller step sizes ↔ Increased gtol for gradient-based methods ↔ More strict convergence criteria
+  - **Initialization quality**: Grid-based seed points ↔ Latin hypercube sampling ↔ Perturbations around known good solutions ↔ Multiple diverse starting configurations
+  - **Post-processing / polish**: Local Nelder-Mead refinement ↔ Gradient-based fine-tuning ↔ Constraint-satisfying projection ↔ Radius expansion passes while maintaining feasibility
+  
+  ### Output
+  Your solution MUST still be VALID / CORRECT for the same problem. A broken solution is worthless.
+  
+  Format:
+  1. REFINEMENT: Describe what you are refining.
+  2. CODE: Implementation with refinement.

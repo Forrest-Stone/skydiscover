@@ -1,0 +1,486 @@
+{
+  "num_islands": 2,
+  "current_island": 1,
+  "iteration_count": 100,
+  "global_best_score": 0.9902935824523044,
+  "decay": 0.9,
+  "intensity_min": 0.15,
+  "intensity_max": 0.5,
+  "migration_interval": 15,
+  "diversity_strategy_type": "code",
+  "use_unified_archive": true,
+  "use_adaptive_search": true,
+  "use_ucb_selection": true,
+  "fixed_intensity": 0.4,
+  "adapter": {
+    "states": [
+      {
+        "accumulated_signal": 0.153981320231755,
+        "best_score": 0.9902935824523044,
+        "improvement_count": 3,
+        "total_evaluations": 45,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      },
+      {
+        "accumulated_signal": 0.153981320231755,
+        "best_score": 0.9902935824523044,
+        "improvement_count": 2,
+        "total_evaluations": 43,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      }
+    ],
+    "dimension_visits": [
+      45,
+      43
+    ],
+    "dimension_rewards": [
+      0.030225539073226483,
+      0.0008782435103010416
+    ],
+    "decayed_visits": [
+      9.912720364319124,
+      9.892247363356944
+    ],
+    "global_best_score": 0.9902935824523044,
+    "ucb_exploration": 1.41,
+    "min_visits": 3,
+    "decay": 0.9,
+    "epsilon": 1e-08
+  },
+  "island_config_names": [
+    "balanced",
+    "balanced"
+  ],
+  "islands": [
+    [
+      "674f4a57-35d0-4d44-b33f-952d6e4952f9",
+      "56889a7d-c038-45d6-9d76-119046204c4a",
+      "17ab60ae-0cf6-46a2-a766-4bc75c45fc8c",
+      "4261e288-da9f-43e5-93e8-b53e857b3b9c",
+      "9db61ecf-beb1-472e-83b1-1b22468f5b49",
+      "568c6318-7827-46be-9342-6829b8f94248",
+      "f709d491-e7f2-466b-b76b-34b9a6e771cd",
+      "9614cbac-4416-474c-bb7b-b466f599ef8b",
+      "b7b80788-a139-4ef1-86ff-2d0d442f5f8e",
+      "c3537087-699f-4773-ac08-cf28e6f113cc",
+      "dc95822e-2855-466e-b9db-1e18bc4dde58",
+      "1a346e31-17f3-4308-a55f-7ed2a7777673",
+      "d1c846ef-7760-4f62-978a-857d39819350",
+      "d1887e08-2eb9-482e-994e-3a5b2c3ed254",
+      "ca72f74f-37bb-4a61-9418-0f3bc24fb328",
+      "cf66572a-e5c5-4481-96d9-083d0c6859c5",
+      "37b16357-41f1-4db7-a06c-184b2efd824e",
+      "210a4f98-b3f0-408c-b2a5-abcb6e11e8df",
+      "16e09170-62cd-40e6-813d-7594bfd299ab",
+      "5dd0b662-1cf7-4ce7-af9b-72207a50312c"
+    ],
+    [
+      "ef8f461a-1fd4-40ca-8a1a-9511587347e5",
+      "7cf91f70-a1d1-42b0-8d39-e23bd062b764",
+      "9ff8f17f-058c-4847-954f-93d74ff3d469",
+      "6b408e7a-8d90-45ba-a950-f261d9996125",
+      "2a144660-7e2a-4af2-bf42-9328a03f6640",
+      "eb420d28-b0ac-461e-8bb9-784450a20be2",
+      "1eccbc34-617e-49bd-8dcd-7aa22ad564bf",
+      "dc1d54b6-6be9-42df-a3be-a8477fac91be",
+      "8062e6e1-86ad-4118-a3dc-c4628c5e028e",
+      "a9752dd2-438b-48e0-b3c6-b88472a5b038",
+      "55184528-7d87-4045-bbe4-942e5602d4ec",
+      "7bfc1d1f-a303-41e4-b87c-742e387d5864",
+      "a91093f2-1e87-4111-9ede-16851e584c97",
+      "cea802d2-2719-4004-9b2e-1f02b1f39e5a",
+      "d1739c4d-6866-49fe-b67c-49d1d57b35cc",
+      "2bf853e8-11aa-4f4e-aeec-38a68c5b0d33",
+      "312a3003-4fbf-415e-a903-d1d15e4413f3",
+      "d22f2bb4-cdf7-401d-b08d-39377dd0cdb5",
+      "0eb9cfb3-b824-4dbc-8ccd-640e09a90016",
+      "648930a1-ffdb-46dc-94f3-23828d5782ad"
+    ]
+  ],
+  "archive_genealogies": [
+    {
+      "parents": {
+        "674f4a57-35d0-4d44-b33f-952d6e4952f9": [],
+        "56889a7d-c038-45d6-9d76-119046204c4a": [
+          "674f4a57-35d0-4d44-b33f-952d6e4952f9"
+        ],
+        "17ab60ae-0cf6-46a2-a766-4bc75c45fc8c": [
+          "674f4a57-35d0-4d44-b33f-952d6e4952f9"
+        ],
+        "4261e288-da9f-43e5-93e8-b53e857b3b9c": [
+          "17ab60ae-0cf6-46a2-a766-4bc75c45fc8c"
+        ],
+        "9db61ecf-beb1-472e-83b1-1b22468f5b49": [
+          "674f4a57-35d0-4d44-b33f-952d6e4952f9"
+        ],
+        "568c6318-7827-46be-9342-6829b8f94248": [
+          "674f4a57-35d0-4d44-b33f-952d6e4952f9"
+        ],
+        "f709d491-e7f2-466b-b76b-34b9a6e771cd": [
+          "9ff8f17f-058c-4847-954f-93d74ff3d469"
+        ],
+        "9614cbac-4416-474c-bb7b-b466f599ef8b": [
+          "568c6318-7827-46be-9342-6829b8f94248"
+        ],
+        "b7b80788-a139-4ef1-86ff-2d0d442f5f8e": [
+          "568c6318-7827-46be-9342-6829b8f94248"
+        ],
+        "c3537087-699f-4773-ac08-cf28e6f113cc": [
+          "568c6318-7827-46be-9342-6829b8f94248"
+        ],
+        "dc95822e-2855-466e-b9db-1e18bc4dde58": [
+          "8062e6e1-86ad-4118-a3dc-c4628c5e028e"
+        ],
+        "1a346e31-17f3-4308-a55f-7ed2a7777673": [
+          "8062e6e1-86ad-4118-a3dc-c4628c5e028e"
+        ],
+        "d1c846ef-7760-4f62-978a-857d39819350": [
+          "7cf91f70-a1d1-42b0-8d39-e23bd062b764"
+        ],
+        "d1887e08-2eb9-482e-994e-3a5b2c3ed254": [
+          "b7b80788-a139-4ef1-86ff-2d0d442f5f8e"
+        ],
+        "ca72f74f-37bb-4a61-9418-0f3bc24fb328": [
+          "1a346e31-17f3-4308-a55f-7ed2a7777673"
+        ],
+        "cf66572a-e5c5-4481-96d9-083d0c6859c5": [
+          "1a346e31-17f3-4308-a55f-7ed2a7777673"
+        ],
+        "37b16357-41f1-4db7-a06c-184b2efd824e": [
+          "1a346e31-17f3-4308-a55f-7ed2a7777673"
+        ],
+        "210a4f98-b3f0-408c-b2a5-abcb6e11e8df": [
+          "ca72f74f-37bb-4a61-9418-0f3bc24fb328"
+        ],
+        "16e09170-62cd-40e6-813d-7594bfd299ab": [
+          "1a346e31-17f3-4308-a55f-7ed2a7777673"
+        ],
+        "5dd0b662-1cf7-4ce7-af9b-72207a50312c": [
+          "1a346e31-17f3-4308-a55f-7ed2a7777673"
+        ]
+      },
+      "children": {
+        "674f4a57-35d0-4d44-b33f-952d6e4952f9": [
+          "56889a7d-c038-45d6-9d76-119046204c4a",
+          "17ab60ae-0cf6-46a2-a766-4bc75c45fc8c",
+          "9db61ecf-beb1-472e-83b1-1b22468f5b49",
+          "568c6318-7827-46be-9342-6829b8f94248"
+        ],
+        "17ab60ae-0cf6-46a2-a766-4bc75c45fc8c": [
+          "4261e288-da9f-43e5-93e8-b53e857b3b9c"
+        ],
+        "568c6318-7827-46be-9342-6829b8f94248": [
+          "9614cbac-4416-474c-bb7b-b466f599ef8b",
+          "b7b80788-a139-4ef1-86ff-2d0d442f5f8e",
+          "c3537087-699f-4773-ac08-cf28e6f113cc"
+        ],
+        "9ff8f17f-058c-4847-954f-93d74ff3d469": [
+          "f709d491-e7f2-466b-b76b-34b9a6e771cd"
+        ],
+        "8062e6e1-86ad-4118-a3dc-c4628c5e028e": [
+          "dc95822e-2855-466e-b9db-1e18bc4dde58",
+          "1a346e31-17f3-4308-a55f-7ed2a7777673"
+        ],
+        "1a346e31-17f3-4308-a55f-7ed2a7777673": [
+          "ca72f74f-37bb-4a61-9418-0f3bc24fb328",
+          "cf66572a-e5c5-4481-96d9-083d0c6859c5",
+          "37b16357-41f1-4db7-a06c-184b2efd824e",
+          "16e09170-62cd-40e6-813d-7594bfd299ab",
+          "5dd0b662-1cf7-4ce7-af9b-72207a50312c"
+        ],
+        "7cf91f70-a1d1-42b0-8d39-e23bd062b764": [
+          "d1c846ef-7760-4f62-978a-857d39819350"
+        ],
+        "b7b80788-a139-4ef1-86ff-2d0d442f5f8e": [
+          "d1887e08-2eb9-482e-994e-3a5b2c3ed254"
+        ],
+        "ca72f74f-37bb-4a61-9418-0f3bc24fb328": [
+          "210a4f98-b3f0-408c-b2a5-abcb6e11e8df"
+        ]
+      }
+    },
+    {
+      "parents": {
+        "ef8f461a-1fd4-40ca-8a1a-9511587347e5": [],
+        "7cf91f70-a1d1-42b0-8d39-e23bd062b764": [
+          "ef8f461a-1fd4-40ca-8a1a-9511587347e5"
+        ],
+        "9ff8f17f-058c-4847-954f-93d74ff3d469": [
+          "ef8f461a-1fd4-40ca-8a1a-9511587347e5"
+        ],
+        "6b408e7a-8d90-45ba-a950-f261d9996125": [
+          "7cf91f70-a1d1-42b0-8d39-e23bd062b764"
+        ],
+        "2a144660-7e2a-4af2-bf42-9328a03f6640": [
+          "674f4a57-35d0-4d44-b33f-952d6e4952f9"
+        ],
+        "eb420d28-b0ac-461e-8bb9-784450a20be2": [
+          "568c6318-7827-46be-9342-6829b8f94248"
+        ],
+        "1eccbc34-617e-49bd-8dcd-7aa22ad564bf": [
+          "56889a7d-c038-45d6-9d76-119046204c4a"
+        ],
+        "dc1d54b6-6be9-42df-a3be-a8477fac91be": [
+          "17ab60ae-0cf6-46a2-a766-4bc75c45fc8c"
+        ],
+        "8062e6e1-86ad-4118-a3dc-c4628c5e028e": [
+          "568c6318-7827-46be-9342-6829b8f94248"
+        ],
+        "a9752dd2-438b-48e0-b3c6-b88472a5b038": [
+          "ef8f461a-1fd4-40ca-8a1a-9511587347e5"
+        ],
+        "55184528-7d87-4045-bbe4-942e5602d4ec": [
+          "8062e6e1-86ad-4118-a3dc-c4628c5e028e"
+        ],
+        "7bfc1d1f-a303-41e4-b87c-742e387d5864": [
+          "1a346e31-17f3-4308-a55f-7ed2a7777673"
+        ],
+        "a91093f2-1e87-4111-9ede-16851e584c97": [
+          "1a346e31-17f3-4308-a55f-7ed2a7777673"
+        ],
+        "cea802d2-2719-4004-9b2e-1f02b1f39e5a": [
+          "1a346e31-17f3-4308-a55f-7ed2a7777673"
+        ],
+        "d1739c4d-6866-49fe-b67c-49d1d57b35cc": [
+          "5d80b85a-ad29-4211-8b2b-fc2bf8f7c95c"
+        ],
+        "2bf853e8-11aa-4f4e-aeec-38a68c5b0d33": [
+          "1a346e31-17f3-4308-a55f-7ed2a7777673"
+        ],
+        "312a3003-4fbf-415e-a903-d1d15e4413f3": [
+          "1a346e31-17f3-4308-a55f-7ed2a7777673"
+        ],
+        "d22f2bb4-cdf7-401d-b08d-39377dd0cdb5": [
+          "928691ad-4888-4989-be72-0c02cddd318e"
+        ],
+        "0eb9cfb3-b824-4dbc-8ccd-640e09a90016": [
+          "1a346e31-17f3-4308-a55f-7ed2a7777673"
+        ],
+        "648930a1-ffdb-46dc-94f3-23828d5782ad": [
+          "eb420d28-b0ac-461e-8bb9-784450a20be2"
+        ]
+      },
+      "children": {
+        "ef8f461a-1fd4-40ca-8a1a-9511587347e5": [
+          "7cf91f70-a1d1-42b0-8d39-e23bd062b764",
+          "9ff8f17f-058c-4847-954f-93d74ff3d469",
+          "a9752dd2-438b-48e0-b3c6-b88472a5b038"
+        ],
+        "7cf91f70-a1d1-42b0-8d39-e23bd062b764": [
+          "6b408e7a-8d90-45ba-a950-f261d9996125"
+        ],
+        "674f4a57-35d0-4d44-b33f-952d6e4952f9": [
+          "2a144660-7e2a-4af2-bf42-9328a03f6640"
+        ],
+        "568c6318-7827-46be-9342-6829b8f94248": [
+          "eb420d28-b0ac-461e-8bb9-784450a20be2",
+          "8062e6e1-86ad-4118-a3dc-c4628c5e028e"
+        ],
+        "56889a7d-c038-45d6-9d76-119046204c4a": [
+          "1eccbc34-617e-49bd-8dcd-7aa22ad564bf"
+        ],
+        "17ab60ae-0cf6-46a2-a766-4bc75c45fc8c": [
+          "dc1d54b6-6be9-42df-a3be-a8477fac91be"
+        ],
+        "8062e6e1-86ad-4118-a3dc-c4628c5e028e": [
+          "55184528-7d87-4045-bbe4-942e5602d4ec"
+        ],
+        "1a346e31-17f3-4308-a55f-7ed2a7777673": [
+          "7bfc1d1f-a303-41e4-b87c-742e387d5864",
+          "a91093f2-1e87-4111-9ede-16851e584c97",
+          "cea802d2-2719-4004-9b2e-1f02b1f39e5a",
+          "2bf853e8-11aa-4f4e-aeec-38a68c5b0d33",
+          "312a3003-4fbf-415e-a903-d1d15e4413f3",
+          "0eb9cfb3-b824-4dbc-8ccd-640e09a90016"
+        ],
+        "5d80b85a-ad29-4211-8b2b-fc2bf8f7c95c": [
+          "d1739c4d-6866-49fe-b67c-49d1d57b35cc"
+        ],
+        "eb420d28-b0ac-461e-8bb9-784450a20be2": [
+          "648930a1-ffdb-46dc-94f3-23828d5782ad"
+        ]
+      }
+    }
+  ],
+  "use_dynamic_islands": true,
+  "max_islands": 5,
+  "last_spawn_iteration": -30,
+  "use_paradigm_breakthrough": true,
+  "paradigm_tracker": {
+    "window_size": 10,
+    "improvement_threshold": 0.12,
+    "max_paradigm_uses": 2,
+    "max_tried_paradigms": 10,
+    "num_paradigms_to_generate": 3,
+    "improvement_history": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "active_paradigms": [
+      {
+        "idea": "Use scipy.optimize.minimize with SLSQP method instead of trust-constr",
+        "description": "Replace trust-constr with SLSQP (Sequential Least Squares Programming), which uses a different algorithmic approach based on quadratic programming subproblems. SLSQP can converge to different local optima than trust-constr due to its different handling of the KKT conditions. Keep the same constraint structure (non-overlap and boundary constraints), same LP post-processing for radii, but use maxiter=2000 and ftol=1e-12 for tighter convergence. SLSQP is often faster per iteration than trust-constr, allowing more effective exploration within the time budget.",
+        "what_to_optimize": "Primary score (sum of radii) - SLSQP may find different local optima due to its sequential quadratic programming approach",
+        "cautions": "SLSQP can be more sensitive to constraint scaling; ensure constraints are well-scaled. May need to adjust initial step size. The constraint Jacobian is still needed for efficiency.",
+        "approach_type": "scipy.optimize.minimize"
+      },
+      {
+        "idea": "Use scipy.optimize.minimize with COBYLA method for derivative-free optimization",
+        "description": "COBYLA (Constrained Optimization BY Linear Approximation) is a derivative-free method that constructs linear approximations of both objective and constraints at each iteration. This fundamentally different approach doesn't rely on gradient information and might escape local optima that trap gradient-based methods. Use rhobeg=0.05 (initial trust region radius) and maxiter=3000. COBYLA handles nonlinear constraints directly without requiring Jacobians. This is particularly valuable because the constraint landscape for circle packing is highly non-convex with many local optima.",
+        "what_to_optimize": "Primary score - derivative-free approach may find solutions in regions where gradient information is misleading",
+        "cautions": "COBYLA doesn't use bounds directly; bounds must be encoded as constraints. Slower convergence than gradient methods, so use more iterations. May need multiple restarts with different rhobeg values.",
+        "approach_type": "scipy.optimize.minimize"
+      },
+      {
+        "idea": "Use scipy.optimize.minimize with trust-constr and systematic pattern enumeration",
+        "description": "Keep trust-constr but systematically enumerate ALL valid hexagonal row patterns for 26 circles instead of just 4 patterns. Generate patterns where rows sum to 26 with each row having 2-7 circles (e.g., [6,5,5,5,5], [5,5,5,5,4,2], [4,5,4,5,4,4], [3,4,5,4,5,3,2], etc.). This gives ~30+ patterns. For each pattern, use 8 seeds (up from 5), 1500 iterations (up from 600), and gtol=1e-10. The key insight is that the optimal packing likely follows some hexagonal-like pattern, and we need to search the pattern space more exhaustively.",
+        "what_to_optimize": "Primary score - better coverage of initialization space increases probability of finding the global optimum",
+        "cautions": "More patterns means longer runtime; balance pattern count with iterations per pattern. Some patterns may be infeasible (rows don't fit in unit square). Use early termination if constraints are violated at initialization.",
+        "approach_type": "scipy.optimize.minimize"
+      }
+    ],
+    "paradigm_usage_counts": {
+      "0": 1,
+      "1": 1
+    },
+    "current_paradigm_index": 2,
+    "tried_paradigms": [
+      {
+        "idea": "Use scipy.optimize.basinhopping with custom constraint handling via penalty method",
+        "description": "Basinhopping combines global random perturbation with local minimization, exploring multiple basins of attraction. Implement constraint handling through a penalty function added to the objective: penalty = sum(max(0, r_i + r_j - dist_ij)^2) + sum(boundary_violations^2). Use local minimizer_kwargs={'method': 'L-BFGS-B', 'bounds': bounds}. Set niter=200, T=1.0 for temperature. The accept test can reject moves that violate constraints too severely. This stochastic global approach differs from deterministic trust-constr and can escape local optima that trap local methods.",
+        "what_to_optimize": "global exploration of the non-convex constraint landscape",
+        "cautions": "Penalty parameters need careful tuning; may converge slowly; use take_step callback to ensure steps stay feasible; combine with multiple random seeds for robustness",
+        "approach_type": "scipy.optimize.basinhopping",
+        "uses": 2,
+        "starting_score": 0.9902935824523044,
+        "ending_score": 0.9902935824523044,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.basinhopping with trust-constr local minimizer for global optimization",
+        "description": "Basin-hopping combines local minimization with random perturbations to escape local minima. Use trust-constr as the local minimizer (which already works well) but wrap it in basin-hopping's global search. Configure with niter=50-100 basin-hopping iterations, T=0.5-1.0 temperature for accepting worse solutions, and take_step with custom perturbation scaled to the problem. The key insight is that the current approach finds good local optima but may miss the global optimum - basin-hopping can jump between basins to find better solutions.",
+        "what_to_optimize": "Primary sum of radii; focus on escaping the current local optimum at 2.610",
+        "cautions": "Ensure the local minimizer's constraints are properly passed through minimizer_kwargs. Use a reasonable step size in take_step - too large jumps waste computation, too small won't escape basins. Monitor convergence across basin-hopping iterations.",
+        "approach_type": "scipy.optimize.basinhopping",
+        "uses": 2,
+        "starting_score": 0.9902935824523044,
+        "ending_score": 0.9902935824523044,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Direct geometric construction with parametric hexagonal pattern and LP radius computation",
+        "description": "Instead of optimizing all 78 variables (52 positions + 26 radii), directly construct positions using a parametric hexagonal pattern with 4-6 key parameters (row spacing, column offset, edge margins), then compute optimal radii via single LP call. For n=26, use a 5-4-5-4-5-3 or similar hexagonal arrangement. Optimize only the pattern parameters (not individual positions) to reduce search space from 78 to ~6 variables. Key geometric insight: optimal packings often have circles in a 'staggered' hexagonal pattern with larger circles near corners and edges.",
+        "what_to_optimize": "Pattern parameters (spacing, offsets, margins) that maximize LP-computed sum of radii",
+        "cautions": "The parametric pattern must be flexible enough to represent near-optimal configurations. Use scipy.optimize.minimize on the small parameter set with LP called inside objective function. Ensure LP always gets feasible input (positive distances).",
+        "approach_type": "scipy.optimize.linprog",
+        "uses": 2,
+        "starting_score": 0.9902935824523044,
+        "ending_score": 0.9902935824523044,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.dual_annealing with penalty-based constraint handling",
+        "description": "Dual annealing is a simulated annealing variant that performs global optimization without requiring gradients. Since it doesn't natively support nonlinear constraints, convert constraints to penalty terms: add large penalty (e.g., 1000\u00d7 violation) for overlap constraints (d_ij < r_i + r_j) and boundary violations. Use bounds for all 78 variables directly. Configure with maxiter=2000, initial_temp=5230, restart_temp_ratio=2e-5, and local search options. The stochastic nature allows escaping local minima that trap trust-constr.",
+        "what_to_optimize": "Primary sum of radii; the penalty formulation allows exploring infeasible regions during search",
+        "cautions": "Penalty weights must be large enough to drive solution to feasibility but not so large they create numerical issues. Start with penalty weight ~100-1000. The solution might slightly violate constraints - apply final LP refinement to ensure validity. Use the 'local_search_options' parameter with bounds to improve local convergence.",
+        "approach_type": "scipy.optimize.dual_annealing",
+        "uses": 2,
+        "starting_score": 0.9902935824523044,
+        "ending_score": 0.9902935824523044,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.linprog with bilevel radius maximization for fixed topologies",
+        "description": "Fix the contact topology (which circles touch which), then solve the radius maximization as a pure LP. The key insight is that for a given topology, optimal radii satisfy linear constraints: r_i + r_j <= d_ij for touching pairs, r_i <= min(x_i, y_i, 1-x_i, 1-y_i) for boundary. Use a two-phase approach: first generate candidate positions using a deterministic hexagonal-like arrangement with specific row patterns [5,5,5,5,3,3] or [4,5,4,5,4,4], then solve the LP to maximize sum of radii. The positions are parameterized by a few key variables (row spacing, column offsets) that can be systematically varied. This avoids the non-convexity of joint position-radius optimization.",
+        "what_to_optimize": "sum of radii through LP solution given structured positions",
+        "cautions": "The LP must handle the case where constraints are infeasible; use high solver tolerance; positions must be generated deterministically without random seeds",
+        "approach_type": "scipy.optimize.linprog",
+        "uses": 2,
+        "starting_score": 0.9902935824523044,
+        "ending_score": 0.9902935824523044,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.minimize with L-BFGS-B and penalty-based soft constraints",
+        "description": "Replace hard nonlinear constraints with a smooth penalty function that penalizes overlaps and boundary violations quadratically. The objective becomes: maximize sum(r_i) - penalty * sum(max(0, r_i + r_j - d_ij)^2) - penalty * sum(boundary_violations^2). Use L-BFGS-B which handles box bounds natively and is efficient for high-dimensional smooth optimization. Start from a carefully designed initial configuration with 6 rows: [4,5,4,5,4,4] pattern where alternating rows are offset by 0.5*horizontal_spacing for hexagonal packing. The penalty coefficient can be gradually increased using a homotopy approach within a single minimize call by incorporating it into the objective.",
+        "what_to_optimize": "penalized objective combining radius sum and constraint violations",
+        "cautions": "Need smooth penalty functions (use squared violations); bounds on radii should be [0.01, 0.5]; positions bounded [0.05, 0.95]; avoid numerical issues in gradient computation",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.9902935824523044,
+        "ending_score": 0.9902935824523044,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.spatial.distance.pdist with greedy sequential circle placement",
+        "description": "Construct the packing greedily by placing circles one at a time, each time choosing the position and radius that maximizes the new circle's radius while respecting all constraints with previously placed circles. For each new circle, discretize the feasible region into a grid of candidate positions, compute the maximum allowed radius at each position (minimum of distances to all placed circles and distances to boundaries), then select the position with maximum radius. Use scipy.spatial.distance.cdist for efficient distance computations. The key is the order of placement: place largest circles first in corners (4 circles), then edges (variable count), then interior. This deterministic construction avoids local optima from simultaneous optimization.",
+        "what_to_optimize": "each circle's radius in sequence, with global sum as the objective",
+        "cautions": "Grid resolution affects both speed and quality; corner circles should be placed optimally at (r,r), (1-r,r), (r,1-r), (1-r,1-r) positions; need to handle ties in candidate positions consistently",
+        "approach_type": "scipy.spatial.distance.cdist",
+        "uses": 2,
+        "starting_score": 0.9902935824523044,
+        "ending_score": 0.9902935824523044,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "scipy.optimize.minimize with trust-constr for position-only optimization",
+        "description": "Reduce optimization variables from 78 to 52 by optimizing only circle center positions. At each objective function evaluation, compute optimal radii using the existing LP method. This eliminates redundant variables and creates a better-conditioned problem. The trust-constr method handles bounds on positions (e.g., [0.05, 0.95]) while the LP implicitly handles all circle-circle and circle-boundary constraints. Use 1000+ iterations with gtol=1e-10 for tighter convergence. Multiple random and geometric initializations explore the solution space.",
+        "what_to_optimize": "Primary metric: sum of radii (target 2.635). Focus on finding positions that yield larger LP-computed radii.",
+        "cautions": "The objective function calls LP internally, so it's not differentiable in the standard sense. Use finite-difference gradient approximation or provide numerical gradient. Ensure position bounds are loose enough to allow circles near edges.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.9902935824523044,
+        "ending_score": 0.9902935824523044,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "scipy.optimize.least_squares with residual-based constraint formulation",
+        "description": "Formulate the problem as nonlinear least squares where residuals represent constraint violations and objective terms. Create residual vector: for each circle pair, residual = max(0, r_i + r_j - dist_ij); for each boundary, residuals for the four edge constraints; add residual = -sum(radii)/n to maximize total radius. Use least_squares with bounds [0,1] on positions and [0,0.5] on radii. The 'trf' method handles bounds well. This transforms the constrained maximization into an unconstrained minimization, potentially finding different local optima than trust-constr.",
+        "what_to_optimize": "Minimize sum of squared residuals, which simultaneously satisfies constraints and maximizes radii.",
+        "cautions": "Use soft constraints (squared violations) rather than hard constraints. Scale residuals appropriately so constraint violations and objective term have comparable magnitudes. The max(0, ...) in residuals creates non-smoothness; consider using softplus or squared violations instead.",
+        "approach_type": "scipy.optimize.least_squares",
+        "uses": 2,
+        "starting_score": 0.9902935824523044,
+        "ending_score": 0.9902935824523044,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "scipy.optimize.minimize with trust-constr and corner-exploiting initialization",
+        "description": "Create initial configurations that explicitly exploit corner geometry. Place 4 circles near corners at positions (r+\u03b5, r+\u03b5), (1-r-\u03b5, r+\u03b5), etc., where r is computed to maximize corner circle size. Fill remaining 22 circles using hexagonal packing in the central region. Compute initial radii via LP. This initialization is geometrically motivated: corner circles can be larger because they're constrained by only 2 boundaries instead of 4. Run trust-constr with 1500 iterations and tighter tolerance (gtol=1e-10) from multiple such corner-aware initializations.",
+        "what_to_optimize": "Start optimization from geometrically superior configurations where large circles are already positioned advantageously.",
+        "cautions": "Corner circle positions should leave room for adjacent circles. Use \u03b5 = 0.01 to 0.02 margin from exact corners. The hexagonal packing in center should align with corner circle boundaries. Test multiple corner distances and hexagonal offsets.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.9902935824523044,
+        "ending_score": 0.9902935824523044,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      }
+    ],
+    "best_score_at_paradigm_gen": 0.9902935824523044,
+    "best_score_during_paradigm": 0.9902935824523044
+  }
+}

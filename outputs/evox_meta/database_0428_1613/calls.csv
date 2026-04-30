@@ -1,0 +1,4 @@
+iteration,source,method,task_family,task_name,seed,frontier_id,call_index,role,model_name,input_tokens,output_tokens,total_tokens,raw_cost,call_meta,objective_key,combined_score,objective_value,cumulative_cost_after_iteration
+1,iteration,evox_meta,database,search_strategy_evaluator,,,0,generation,z-ai/glm-5,3231,11427,14658,0.02860842,{},combined_score,0.0,0.0,0.02860842
+2,iteration,evox_meta,database,search_strategy_evaluator,,,0,generation,z-ai/glm-5,3555,8823,12378,0.022852499999999998,{},combined_score,0.0,0.0,0.05146091999999999
+3,iteration,evox_meta,database,search_strategy_evaluator,,,0,generation,z-ai/glm-5,3641,864,4505,0.004608719999999999,{},combined_score,0.0,0.0,0.05606963999999999

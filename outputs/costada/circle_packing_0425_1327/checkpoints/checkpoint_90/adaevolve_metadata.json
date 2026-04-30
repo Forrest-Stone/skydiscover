@@ -1,0 +1,477 @@
+{
+  "num_islands": 2,
+  "current_island": 0,
+  "iteration_count": 89,
+  "global_best_score": 0.6374096411733456,
+  "decay": 0.9,
+  "intensity_min": 0.15,
+  "intensity_max": 0.5,
+  "migration_interval": 15,
+  "diversity_strategy_type": "code",
+  "use_unified_archive": true,
+  "use_adaptive_search": true,
+  "use_ucb_selection": true,
+  "fixed_intensity": 0.4,
+  "adapter": {
+    "states": [
+      {
+        "accumulated_signal": 0.12115102448909233,
+        "best_score": 0.6374096411733456,
+        "improvement_count": 3,
+        "total_evaluations": 29,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      },
+      {
+        "accumulated_signal": 0.12030827929509186,
+        "best_score": 0.6067443693465289,
+        "improvement_count": 2,
+        "total_evaluations": 33,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      }
+    ],
+    "dimension_visits": [
+      29,
+      33
+    ],
+    "dimension_rewards": [
+      0.13653723521666744,
+      0.013761715066365096
+    ],
+    "decayed_visits": [
+      9.528987130275377,
+      9.690968456173676
+    ],
+    "global_best_score": 0.6374096411733456,
+    "ucb_exploration": 1.41,
+    "min_visits": 3,
+    "decay": 0.9,
+    "epsilon": 1e-08
+  },
+  "island_config_names": [
+    "balanced",
+    "balanced"
+  ],
+  "islands": [
+    [
+      "e37cc733-2858-46e0-88bd-1d6346041e22",
+      "20aaa8b2-1d07-4d78-bd2e-f16b43cd3964",
+      "dae3c51e-d4a0-4275-ac48-8dfbb5153e5c",
+      "df08758c-6144-482a-af19-53b020b702f3",
+      "4de9c6c4-fb42-4ad6-9d3f-ac90070f9c10",
+      "cf4ef907-8a66-4c76-9daf-d56f033d552e",
+      "f3ef4923-f002-4a00-8def-4bcd6ccbac23",
+      "2ce90c64-da0e-4d35-a0c1-f54d1666747d",
+      "b1e703b5-e0b6-4ae0-9b3d-8bbedf0f148e",
+      "c04c69e2-e97d-4a0c-abc9-ee0cdd55f700",
+      "a6c9636a-5bef-486a-bdbf-702fb6891791",
+      "9e5f1ab1-cc1b-4d1d-b323-a115106485ed",
+      "e2060f39-e76d-4d19-b087-d727f65b427b",
+      "5a4f1e6d-cc9f-4630-a7f9-aba211b8eadd",
+      "e952deb8-d024-4291-abd5-faf64e35f221",
+      "3e41a83e-bee5-4702-9cc1-c0c9b566ee88",
+      "b493a309-5a64-4422-8ea1-ef7d8a624baf",
+      "482ca273-2f21-4496-accb-75ba6ba0d3e2",
+      "03b9f536-76ae-4cb6-a665-6e1d05bfb761",
+      "f60d5256-59bf-45d3-af9d-df2ba4161464"
+    ],
+    [
+      "616f6bbe-e5d4-4e85-8f25-dfca16ffd4aa",
+      "3b1bd54c-cbd2-436d-8301-6a5911aa59ec",
+      "2c746a85-de06-40c3-a764-c7e6b1f0a1ca",
+      "e56b1f3b-75dc-440b-9c22-4242e2d42f87",
+      "31a74da2-ee52-443f-8515-70c98e1d7bb5",
+      "5bb92a81-403d-4db2-a2bd-b10c68139f79",
+      "718581f1-942e-48ee-94a0-e820635d3df8",
+      "4cf9e0f4-d34e-4fa0-9581-4e80bcca3436",
+      "d861b481-a528-42a0-98d3-2b09bd4e128c",
+      "8d54919a-8bf0-4b76-b348-62959bf24cf0",
+      "a0a05bdc-f170-4d4c-bcd0-fe84d8b294a6",
+      "a0eb474c-9b30-4fa6-8386-dc07ef1d9f99",
+      "47737bc2-3beb-4170-b9dd-75574881e5a9",
+      "e3e5bc71-0c22-473f-b087-c24f6ffac9cf",
+      "000214bb-6f4c-4a9d-b22c-151587ea20c1",
+      "361b2991-c0d0-46a6-af53-3933bfb0dfd9",
+      "ea93995d-7733-4504-bb3c-5c9a66497beb",
+      "d3908039-1223-4327-b775-daff974e37e4",
+      "7d513fea-b9f7-46e5-8d84-2a2eb837b677",
+      "08fb40c0-ed54-419a-ab66-0f1994c7484f"
+    ]
+  ],
+  "archive_genealogies": [
+    {
+      "parents": {
+        "e37cc733-2858-46e0-88bd-1d6346041e22": [
+          "1601b114-b981-46fc-9b25-98fb25a1775b"
+        ],
+        "20aaa8b2-1d07-4d78-bd2e-f16b43cd3964": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "dae3c51e-d4a0-4275-ac48-8dfbb5153e5c": [
+          "20aaa8b2-1d07-4d78-bd2e-f16b43cd3964"
+        ],
+        "df08758c-6144-482a-af19-53b020b702f3": [
+          "dae3c51e-d4a0-4275-ac48-8dfbb5153e5c"
+        ],
+        "4de9c6c4-fb42-4ad6-9d3f-ac90070f9c10": [
+          "616f6bbe-e5d4-4e85-8f25-dfca16ffd4aa"
+        ],
+        "cf4ef907-8a66-4c76-9daf-d56f033d552e": [
+          "3b1bd54c-cbd2-436d-8301-6a5911aa59ec"
+        ],
+        "f3ef4923-f002-4a00-8def-4bcd6ccbac23": [
+          "2c746a85-de06-40c3-a764-c7e6b1f0a1ca"
+        ],
+        "2ce90c64-da0e-4d35-a0c1-f54d1666747d": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "b1e703b5-e0b6-4ae0-9b3d-8bbedf0f148e": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "c04c69e2-e97d-4a0c-abc9-ee0cdd55f700": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "a6c9636a-5bef-486a-bdbf-702fb6891791": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "9e5f1ab1-cc1b-4d1d-b323-a115106485ed": [
+          "1601b114-b981-46fc-9b25-98fb25a1775b"
+        ],
+        "e2060f39-e76d-4d19-b087-d727f65b427b": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "5a4f1e6d-cc9f-4630-a7f9-aba211b8eadd": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "e952deb8-d024-4291-abd5-faf64e35f221": [
+          "c834df9b-73a5-46ec-8b32-96592e72a44e"
+        ],
+        "3e41a83e-bee5-4702-9cc1-c0c9b566ee88": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "b493a309-5a64-4422-8ea1-ef7d8a624baf": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "482ca273-2f21-4496-accb-75ba6ba0d3e2": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "03b9f536-76ae-4cb6-a665-6e1d05bfb761": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "f60d5256-59bf-45d3-af9d-df2ba4161464": [
+          "03b9f536-76ae-4cb6-a665-6e1d05bfb761"
+        ]
+      },
+      "children": {
+        "e37cc733-2858-46e0-88bd-1d6346041e22": [
+          "20aaa8b2-1d07-4d78-bd2e-f16b43cd3964",
+          "2ce90c64-da0e-4d35-a0c1-f54d1666747d",
+          "b1e703b5-e0b6-4ae0-9b3d-8bbedf0f148e",
+          "c04c69e2-e97d-4a0c-abc9-ee0cdd55f700",
+          "a6c9636a-5bef-486a-bdbf-702fb6891791",
+          "e2060f39-e76d-4d19-b087-d727f65b427b",
+          "5a4f1e6d-cc9f-4630-a7f9-aba211b8eadd",
+          "3e41a83e-bee5-4702-9cc1-c0c9b566ee88",
+          "b493a309-5a64-4422-8ea1-ef7d8a624baf",
+          "482ca273-2f21-4496-accb-75ba6ba0d3e2",
+          "03b9f536-76ae-4cb6-a665-6e1d05bfb761"
+        ],
+        "20aaa8b2-1d07-4d78-bd2e-f16b43cd3964": [
+          "dae3c51e-d4a0-4275-ac48-8dfbb5153e5c"
+        ],
+        "dae3c51e-d4a0-4275-ac48-8dfbb5153e5c": [
+          "df08758c-6144-482a-af19-53b020b702f3"
+        ],
+        "616f6bbe-e5d4-4e85-8f25-dfca16ffd4aa": [
+          "4de9c6c4-fb42-4ad6-9d3f-ac90070f9c10"
+        ],
+        "3b1bd54c-cbd2-436d-8301-6a5911aa59ec": [
+          "cf4ef907-8a66-4c76-9daf-d56f033d552e"
+        ],
+        "2c746a85-de06-40c3-a764-c7e6b1f0a1ca": [
+          "f3ef4923-f002-4a00-8def-4bcd6ccbac23"
+        ],
+        "c834df9b-73a5-46ec-8b32-96592e72a44e": [
+          "e952deb8-d024-4291-abd5-faf64e35f221"
+        ],
+        "03b9f536-76ae-4cb6-a665-6e1d05bfb761": [
+          "f60d5256-59bf-45d3-af9d-df2ba4161464"
+        ]
+      }
+    },
+    {
+      "parents": {
+        "616f6bbe-e5d4-4e85-8f25-dfca16ffd4aa": [
+          "3a62a7be-d173-44c8-9a80-0c251c04c5e9"
+        ],
+        "3b1bd54c-cbd2-436d-8301-6a5911aa59ec": [
+          "616f6bbe-e5d4-4e85-8f25-dfca16ffd4aa"
+        ],
+        "2c746a85-de06-40c3-a764-c7e6b1f0a1ca": [
+          "3b1bd54c-cbd2-436d-8301-6a5911aa59ec"
+        ],
+        "e56b1f3b-75dc-440b-9c22-4242e2d42f87": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "31a74da2-ee52-443f-8515-70c98e1d7bb5": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "5bb92a81-403d-4db2-a2bd-b10c68139f79": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "718581f1-942e-48ee-94a0-e820635d3df8": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "4cf9e0f4-d34e-4fa0-9581-4e80bcca3436": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "d861b481-a528-42a0-98d3-2b09bd4e128c": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "8d54919a-8bf0-4b76-b348-62959bf24cf0": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "a0a05bdc-f170-4d4c-bcd0-fe84d8b294a6": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "a0eb474c-9b30-4fa6-8386-dc07ef1d9f99": [
+          "5a4f1e6d-cc9f-4630-a7f9-aba211b8eadd"
+        ],
+        "47737bc2-3beb-4170-b9dd-75574881e5a9": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "e3e5bc71-0c22-473f-b087-c24f6ffac9cf": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "000214bb-6f4c-4a9d-b22c-151587ea20c1": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "361b2991-c0d0-46a6-af53-3933bfb0dfd9": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "ea93995d-7733-4504-bb3c-5c9a66497beb": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "d3908039-1223-4327-b775-daff974e37e4": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "7d513fea-b9f7-46e5-8d84-2a2eb837b677": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "08fb40c0-ed54-419a-ab66-0f1994c7484f": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ]
+      },
+      "children": {
+        "616f6bbe-e5d4-4e85-8f25-dfca16ffd4aa": [
+          "3b1bd54c-cbd2-436d-8301-6a5911aa59ec"
+        ],
+        "3b1bd54c-cbd2-436d-8301-6a5911aa59ec": [
+          "2c746a85-de06-40c3-a764-c7e6b1f0a1ca"
+        ],
+        "e37cc733-2858-46e0-88bd-1d6346041e22": [
+          "e56b1f3b-75dc-440b-9c22-4242e2d42f87",
+          "31a74da2-ee52-443f-8515-70c98e1d7bb5",
+          "5bb92a81-403d-4db2-a2bd-b10c68139f79",
+          "718581f1-942e-48ee-94a0-e820635d3df8",
+          "4cf9e0f4-d34e-4fa0-9581-4e80bcca3436",
+          "d861b481-a528-42a0-98d3-2b09bd4e128c",
+          "8d54919a-8bf0-4b76-b348-62959bf24cf0",
+          "a0a05bdc-f170-4d4c-bcd0-fe84d8b294a6",
+          "47737bc2-3beb-4170-b9dd-75574881e5a9",
+          "e3e5bc71-0c22-473f-b087-c24f6ffac9cf",
+          "000214bb-6f4c-4a9d-b22c-151587ea20c1",
+          "361b2991-c0d0-46a6-af53-3933bfb0dfd9",
+          "ea93995d-7733-4504-bb3c-5c9a66497beb",
+          "d3908039-1223-4327-b775-daff974e37e4",
+          "7d513fea-b9f7-46e5-8d84-2a2eb837b677",
+          "08fb40c0-ed54-419a-ab66-0f1994c7484f"
+        ],
+        "5a4f1e6d-cc9f-4630-a7f9-aba211b8eadd": [
+          "a0eb474c-9b30-4fa6-8386-dc07ef1d9f99"
+        ]
+      }
+    }
+  ],
+  "use_dynamic_islands": true,
+  "max_islands": 5,
+  "last_spawn_iteration": -30,
+  "use_paradigm_breakthrough": true,
+  "paradigm_tracker": {
+    "window_size": 10,
+    "improvement_threshold": 0.12,
+    "max_paradigm_uses": 2,
+    "max_tried_paradigms": 10,
+    "num_paradigms_to_generate": 3,
+    "improvement_history": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    "active_paradigms": [
+      {
+        "idea": "Use scipy.optimize.linprog for radius optimization with fixed positions",
+        "description": "Given circle center positions, the radius maximization is a linear program: maximize sum(r_i) subject to r_i + r_j <= dist(i,j) for all pairs, and r_i <= wall_distance(i). Use scipy.optimize.linprog with method='highs' to solve this LP directly. First define positions using a corner-heavy pattern (4 large corners + 8 edges + 14 interior), then call linprog to compute optimal radii. This exploits the linear structure of the constraint matrix.",
+        "what_to_optimize": "sum of radii via linear programming with pairwise and wall constraints",
+        "cautions": "linprog minimizes, so negate the objective. Build constraint matrix efficiently. Use method='highs' for robustness. Ensure positions are valid (inside unit square with margin).",
+        "approach_type": "scipy.optimize.linprog"
+      },
+      {
+        "idea": "Parametric construction with manual golden section search",
+        "description": "Define a 1-parameter family of packings where corner radius r_c determines all other positions and radii geometrically. Corner circles at (r_c, r_c), etc. Edge circles positioned between corners with radii computed from contact constraints. Interior in hexagonal pattern. Use manual golden section search (pure numpy, no scipy.optimize) to find optimal r_c. This reduces 78D problem to 1D search.",
+        "what_to_optimize": "single parameter r_c (corner radius) that determines entire packing",
+        "cautions": "Derive geometric relationships carefully. When corner circles touch, edge circles have zero radius. Use golden ratio phi=(1+sqrt(5))/2. Compute radii directly from contact equations, not iteratively.",
+        "approach_type": "numpy golden section search"
+      },
+      {
+        "idea": "scipy.spatial.KDTree for efficient greedy maximal placement",
+        "description": "Build packing greedily using KDTree for O(n log n) nearest neighbor queries instead of O(n\u00b2) loops. Start with 4 corner circles. For each new circle, sample candidate positions on a grid, use KDTree to find nearest existing circles quickly, compute max possible radius at each candidate, select position with largest radius. KDTree makes greedy placement efficient enough to explore many candidates.",
+        "what_to_optimize": "greedy placement order with efficient nearest neighbor queries",
+        "cautions": "Rebuild KDTree after each placement. Sample candidate positions densely enough. Consider positions near walls and near existing circles (contact points). Radius at position = min(wall distances, dist to each existing circle - its radius).",
+        "approach_type": "scipy.spatial.KDTree"
+      }
+    ],
+    "paradigm_usage_counts": {
+      "0": 2,
+      "1": 2,
+      "2": 2
+    },
+    "current_paradigm_index": 2,
+    "tried_paradigms": [
+      {
+        "idea": "Use scipy.optimize.shgo (Simplicial Homology Global Optimization) for constrained global optimization",
+        "description": "Use shgo which constructs a simplicial complex to explore the feasible region systematically. Define the same 78-variable problem with minimize_kwargs containing constraints. shgo is specifically designed for nonlinear constrained optimization and can provably find global optima for Lipschitz-continuous objectives. Use sampling methods='sobol' for better coverage. Set n=100 or higher for more sampling points. Define constraints as a list of dicts with 'type':'ineq' and 'fun' for each constraint.",
+        "what_to_optimize": "global optimum of sum of radii",
+        "cautions": "shgo can be slow for high dimensions. Start with iters=1, n=50 for quick test. Increase n to 200-500 for better results. Use minimizer_kwargs={'method':'SLSQP'} for local refinement. Set constraint tolerance via options={'ftol': 1e-8}. May timeout with too many sampling points.",
+        "approach_type": "scipy.optimize.shgo",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.minimize with SLSQP for joint position-radius optimization",
+        "description": "Formulate as a constrained optimization problem with 78 variables (26 centers + 26 radii). Objective: maximize sum of radii. Constraints: (1) Non-overlap: ||c_i - c_j|| >= r_i + r_j for all pairs, (2) Boundary: r_i <= x_i, r_i <= y_i, r_i <= 1-x_i, r_i <= 1-y_i. Use SLSQP method with multiple starting points from different initial configurations (hexagonal, random, corner-focused). The key insight is that greedy radius reduction is suboptimal - joint optimization can find configurations where some circles are larger at the expense of others to maximize total sum.",
+        "what_to_optimize": "sum_radii (primary objective)",
+        "cautions": "SLSQP requires feasible initial point. Use barrier/penalty for constraint handling. Try trust-constr as alternative if SLSQP fails. Ensure radii stay non-negative. Multiple restarts critical to avoid local optima.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Construct packing based on contact graph analysis with corner-edge-interior hierarchy",
+        "description": "In optimal packings, circles form specific contact patterns. Corner circles can touch 2 walls and potentially achieve radius ~0.12-0.15. Edge circles touch 1 wall. Interior circles touch only other circles. Construct explicitly: (1) Place 4 corner circles at (r,r), (1-r,r), (r,1-r), (1-r,1-r) with radius r_c, (2) Place edge circles between corners, computing positions from tangent constraints, (3) Fill interior with remaining circles in hexagonal-like pattern. Solve the resulting system of geometric equations to find exact positions and radii that maximize sum while satisfying all contact constraints.",
+        "what_to_optimize": "sum_radii through geometric optimality",
+        "cautions": "Must solve system of nonlinear equations for contact constraints. May need scipy.optimize.root for exact solution. Verify all constraints satisfied. Pattern may need adjustment for n=26 specifically.",
+        "approach_type": "numpy.linalg.solve with geometric constraints",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use iterative expansion simulation with collision-driven repositioning",
+        "description": "Start with all 26 circles at small uniform radius (e.g., 0.05) placed in a reasonable initial pattern. Iteratively: (1) Expand all radii by small increment, (2) For each overlapping pair, compute repulsion vector and move circles apart, (3) Enforce boundary constraints by pushing circles inward, (4) Repeat until no expansion possible without violation. This simulation approach naturally finds equilibrium configurations that maximize total radius. Unlike greedy reduction which shrinks circles, this expands them until geometrically constrained.",
+        "what_to_optimize": "sum_radii through physical simulation equilibrium",
+        "cautions": "Need careful tuning of expansion rate and repulsion strength. May get stuck in local optima - try multiple random initializations. Final configuration needs validation. Convergence detection is critical.",
+        "approach_type": "numpy iterative simulation with collision detection",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Corner-priority asymmetric packing with explicit radius computation",
+        "description": "Place circles in priority order: 4 large circles in corners (each bounded by 2 walls), 8 medium circles along edges (each bounded by 1 wall), remaining 14 smaller circles in interior. For each position, compute radius analytically as min(distance to walls, half-distance to all previously placed circles). Use asymmetric placement - start with corners at maximum possible radius, then greedily place edge circles at positions that maximize their radius, finally fill interior with smaller circles. This exploits the square geometry directly without optimization.",
+        "what_to_optimize": "sum_radii by placing larger circles where they have natural boundaries",
+        "cautions": "Order of placement matters critically - corners first, then edges, then interior. Use numpy to compute distances efficiently. Each circle's radius is exactly determined by constraints, no iteration needed.",
+        "approach_type": "numpy.ndarray",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Bisection search on uniform radius with greedy placement",
+        "description": "Search for maximum uniform radius R using binary search between 0 and 0.2. For each candidate R, attempt to place 26 circles of radius R using greedy sequential placement (place each circle at position that doesn't overlap existing circles or walls). Track the maximum R for which all 26 circles can be placed. This converts the problem to finding the critical radius threshold. Use numpy for distance calculations. Final solution has all circles at the same optimal radius R_max.",
+        "what_to_optimize": "Find maximum uniform radius through binary search",
+        "cautions": "Greedy placement order affects feasibility - try multiple orderings (random, corner-first, center-first). Binary search needs ~20-30 iterations for precision. Must handle case where greedy fails to place all circles even when feasible.",
+        "approach_type": "numpy.searchsorted",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Parametric spiral pattern with direct radius formula",
+        "description": "Construct a parametric spiral pattern where circle positions follow: x_i = 0.5 + r_i*cos(\u03b8_i), y_i = 0.5 + r_i*sin(\u03b8_i), with r_i and \u03b8_i following golden angle distribution. Radii computed directly as r_i = min(wall_distance, neighbor_distances/2). The spiral ensures good coverage and natural size variation - outer circles larger, inner circles smaller. Use 4 arms of the spiral starting from corners. Parameters control spiral tightness and angle offset, computed to maximize total radius sum.",
+        "what_to_optimize": "Pattern parameters that maximize sum of analytically-computed radii",
+        "cautions": "Spiral parameters must ensure all circles fit in unit square. Need to handle edge cases where spiral circles would overlap or exit bounds. Use numpy trigonometric functions for position computation.",
+        "approach_type": "numpy.linspace",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Pre-computed optimal coordinates from published n=26 packings with direct radius expansion",
+        "description": "Use known optimal coordinates from circle packing literature for n=26. Place circles at empirically-determined optimal positions, then compute radii by expanding each circle to touch its nearest neighbors and boundaries. The pattern for optimal n=26 packing has been studied - use a 5-4-5-4-5-3 row structure but with carefully tuned x,y positions that maximize space utilization. Start with coordinates from proven configurations, then apply greedy radius expansion in priority order (corner circles first, then edges, then interior).",
+        "what_to_optimize": "Maximize sum of radii by placing circles at optimal positions before radius computation",
+        "cautions": "Must ensure no overlaps during radius expansion. Use distance-based priority ordering. Coordinates must stay within [0,1] bounds.",
+        "approach_type": "numpy.ndarray",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Lattice-based construction with explicit contact graph specification",
+        "description": "Construct the packing by specifying which circles touch each other explicitly. Define a contact graph where edges represent touching circles. Place circles by building from corners: 4 circles in corners touching two walls each, then edge circles touching one wall and two neighbors, then interior circles in a hexagonal pattern. For n=26, use configuration: 4 corners + 16 edge/peri-edge + 6 interior. Compute positions analytically from the contact constraints using distance geometry.",
+        "what_to_optimize": "Maximize radii by ensuring maximum contacts per circle",
+        "cautions": "Contact graph must be realizable without overlap. Use trigonometric calculations for positions based on touching constraints.",
+        "approach_type": "numpy.linalg.solve",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Greedy sequential placement with maximum-radius oracle",
+        "description": "Place circles one at a time, each at the position that maximizes its radius given already-placed circles. For each new circle, find the largest inscribed circle in the remaining free space. This is equivalent to finding the point with maximum distance to all placed circles and boundaries. Use a grid search over candidate positions, then refine with local search. Place circles in order: 4 corners first (maximizing distance from walls), then edges, then fill interior. This greedy approach naturally creates efficient packings.",
+        "what_to_optimize": "Each circle's radius individually, leading to globally high sum",
+        "cautions": "Order of placement matters significantly. Use fine grid for position search. Must check all constraints for each placement.",
+        "approach_type": "numpy.maximum",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      }
+    ],
+    "best_score_at_paradigm_gen": 0.6067443693465289,
+    "best_score_during_paradigm": 0.6374096411733456
+  }
+}

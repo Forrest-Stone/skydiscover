@@ -1,0 +1,11 @@
+{
+  "nominal_budget": 1000000000.0,
+  "total_cost": 2.14434496,
+  "oob": false,
+  "overshoot": 0.0,
+  "num_iterations": 100,
+  "num_generation_calls": 99,
+  "num_retry_calls": 2,
+  "num_guide_calls": 12,
+  "best_score": 0.9209667270150225
+}

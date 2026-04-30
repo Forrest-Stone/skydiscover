@@ -1,0 +1,483 @@
+{
+  "num_islands": 2,
+  "current_island": 0,
+  "iteration_count": 69,
+  "global_best_score": 0.9992543563133135,
+  "decay": 0.9,
+  "intensity_min": 0.15,
+  "intensity_max": 0.5,
+  "migration_interval": 15,
+  "diversity_strategy_type": "code",
+  "use_unified_archive": true,
+  "use_adaptive_search": true,
+  "use_ucb_selection": true,
+  "fixed_intensity": 0.4,
+  "adapter": {
+    "states": [
+      {
+        "accumulated_signal": 0.1032555084377954,
+        "best_score": 0.9992543563133135,
+        "improvement_count": 7,
+        "total_evaluations": 22,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      },
+      {
+        "accumulated_signal": 0.10658731197777746,
+        "best_score": 0.9992543563133135,
+        "improvement_count": 4,
+        "total_evaluations": 21,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      }
+    ],
+    "dimension_visits": [
+      22,
+      21
+    ],
+    "dimension_rewards": [
+      0.33167044806479945,
+      0.05739290174245225
+    ],
+    "decayed_visits": [
+      9.01522909781639,
+      8.905810108684877
+    ],
+    "global_best_score": 0.9992543563133135,
+    "ucb_exploration": 1.41,
+    "min_visits": 3,
+    "decay": 0.9,
+    "epsilon": 1e-08
+  },
+  "island_config_names": [
+    "balanced",
+    "balanced"
+  ],
+  "islands": [
+    [
+      "936bed3b-42b1-4ac3-9702-3a542d50513b",
+      "cd99dd10-1084-4980-8fe4-9b3c4d1ee675",
+      "a2165041-2248-4896-9dea-5aaf19be10f5",
+      "60a98d13-fc3d-4086-9af9-d1e0193b5749",
+      "e9ef1754-99fc-4d9b-92ed-4fea9194b763",
+      "2ac95dd1-5fcc-4483-b12a-9cc4d2f96430",
+      "8e5cb83b-fc88-4022-9689-b63cc4e95461",
+      "8df88af7-d61b-4a55-9a3d-a6cf5c84d8c4",
+      "2984bffd-3969-4090-8165-a93752f1c553",
+      "e1f75d8a-37ba-4d4a-8ad8-75603cecabc4",
+      "3ef31c5c-e591-430e-81ea-580922440f28",
+      "5c22bee5-b1f9-4c66-9c57-d53627dc7681",
+      "ab7a07c2-1cce-48cb-93fc-c5f54a6edacb",
+      "378abefc-f3b9-42ff-895c-b3b50504ba12",
+      "5335e9f3-7162-48e9-a4fc-80b4d819eb7e",
+      "147ad50c-5fe3-4283-b255-1ee9106367fd",
+      "e2b301aa-980c-4928-9ca7-6d38d0a9cd21",
+      "397192e5-668a-4e27-bfa9-053522920724",
+      "8a128067-7b14-4714-9f66-938468f7f186",
+      "b28623c1-dcf3-4b86-96ab-8673cfbfa6dc"
+    ],
+    [
+      "a9073925-4c06-41b1-b592-9c756c1b9daf",
+      "1d42a312-5600-458c-8757-23ae35993852",
+      "16e921a4-9e24-4827-8432-96972926b596",
+      "c8205b6b-59e0-47d9-a423-376f5d6fed98",
+      "0dc87861-feda-4bdf-901a-cec481ab6aee",
+      "32191ba6-bdde-4046-b39b-27cc31159715",
+      "667567af-4d30-4444-9784-6e9d7901d9b2",
+      "03679b1b-f775-4fee-afa5-f3c7cf20579f",
+      "ac1e376c-c54a-4bd6-b9bb-37d27a37e8bc",
+      "9534c455-50a5-4948-8c51-d727d1625334",
+      "f85bac9b-3605-40e1-ae10-be8404e8834a",
+      "46cd19fc-5329-4ea6-9692-b384b3381e09",
+      "c749bfc9-1bd0-400f-9dce-dfa77c9e9b7f",
+      "a62b6b22-8a16-4610-a504-8f7bdb560a39",
+      "c2cdf57d-347a-42c1-bcc6-b614987b91ba",
+      "3d016531-97c6-4b5a-8333-ff9783359cc6",
+      "3a4f5a3f-82b6-418f-b6c1-23a3ae41e960",
+      "160ae99f-46c8-4c7c-963b-36762f13bcb8",
+      "eaf2d914-12c4-4bee-bf65-f0574e8ced27",
+      "5d77a917-185b-420b-a5ef-ea5037a3fbca"
+    ]
+  ],
+  "archive_genealogies": [
+    {
+      "parents": {
+        "936bed3b-42b1-4ac3-9702-3a542d50513b": [],
+        "cd99dd10-1084-4980-8fe4-9b3c4d1ee675": [
+          "936bed3b-42b1-4ac3-9702-3a542d50513b"
+        ],
+        "a2165041-2248-4896-9dea-5aaf19be10f5": [
+          "cd99dd10-1084-4980-8fe4-9b3c4d1ee675"
+        ],
+        "60a98d13-fc3d-4086-9af9-d1e0193b5749": [
+          "a2165041-2248-4896-9dea-5aaf19be10f5"
+        ],
+        "e9ef1754-99fc-4d9b-92ed-4fea9194b763": [
+          "936bed3b-42b1-4ac3-9702-3a542d50513b"
+        ],
+        "2ac95dd1-5fcc-4483-b12a-9cc4d2f96430": [
+          "a2165041-2248-4896-9dea-5aaf19be10f5"
+        ],
+        "8e5cb83b-fc88-4022-9689-b63cc4e95461": [
+          "a2165041-2248-4896-9dea-5aaf19be10f5"
+        ],
+        "8df88af7-d61b-4a55-9a3d-a6cf5c84d8c4": [
+          "8f1c9da2-986e-4834-9e8a-7d63d1f0a161"
+        ],
+        "2984bffd-3969-4090-8165-a93752f1c553": [
+          "8df88af7-d61b-4a55-9a3d-a6cf5c84d8c4"
+        ],
+        "e1f75d8a-37ba-4d4a-8ad8-75603cecabc4": [
+          "8f1c9da2-986e-4834-9e8a-7d63d1f0a161"
+        ],
+        "3ef31c5c-e591-430e-81ea-580922440f28": [
+          "8df88af7-d61b-4a55-9a3d-a6cf5c84d8c4"
+        ],
+        "5c22bee5-b1f9-4c66-9c57-d53627dc7681": [
+          "8df88af7-d61b-4a55-9a3d-a6cf5c84d8c4"
+        ],
+        "ab7a07c2-1cce-48cb-93fc-c5f54a6edacb": [
+          "5c22bee5-b1f9-4c66-9c57-d53627dc7681"
+        ],
+        "378abefc-f3b9-42ff-895c-b3b50504ba12": [
+          "8df88af7-d61b-4a55-9a3d-a6cf5c84d8c4"
+        ],
+        "5335e9f3-7162-48e9-a4fc-80b4d819eb7e": [
+          "a62b6b22-8a16-4610-a504-8f7bdb560a39"
+        ],
+        "147ad50c-5fe3-4283-b255-1ee9106367fd": [
+          "c2cdf57d-347a-42c1-bcc6-b614987b91ba"
+        ],
+        "e2b301aa-980c-4928-9ca7-6d38d0a9cd21": [
+          "c2cdf57d-347a-42c1-bcc6-b614987b91ba"
+        ],
+        "397192e5-668a-4e27-bfa9-053522920724": [
+          "a62b6b22-8a16-4610-a504-8f7bdb560a39"
+        ],
+        "8a128067-7b14-4714-9f66-938468f7f186": [
+          "5335e9f3-7162-48e9-a4fc-80b4d819eb7e"
+        ],
+        "b28623c1-dcf3-4b86-96ab-8673cfbfa6dc": [
+          "c2cdf57d-347a-42c1-bcc6-b614987b91ba"
+        ]
+      },
+      "children": {
+        "936bed3b-42b1-4ac3-9702-3a542d50513b": [
+          "cd99dd10-1084-4980-8fe4-9b3c4d1ee675",
+          "e9ef1754-99fc-4d9b-92ed-4fea9194b763"
+        ],
+        "cd99dd10-1084-4980-8fe4-9b3c4d1ee675": [
+          "a2165041-2248-4896-9dea-5aaf19be10f5"
+        ],
+        "a2165041-2248-4896-9dea-5aaf19be10f5": [
+          "60a98d13-fc3d-4086-9af9-d1e0193b5749",
+          "2ac95dd1-5fcc-4483-b12a-9cc4d2f96430",
+          "8e5cb83b-fc88-4022-9689-b63cc4e95461"
+        ],
+        "8f1c9da2-986e-4834-9e8a-7d63d1f0a161": [
+          "8df88af7-d61b-4a55-9a3d-a6cf5c84d8c4",
+          "e1f75d8a-37ba-4d4a-8ad8-75603cecabc4"
+        ],
+        "8df88af7-d61b-4a55-9a3d-a6cf5c84d8c4": [
+          "2984bffd-3969-4090-8165-a93752f1c553",
+          "3ef31c5c-e591-430e-81ea-580922440f28",
+          "5c22bee5-b1f9-4c66-9c57-d53627dc7681",
+          "378abefc-f3b9-42ff-895c-b3b50504ba12"
+        ],
+        "5c22bee5-b1f9-4c66-9c57-d53627dc7681": [
+          "ab7a07c2-1cce-48cb-93fc-c5f54a6edacb"
+        ],
+        "a62b6b22-8a16-4610-a504-8f7bdb560a39": [
+          "5335e9f3-7162-48e9-a4fc-80b4d819eb7e",
+          "397192e5-668a-4e27-bfa9-053522920724"
+        ],
+        "c2cdf57d-347a-42c1-bcc6-b614987b91ba": [
+          "147ad50c-5fe3-4283-b255-1ee9106367fd",
+          "e2b301aa-980c-4928-9ca7-6d38d0a9cd21",
+          "b28623c1-dcf3-4b86-96ab-8673cfbfa6dc"
+        ],
+        "5335e9f3-7162-48e9-a4fc-80b4d819eb7e": [
+          "8a128067-7b14-4714-9f66-938468f7f186"
+        ]
+      }
+    },
+    {
+      "parents": {
+        "a9073925-4c06-41b1-b592-9c756c1b9daf": [],
+        "1d42a312-5600-458c-8757-23ae35993852": [
+          "a9073925-4c06-41b1-b592-9c756c1b9daf"
+        ],
+        "16e921a4-9e24-4827-8432-96972926b596": [
+          "8f1c9da2-986e-4834-9e8a-7d63d1f0a161"
+        ],
+        "c8205b6b-59e0-47d9-a423-376f5d6fed98": [
+          "8f1c9da2-986e-4834-9e8a-7d63d1f0a161"
+        ],
+        "0dc87861-feda-4bdf-901a-cec481ab6aee": [
+          "8f1c9da2-986e-4834-9e8a-7d63d1f0a161"
+        ],
+        "32191ba6-bdde-4046-b39b-27cc31159715": [
+          "8f1c9da2-986e-4834-9e8a-7d63d1f0a161"
+        ],
+        "667567af-4d30-4444-9784-6e9d7901d9b2": [
+          "8df88af7-d61b-4a55-9a3d-a6cf5c84d8c4"
+        ],
+        "03679b1b-f775-4fee-afa5-f3c7cf20579f": [
+          "8df88af7-d61b-4a55-9a3d-a6cf5c84d8c4"
+        ],
+        "ac1e376c-c54a-4bd6-b9bb-37d27a37e8bc": [
+          "2984bffd-3969-4090-8165-a93752f1c553"
+        ],
+        "9534c455-50a5-4948-8c51-d727d1625334": [
+          "a2165041-2248-4896-9dea-5aaf19be10f5"
+        ],
+        "f85bac9b-3605-40e1-ae10-be8404e8834a": [
+          "e9ef1754-99fc-4d9b-92ed-4fea9194b763"
+        ],
+        "46cd19fc-5329-4ea6-9692-b384b3381e09": [
+          "8e5cb83b-fc88-4022-9689-b63cc4e95461"
+        ],
+        "c749bfc9-1bd0-400f-9dce-dfa77c9e9b7f": [
+          "8f1c9da2-986e-4834-9e8a-7d63d1f0a161"
+        ],
+        "a62b6b22-8a16-4610-a504-8f7bdb560a39": [
+          "03679b1b-f775-4fee-afa5-f3c7cf20579f"
+        ],
+        "c2cdf57d-347a-42c1-bcc6-b614987b91ba": [
+          "5335e9f3-7162-48e9-a4fc-80b4d819eb7e"
+        ],
+        "3d016531-97c6-4b5a-8333-ff9783359cc6": [
+          "5335e9f3-7162-48e9-a4fc-80b4d819eb7e"
+        ],
+        "3a4f5a3f-82b6-418f-b6c1-23a3ae41e960": [
+          "82b7ca6d-f62f-4abd-8fa3-7d60a61cfbec"
+        ],
+        "160ae99f-46c8-4c7c-963b-36762f13bcb8": [
+          "8a128067-7b14-4714-9f66-938468f7f186"
+        ],
+        "eaf2d914-12c4-4bee-bf65-f0574e8ced27": [
+          "c2cdf57d-347a-42c1-bcc6-b614987b91ba"
+        ],
+        "5d77a917-185b-420b-a5ef-ea5037a3fbca": [
+          "b28623c1-dcf3-4b86-96ab-8673cfbfa6dc"
+        ]
+      },
+      "children": {
+        "a9073925-4c06-41b1-b592-9c756c1b9daf": [
+          "1d42a312-5600-458c-8757-23ae35993852"
+        ],
+        "8df88af7-d61b-4a55-9a3d-a6cf5c84d8c4": [
+          "667567af-4d30-4444-9784-6e9d7901d9b2",
+          "03679b1b-f775-4fee-afa5-f3c7cf20579f"
+        ],
+        "2984bffd-3969-4090-8165-a93752f1c553": [
+          "ac1e376c-c54a-4bd6-b9bb-37d27a37e8bc"
+        ],
+        "a2165041-2248-4896-9dea-5aaf19be10f5": [
+          "9534c455-50a5-4948-8c51-d727d1625334"
+        ],
+        "e9ef1754-99fc-4d9b-92ed-4fea9194b763": [
+          "f85bac9b-3605-40e1-ae10-be8404e8834a"
+        ],
+        "8e5cb83b-fc88-4022-9689-b63cc4e95461": [
+          "46cd19fc-5329-4ea6-9692-b384b3381e09"
+        ],
+        "03679b1b-f775-4fee-afa5-f3c7cf20579f": [
+          "a62b6b22-8a16-4610-a504-8f7bdb560a39"
+        ],
+        "5335e9f3-7162-48e9-a4fc-80b4d819eb7e": [
+          "c2cdf57d-347a-42c1-bcc6-b614987b91ba",
+          "3d016531-97c6-4b5a-8333-ff9783359cc6"
+        ],
+        "8a128067-7b14-4714-9f66-938468f7f186": [
+          "160ae99f-46c8-4c7c-963b-36762f13bcb8"
+        ],
+        "c2cdf57d-347a-42c1-bcc6-b614987b91ba": [
+          "eaf2d914-12c4-4bee-bf65-f0574e8ced27"
+        ],
+        "b28623c1-dcf3-4b86-96ab-8673cfbfa6dc": [
+          "5d77a917-185b-420b-a5ef-ea5037a3fbca"
+        ]
+      }
+    }
+  ],
+  "use_dynamic_islands": true,
+  "max_islands": 5,
+  "last_spawn_iteration": -30,
+  "use_paradigm_breakthrough": true,
+  "paradigm_tracker": {
+    "window_size": 10,
+    "improvement_threshold": 0.12,
+    "max_paradigm_uses": 2,
+    "max_tried_paradigms": 10,
+    "num_paradigms_to_generate": 3,
+    "improvement_history": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "active_paradigms": [
+      {
+        "idea": "Use scipy.optimize.differential_evolution for population-based global optimization",
+        "description": "Replace basinhopping with differential_evolution, a fundamentally different global optimizer that uses population-based evolution (mutation, crossover, selection) rather than Monte Carlo jumps. Differential evolution maintains a population of candidate solutions and combines them to explore the solution space more systematically. Use a penalty function formulation for constraints: penalty = sum of squared constraint violations. The optimizer handles bounds natively. Set popsize=15-20, mutation=(0.5, 1), recombination=0.7, maxiter=1000-2000. This explores the solution space differently from basinhopping's random walk approach.",
+        "what_to_optimize": "Maximize sum of radii while satisfying all overlap and boundary constraints",
+        "cautions": "Use penalty weight scaling (start with 100-1000) to balance objective vs constraint violations. Ensure final solution satisfies constraints by running a local refinement step if needed. The population size affects exploration vs exploitation tradeoff.",
+        "approach_type": "scipy.optimize.differential_evolution"
+      },
+      {
+        "idea": "Use scipy.optimize.minimize with trust-constr method for trust-region constrained optimization",
+        "description": "Use scipy.optimize.minimize with method='trust-constr' which implements a trust-region method with augmented Lagrangian constraint handling. This is fundamentally different from SLSQP's sequential quadratic programming approach. Trust-constr uses an interior-point method that maintains feasibility throughout optimization. Define constraints using NonlinearConstraint objects with lower bounds of 0 (for inequality constraints >= 0). Use xtol=1e-8, gtol=1e-8 for tight convergence. The trust region approach may find different local minima than SQP, potentially reaching better solutions near constraint boundaries.",
+        "what_to_optimize": "Maximize sum of radii subject to non-overlap and boundary constraints",
+        "cautions": "Trust-constr requires Jacobian of constraints for efficiency - provide analytically or use finite differences. The initial point should be feasible or close to feasible. May need multiple random starts to find global optimum.",
+        "approach_type": "scipy.optimize.minimize"
+      },
+      {
+        "idea": "Solve KKT conditions directly using scipy.optimize.root for stationary point computation",
+        "description": "Instead of optimization, directly solve the Karush-Kuhn-Tucker (KKT) optimality conditions using scipy.optimize.root. Formulate the Lagrangian with multipliers for each constraint (325 overlap constraints + 104 boundary constraints). The KKT system consists of: gradient of Lagrangian = 0, complementarity conditions, and primal/dual feasibility. Use a hybrid method that combines Newton iteration with line search. This is fundamentally different because it finds stationary points directly rather than searching iteratively. The active set of constraints (which ones are tight) determines the local structure of the solution.",
+        "what_to_optimize": "Find KKT stationary point that maximizes sum of radii",
+        "cautions": "KKT conditions are necessary but not sufficient for global optimum - need to check multiple starting points. The system is large (78 primal + ~400 dual variables). Use sparse Jacobian for efficiency. Some constraints may be inactive at optimum, requiring careful handling of complementarity conditions.",
+        "approach_type": "scipy.optimize.root"
+      }
+    ],
+    "paradigm_usage_counts": {
+      "0": 1,
+      "1": 1
+    },
+    "current_paradigm_index": 2,
+    "tried_paradigms": [
+      {
+        "idea": "Use scipy.optimize.shgo (simplicial homology global optimization) for systematic exploration",
+        "description": "SHGO uses simplicial homology to systematically explore the feasible region, building a simplicial complex to find all local minima. Unlike basinhopping's random jumps, SHGO uses a deterministic sampling strategy that guarantees finding all local minima for sufficiently fine sampling. Use the 'sobol' sampling method for better coverage of the search space. This is fundamentally different from both evolutionary and annealing approaches.",
+        "what_to_optimize": "global minimum of negative sum of radii",
+        "cautions": "SHGO can be computationally expensive. Use iters=1 with appropriate sampling points (n=64 or 128). Set minimizer_kwargs with SLSQP for local refinement. The argument 'sampling_method' should be 'sobol' for deterministic results. May need to reduce problem dimension or use bounds effectively.",
+        "approach_type": "scipy.optimize.shgo",
+        "uses": 2,
+        "starting_score": 0.9992543563133135,
+        "ending_score": 0.9992543563133135,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Sequential greedy placement with adaptive grid refinement",
+        "description": "A constructive algorithm fundamentally different from optimization. Place circles one at a time, each at the position allowing maximum radius. For each new circle, do coarse grid search (20x20), then refine with finer grid (100x100) around best coarse point. Compute max radius at each position considering all placed circles and boundaries. This deterministic construction builds the packing incrementally and may find configurations that global optimization misses due to its greedy nature prioritizing large radii early.",
+        "what_to_optimize": "sum of radii through greedy radius maximization at each placement step",
+        "cautions": "Order of placement matters - try multiple orderings (largest-first, random, edge-first). Use fine enough grid to not miss optimal positions. After construction, optionally do local refinement with minimize.",
+        "approach_type": "constructive.greedy_placement",
+        "uses": 2,
+        "starting_score": 0.9992543563133135,
+        "ending_score": 0.9992543563133135,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Parametric pattern optimization with reduced dimensionality",
+        "description": "Instead of optimizing all 78 variables, construct a structured pattern with only 6-8 parameters: corner_radius (symmetric), edge_count_per_side, edge_spacing, edge_radius, interior_lattice_spacing, interior_offset_x, interior_offset_y. The pattern places 4 corners, edge circles at parametric positions, and interior circles on a hexagonal lattice. Optimize only these few parameters using scipy.optimize.minimize with Nelder-Mead (derivative-free, good for low dimensions). This dramatic dimensionality reduction allows much more thorough exploration of structured configurations.",
+        "what_to_optimize": "pattern parameters that define the entire configuration structure",
+        "cautions": "Must ensure pattern produces exactly 26 circles. The pattern constrains the solution space - may miss asymmetric optima. Use flexible pattern that allows slight asymmetries via offset parameters.",
+        "approach_type": "parametric.pattern_construction",
+        "uses": 2,
+        "starting_score": 0.9992543563133135,
+        "ending_score": 0.9992543563133135,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "scipy.optimize.minimize with COBYLA method",
+        "description": "COBYLA (Constraint Optimization BY Linear Approximation) is a derivative-free trust-region method that constructs linear approximations of both objective and constraints. Unlike SLSQP (uses gradients and quadratic approximations) and trust-constr (uses Hessian information), COBYLA only needs function evaluations. This makes it robust to non-smooth constraint boundaries where the active constraint set changes. The linear approximation might navigate the non-convex landscape differently, potentially finding better local optima in regions where gradient-based methods get stuck.",
+        "what_to_optimize": "all 78 variables (26 centers + 26 radii) using linear constraint approximation",
+        "cautions": "COBYLA can be slower to converge than gradient methods. Use rhobeg=0.1 for initial trust region radius, rhoend=1e-6 for final precision. May need more iterations (maxiter=10000). Start from the best known configuration, not random.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.9992543563133135,
+        "ending_score": 0.9992543563133135,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.minimize with L-BFGS-B method and penalty formulation",
+        "description": "Reformulate the constrained problem as unconstrained optimization with penalty terms. Use L-BFGS-B which efficiently handles simple bounds (0\u2264x,y\u22641, 0\u2264r\u22640.5) while the penalty function handles overlap constraints. The objective becomes: minimize -sum(radii) + penalty_weight * sum(max(0, r_i+r_j - dist_ij)^2) + penalty_weight * sum(boundary_violations^2). Start with penalty_weight=1000 and increase if needed. Use multiple initializations from structured patterns.",
+        "what_to_optimize": "sum of radii through penalty-based formulation",
+        "cautions": "Penalty weight must be large enough to enforce constraints but not so large it causes numerical issues. Use multiple starting points to avoid local optima. Ensure bounds are properly set for L-BFGS-B.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.9992543563133135,
+        "ending_score": 0.9992543563133135,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.least_squares for constraint violation minimization",
+        "description": "Formulate the problem as nonlinear least squares where residuals are: (1) constraint violations for each circle pair (max(0, r_i+r_j-dist_ij)), (2) boundary violations for each circle, and (3) negative radii terms to maximize sum. The objective is minimize(sum(residuals^2)). This directly targets constraint satisfaction while maximizing radii. Use bounds parameter for simple constraints and robust loss functions like 'soft_l1' to handle outliers better.",
+        "what_to_optimize": "constraint violations and radii simultaneously via residuals",
+        "cautions": "Need to balance constraint residuals with radius maximization residuals. The 'soft_l1' loss can help with numerical stability. Multiple starting points recommended.",
+        "approach_type": "scipy.optimize.least_squares",
+        "uses": 2,
+        "starting_score": 0.9992543563133135,
+        "ending_score": 0.9992543563133135,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.minimize with Powell method and penalty formulation",
+        "description": "Powell's conjugate direction method is derivative-free and can find solutions that gradient-based methods miss. Reformulate with penalty terms for constraints. Powell's method searches along conjugate directions without requiring gradient information, which can be advantageous for this non-convex problem. Use bounds via penalty and start from multiple initial configurations including hexagonal patterns and corner-heavy arrangements.",
+        "what_to_optimize": "sum of radii via derivative-free optimization",
+        "cautions": "Powell's method doesn't handle bounds directly, so all constraints must be in the penalty function. May require more function evaluations but can escape local optima that trap gradient methods. Use higher iteration limits.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.9992543563133135,
+        "ending_score": 0.9992543563133135,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "scipy.optimize.minimize with trust-constr method and center-only formulation",
+        "description": "Reformulate to optimize only circle centers (52 variables), computing radii exactly from centers using min(distance_to_walls, distance_to_neighbors/2). Use scipy.optimize.minimize with method='trust-constr', which is specifically designed for nonlinear constrained optimization and can be more robust than SLSQP for highly coupled constraints. The objective is -sum(radii) with bounds [0,1] for each center coordinate. Trust region methods handle the implicit constraint coupling better than sequential quadratic programming.",
+        "what_to_optimize": "Primary score (sum of radii / 2.635). The center-only formulation guarantees radii are always optimal for given centers, eliminating a source of suboptimality.",
+        "cautions": "The objective function is non-smooth where the minimum constraint changes (wall vs neighbor). Use finite-difference gradient approximation or let trust-constr approximate it. Try multiple random initializations since trust-constr is a local optimizer.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.9992543563133135,
+        "ending_score": 0.9992543563133135,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "scipy.optimize.differential_evolution with strategy='best1exp' and center-only formulation",
+        "description": "Use center-only formulation with scipy.optimize.differential_evolution, trying strategy='best1exp' which uses exponential crossover for better exploration. Differential evolution is population-based global optimization, fundamentally different from trajectory-based basinhopping. Set bounds=[[0,1]]*52, use larger population (15-20), and enable polish=True for local refinement. The 'best1exp' strategy mutates using the best solution and one difference vector with exponential crossover, which can explore differently than the default 'best1bin'.",
+        "what_to_optimize": "Primary score. Population-based methods explore multiple regions simultaneously, potentially finding better global optima than trajectory-based methods that can get trapped.",
+        "cautions": "Differential evolution can be slower per iteration but explores more thoroughly. Use recombination=0.7, mutation=(0.5, 1.0) for good exploration. The maxiter should be sufficient (1000-2000) for convergence.",
+        "approach_type": "scipy.optimize.differential_evolution",
+        "uses": 2,
+        "starting_score": 0.9992543563133135,
+        "ending_score": 0.9992543563133135,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "scipy.optimize.basinhopping with center-only formulation (reduced dimensionality)",
+        "description": "Keep the same basinhopping algorithm but use center-only formulation, reducing variables from 78 to 52. This is the same successful algorithm with a critical improvement: compute radii exactly from centers rather than optimizing them. The take_step function only perturbs centers (not radii), and the local SLSQP minimizer works with 52 variables. This should significantly improve convergence since: (1) fewer variables to optimize, (2) radii are always optimal for given centers, (3) no need for explicit overlap constraints since radii computation enforces them.",
+        "what_to_optimize": "Primary score. Reducing dimensionality by 33% (78\u219252 variables) should improve both convergence speed and solution quality. The implicit constraint handling via exact radius computation eliminates constraint violations.",
+        "cautions": "The objective function becomes non-smooth. Increase niter (300-500) and adjust stepsize for the smaller variable space. Use multiple random restarts with different seeds to ensure global exploration.",
+        "approach_type": "scipy.optimize.basinhopping",
+        "uses": 2,
+        "starting_score": 0.9992543563133135,
+        "ending_score": 0.9992543563133135,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      }
+    ],
+    "best_score_at_paradigm_gen": 0.9992543563133135,
+    "best_score_during_paradigm": 0.9992543563133135
+  }
+}

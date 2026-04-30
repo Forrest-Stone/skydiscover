@@ -1,0 +1,477 @@
+{
+  "num_islands": 2,
+  "current_island": 1,
+  "iteration_count": 69,
+  "global_best_score": 0.6067443693465289,
+  "decay": 0.9,
+  "intensity_min": 0.15,
+  "intensity_max": 0.5,
+  "migration_interval": 15,
+  "diversity_strategy_type": "code",
+  "use_unified_archive": true,
+  "use_adaptive_search": true,
+  "use_ucb_selection": true,
+  "fixed_intensity": 0.4,
+  "adapter": {
+    "states": [
+      {
+        "accumulated_signal": 0.13432843164865158,
+        "best_score": 0.6067443693465289,
+        "improvement_count": 2,
+        "total_evaluations": 25,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      },
+      {
+        "accumulated_signal": 0.12030827929509186,
+        "best_score": 0.6067443693465289,
+        "improvement_count": 2,
+        "total_evaluations": 27,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      }
+    ],
+    "dimension_visits": [
+      25,
+      27
+    ],
+    "dimension_rewards": [
+      0.13877553075105276,
+      0.025895094782610102
+    ],
+    "decayed_visits": [
+      9.28210201230815,
+      9.4185026299696
+    ],
+    "global_best_score": 0.6067443693465289,
+    "ucb_exploration": 1.41,
+    "min_visits": 3,
+    "decay": 0.9,
+    "epsilon": 1e-08
+  },
+  "island_config_names": [
+    "balanced",
+    "balanced"
+  ],
+  "islands": [
+    [
+      "e37cc733-2858-46e0-88bd-1d6346041e22",
+      "20aaa8b2-1d07-4d78-bd2e-f16b43cd3964",
+      "dae3c51e-d4a0-4275-ac48-8dfbb5153e5c",
+      "0db6b8d3-28f9-4abb-8ba0-85647f6bb5cf",
+      "df08758c-6144-482a-af19-53b020b702f3",
+      "4de9c6c4-fb42-4ad6-9d3f-ac90070f9c10",
+      "cf4ef907-8a66-4c76-9daf-d56f033d552e",
+      "f3ef4923-f002-4a00-8def-4bcd6ccbac23",
+      "2ce90c64-da0e-4d35-a0c1-f54d1666747d",
+      "b1e703b5-e0b6-4ae0-9b3d-8bbedf0f148e",
+      "c04c69e2-e97d-4a0c-abc9-ee0cdd55f700",
+      "a6c9636a-5bef-486a-bdbf-702fb6891791",
+      "9e5f1ab1-cc1b-4d1d-b323-a115106485ed",
+      "e2060f39-e76d-4d19-b087-d727f65b427b",
+      "c935bbe6-0d43-47e4-9b81-4b2379cdd5b9",
+      "5135eae0-4e15-4764-be38-945bce9032ee",
+      "5a4f1e6d-cc9f-4630-a7f9-aba211b8eadd",
+      "e952deb8-d024-4291-abd5-faf64e35f221",
+      "3e41a83e-bee5-4702-9cc1-c0c9b566ee88",
+      "4a485b05-d37c-4163-ac72-ff7ad68784f7"
+    ],
+    [
+      "616f6bbe-e5d4-4e85-8f25-dfca16ffd4aa",
+      "3b1bd54c-cbd2-436d-8301-6a5911aa59ec",
+      "2c746a85-de06-40c3-a764-c7e6b1f0a1ca",
+      "e56b1f3b-75dc-440b-9c22-4242e2d42f87",
+      "f92cb104-9db7-4ab3-8f2f-cd1226d794dc",
+      "31a74da2-ee52-443f-8515-70c98e1d7bb5",
+      "5bb92a81-403d-4db2-a2bd-b10c68139f79",
+      "718581f1-942e-48ee-94a0-e820635d3df8",
+      "4cf9e0f4-d34e-4fa0-9581-4e80bcca3436",
+      "9e3fdea3-7e95-43e7-803f-18b77e66f1ed",
+      "d861b481-a528-42a0-98d3-2b09bd4e128c",
+      "8d54919a-8bf0-4b76-b348-62959bf24cf0",
+      "a0eb0677-a2dc-40de-a36a-c87044f69684",
+      "c834df9b-73a5-46ec-8b32-96592e72a44e",
+      "a0a05bdc-f170-4d4c-bcd0-fe84d8b294a6",
+      "3d280c7f-ea29-472c-be98-b603532abd28",
+      "a0eb474c-9b30-4fa6-8386-dc07ef1d9f99",
+      "47737bc2-3beb-4170-b9dd-75574881e5a9",
+      "e3e5bc71-0c22-473f-b087-c24f6ffac9cf",
+      "000214bb-6f4c-4a9d-b22c-151587ea20c1"
+    ]
+  ],
+  "archive_genealogies": [
+    {
+      "parents": {
+        "e37cc733-2858-46e0-88bd-1d6346041e22": [
+          "1601b114-b981-46fc-9b25-98fb25a1775b"
+        ],
+        "20aaa8b2-1d07-4d78-bd2e-f16b43cd3964": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "dae3c51e-d4a0-4275-ac48-8dfbb5153e5c": [
+          "20aaa8b2-1d07-4d78-bd2e-f16b43cd3964"
+        ],
+        "0db6b8d3-28f9-4abb-8ba0-85647f6bb5cf": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "df08758c-6144-482a-af19-53b020b702f3": [
+          "dae3c51e-d4a0-4275-ac48-8dfbb5153e5c"
+        ],
+        "4de9c6c4-fb42-4ad6-9d3f-ac90070f9c10": [
+          "616f6bbe-e5d4-4e85-8f25-dfca16ffd4aa"
+        ],
+        "cf4ef907-8a66-4c76-9daf-d56f033d552e": [
+          "3b1bd54c-cbd2-436d-8301-6a5911aa59ec"
+        ],
+        "f3ef4923-f002-4a00-8def-4bcd6ccbac23": [
+          "2c746a85-de06-40c3-a764-c7e6b1f0a1ca"
+        ],
+        "2ce90c64-da0e-4d35-a0c1-f54d1666747d": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "b1e703b5-e0b6-4ae0-9b3d-8bbedf0f148e": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "c04c69e2-e97d-4a0c-abc9-ee0cdd55f700": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "a6c9636a-5bef-486a-bdbf-702fb6891791": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "9e5f1ab1-cc1b-4d1d-b323-a115106485ed": [
+          "1601b114-b981-46fc-9b25-98fb25a1775b"
+        ],
+        "e2060f39-e76d-4d19-b087-d727f65b427b": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "c935bbe6-0d43-47e4-9b81-4b2379cdd5b9": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "5135eae0-4e15-4764-be38-945bce9032ee": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "5a4f1e6d-cc9f-4630-a7f9-aba211b8eadd": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "e952deb8-d024-4291-abd5-faf64e35f221": [
+          "c834df9b-73a5-46ec-8b32-96592e72a44e"
+        ],
+        "3e41a83e-bee5-4702-9cc1-c0c9b566ee88": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "4a485b05-d37c-4163-ac72-ff7ad68784f7": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ]
+      },
+      "children": {
+        "e37cc733-2858-46e0-88bd-1d6346041e22": [
+          "20aaa8b2-1d07-4d78-bd2e-f16b43cd3964",
+          "0db6b8d3-28f9-4abb-8ba0-85647f6bb5cf",
+          "2ce90c64-da0e-4d35-a0c1-f54d1666747d",
+          "b1e703b5-e0b6-4ae0-9b3d-8bbedf0f148e",
+          "c04c69e2-e97d-4a0c-abc9-ee0cdd55f700",
+          "a6c9636a-5bef-486a-bdbf-702fb6891791",
+          "e2060f39-e76d-4d19-b087-d727f65b427b",
+          "c935bbe6-0d43-47e4-9b81-4b2379cdd5b9",
+          "5135eae0-4e15-4764-be38-945bce9032ee",
+          "5a4f1e6d-cc9f-4630-a7f9-aba211b8eadd",
+          "3e41a83e-bee5-4702-9cc1-c0c9b566ee88",
+          "4a485b05-d37c-4163-ac72-ff7ad68784f7"
+        ],
+        "20aaa8b2-1d07-4d78-bd2e-f16b43cd3964": [
+          "dae3c51e-d4a0-4275-ac48-8dfbb5153e5c"
+        ],
+        "dae3c51e-d4a0-4275-ac48-8dfbb5153e5c": [
+          "df08758c-6144-482a-af19-53b020b702f3"
+        ],
+        "616f6bbe-e5d4-4e85-8f25-dfca16ffd4aa": [
+          "4de9c6c4-fb42-4ad6-9d3f-ac90070f9c10"
+        ],
+        "3b1bd54c-cbd2-436d-8301-6a5911aa59ec": [
+          "cf4ef907-8a66-4c76-9daf-d56f033d552e"
+        ],
+        "2c746a85-de06-40c3-a764-c7e6b1f0a1ca": [
+          "f3ef4923-f002-4a00-8def-4bcd6ccbac23"
+        ],
+        "c834df9b-73a5-46ec-8b32-96592e72a44e": [
+          "e952deb8-d024-4291-abd5-faf64e35f221"
+        ]
+      }
+    },
+    {
+      "parents": {
+        "616f6bbe-e5d4-4e85-8f25-dfca16ffd4aa": [
+          "3a62a7be-d173-44c8-9a80-0c251c04c5e9"
+        ],
+        "3b1bd54c-cbd2-436d-8301-6a5911aa59ec": [
+          "616f6bbe-e5d4-4e85-8f25-dfca16ffd4aa"
+        ],
+        "2c746a85-de06-40c3-a764-c7e6b1f0a1ca": [
+          "3b1bd54c-cbd2-436d-8301-6a5911aa59ec"
+        ],
+        "e56b1f3b-75dc-440b-9c22-4242e2d42f87": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "f92cb104-9db7-4ab3-8f2f-cd1226d794dc": [
+          "dae3c51e-d4a0-4275-ac48-8dfbb5153e5c"
+        ],
+        "31a74da2-ee52-443f-8515-70c98e1d7bb5": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "5bb92a81-403d-4db2-a2bd-b10c68139f79": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "718581f1-942e-48ee-94a0-e820635d3df8": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "4cf9e0f4-d34e-4fa0-9581-4e80bcca3436": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "9e3fdea3-7e95-43e7-803f-18b77e66f1ed": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "d861b481-a528-42a0-98d3-2b09bd4e128c": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "8d54919a-8bf0-4b76-b348-62959bf24cf0": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "a0eb0677-a2dc-40de-a36a-c87044f69684": [
+          "c935bbe6-0d43-47e4-9b81-4b2379cdd5b9"
+        ],
+        "c834df9b-73a5-46ec-8b32-96592e72a44e": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "a0a05bdc-f170-4d4c-bcd0-fe84d8b294a6": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "3d280c7f-ea29-472c-be98-b603532abd28": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "a0eb474c-9b30-4fa6-8386-dc07ef1d9f99": [
+          "5a4f1e6d-cc9f-4630-a7f9-aba211b8eadd"
+        ],
+        "47737bc2-3beb-4170-b9dd-75574881e5a9": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "e3e5bc71-0c22-473f-b087-c24f6ffac9cf": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ],
+        "000214bb-6f4c-4a9d-b22c-151587ea20c1": [
+          "e37cc733-2858-46e0-88bd-1d6346041e22"
+        ]
+      },
+      "children": {
+        "616f6bbe-e5d4-4e85-8f25-dfca16ffd4aa": [
+          "3b1bd54c-cbd2-436d-8301-6a5911aa59ec"
+        ],
+        "3b1bd54c-cbd2-436d-8301-6a5911aa59ec": [
+          "2c746a85-de06-40c3-a764-c7e6b1f0a1ca"
+        ],
+        "e37cc733-2858-46e0-88bd-1d6346041e22": [
+          "e56b1f3b-75dc-440b-9c22-4242e2d42f87",
+          "31a74da2-ee52-443f-8515-70c98e1d7bb5",
+          "5bb92a81-403d-4db2-a2bd-b10c68139f79",
+          "718581f1-942e-48ee-94a0-e820635d3df8",
+          "4cf9e0f4-d34e-4fa0-9581-4e80bcca3436",
+          "9e3fdea3-7e95-43e7-803f-18b77e66f1ed",
+          "d861b481-a528-42a0-98d3-2b09bd4e128c",
+          "8d54919a-8bf0-4b76-b348-62959bf24cf0",
+          "c834df9b-73a5-46ec-8b32-96592e72a44e",
+          "a0a05bdc-f170-4d4c-bcd0-fe84d8b294a6",
+          "3d280c7f-ea29-472c-be98-b603532abd28",
+          "47737bc2-3beb-4170-b9dd-75574881e5a9",
+          "e3e5bc71-0c22-473f-b087-c24f6ffac9cf",
+          "000214bb-6f4c-4a9d-b22c-151587ea20c1"
+        ],
+        "dae3c51e-d4a0-4275-ac48-8dfbb5153e5c": [
+          "f92cb104-9db7-4ab3-8f2f-cd1226d794dc"
+        ],
+        "c935bbe6-0d43-47e4-9b81-4b2379cdd5b9": [
+          "a0eb0677-a2dc-40de-a36a-c87044f69684"
+        ],
+        "5a4f1e6d-cc9f-4630-a7f9-aba211b8eadd": [
+          "a0eb474c-9b30-4fa6-8386-dc07ef1d9f99"
+        ]
+      }
+    }
+  ],
+  "use_dynamic_islands": true,
+  "max_islands": 5,
+  "last_spawn_iteration": -30,
+  "use_paradigm_breakthrough": true,
+  "paradigm_tracker": {
+    "window_size": 10,
+    "improvement_threshold": 0.12,
+    "max_paradigm_uses": 2,
+    "max_tried_paradigms": 10,
+    "num_paradigms_to_generate": 3,
+    "improvement_history": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "active_paradigms": [
+      {
+        "idea": "scipy.optimize.linprog for exact optimal radius computation",
+        "description": "Use linear programming to compute optimal radii for fixed positions. Formulate as: maximize sum(r_i) subject to r_i + r_j <= dist(i,j) (pairwise) and r_i <= min(x_i, y_i, 1-x_i, 1-y_i) (boundary). This LP can be solved exactly using scipy.optimize.linprog with the HiGHS solver. After solving, identify active constraints (tight pairs) and adjust positions to increase those distances. Iterate: solve LP \u2192 identify tight constraints \u2192 move centers apart \u2192 repeat. This guarantees optimal radii for any fixed positions.",
+        "what_to_optimize": "radii using exact linear programming solution, then positions iteratively",
+        "cautions": "Large constraint matrix (325 pairwise + 104 boundary constraints). Use sparse matrices for efficiency. Set method='highs' for best performance. After LP solve, identify which pairs have r_i + r_j = dist(i,j) and adjust those positions. Need ~10-20 iterations for convergence.",
+        "approach_type": "scipy.optimize.linprog"
+      },
+      {
+        "idea": "scipy.spatial.Voronoi for centroid-based position refinement",
+        "description": "Use Voronoi diagrams to refine positions geometrically (Lloyd's algorithm variant). Compute Voronoi diagram for current centers, clip cells to unit square. The inscribed circle in each Voronoi cell gives the maximum radius for that center. Move each center toward its cell centroid (weighted by inscribed circle radius). Recompute Voronoi and iterate. This geometric approach naturally maximizes minimum distances without gradient-based optimization. Start with hexagonal grid, refine using Voronoi iterations.",
+        "what_to_optimize": "positions using Voronoi cell geometry to maximize inscribed circles",
+        "cautions": "Clip Voronoi cells to [0,1]\u00d7[0,1] using shapely or manual polygon clipping. Compute inscribed radius as min distance from center to cell edges. Use relaxation factor (move fraction toward centroid) for stability. Handle 4+ cells meeting at vertices carefully. Typically converges in 50-100 iterations.",
+        "approach_type": "scipy.spatial.Voronoi"
+      },
+      {
+        "idea": "scipy.spatial.Delaunay for topology-aware constraint handling",
+        "description": "Use Delaunay triangulation to identify which circles can potentially touch (only check Delaunay neighbors, not all pairs). This reduces O(n\u00b2) constraint checks to O(n). For each center, compute radius as min(boundary_dist, min(neighbor_dist)/2 for Delaunay neighbors). Then use iterative adjustment: for tight constraints (r_i + r_j \u2248 dist), move centers apart proportionally. Recompute Delaunay after adjustments. This topology-aware approach captures actual packing structure.",
+        "what_to_optimize": "constraint efficiency and radius computation using Delaunay neighbor topology",
+        "cautions": "Delaunay may include spurious long edges; filter by distance threshold. Boundary circles need special handling (convex hull gives boundary neighbors). Verify final solution against all pairwise constraints, not just Delaunay neighbors. Recompute Delaunay after significant position changes.",
+        "approach_type": "scipy.spatial.Delaunay"
+      }
+    ],
+    "paradigm_usage_counts": {
+      "0": 1
+    },
+    "current_paradigm_index": 1,
+    "tried_paradigms": [
+      {
+        "idea": "Use scipy.optimize.minimize with parameterized hexagonal lattice construction",
+        "description": "Instead of optimizing 78 individual variables, parameterize the packing with a small set of geometric parameters: (1) base_radius r, (2) horizontal_spacing h_factor (as multiple of r), (3) vertical_spacing v_factor (as multiple of r), (4) row_pattern encoding, (5) offset parameters for each row. This reduces the search space from 78 dimensions to perhaps 10-15 dimensions. Use scipy.optimize.minimize with L-BFGS-B (for bound constraints) or SLSQP to optimize these parameters. The packing is constructed deterministically from parameters, then radii are computed. This exploits the known structure of good packings (hexagonal patterns) while allowing optimization of key parameters.",
+        "what_to_optimize": "Primary metric: sum of radii. By reducing dimensionality, we can more efficiently search for optimal configurations while respecting geometric structure.",
+        "cautions": "Parameterization must be differentiable or have meaningful gradients. Use finite differences if analytical gradients unavailable. Start with parameters derived from theoretical hexagonal packing (h=2r, v=\u221a3r). Ensure row_pattern always produces exactly 26 circles. Use multiple initial parameter sets.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.shgo for global constrained optimization",
+        "description": "SHGO (Simplicial Homology Global Optimization) is designed specifically for global optimization with nonlinear constraints. Unlike local optimizers (SLSQP) that get trapped, SHGO uses simplicial homology to systematically explore the solution space and find all local minima, then select the global optimum. Define 78 variables (26 positions \u00d7 2 coordinates + 26 radii), objective as maximizing sum of radii (minimize negative sum), and constraints as circle-circle non-overlap (r_i + r_j \u2264 dist(i,j)) and circle-boundary containment (r_i \u2264 min(x_i, y_i, 1-x_i, 1-y_i)). Use bounds positions \u2208 [0.05, 0.95], radii \u2208 [0.01, 0.25].",
+        "what_to_optimize": "primary evaluator score (sum of radii)",
+        "cautions": "SHGO can be computationally expensive for 78 variables. Use iters=1 or sampling methods='sobol' for efficiency. Ensure constraints are properly formatted as inequality constraints (\u2264 0 form). Start with fewer variables by fixing radii ratio relationships if 78 is too many.",
+        "approach_type": "scipy.optimize.shgo",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.differential_evolution with penalty-based constraint handling",
+        "description": "Differential evolution is a global evolutionary optimizer robust to local minima. Since DE doesn't handle constraints directly, embed them as penalties in the objective function. Optimize 52 variables (positions only), compute radii implicitly as r_i = min(boundary_dist, min_{j\u2260i} dist(i,j)/2 - penalty_adjustment). The objective becomes: maximize sum(r_i) - large_penalty \u00d7 sum(overlap_violations) - large_penalty \u00d7 sum(boundary_violations). Use strategy='best1bin', popsize=15-20, mutation=(0.5, 1), recombination=0.7, and bounds [0.05, 0.95] for positions. The evolutionary exploration escapes local minima that trapped SLSQP.",
+        "what_to_optimize": "primary evaluator score with constraint satisfaction",
+        "cautions": "Penalty coefficients must be large enough (try 100-1000) to force constraint satisfaction. The implicit radius computation may not be optimal for variable radii - consider optimizing all 78 variables with penalty for overlaps. Use polish=True to refine the final solution with local optimization.",
+        "approach_type": "scipy.optimize.differential_evolution",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.basinhopping with constrained local minimizer",
+        "description": "Basinhopping combines global exploration (random jumps) with local minimization, effectively escaping local minima while efficiently refining solutions. Use 78 variables (positions + radii) with SLSQP as the local minimizer to handle nonlinear constraints. The key is that basinhopping adds random perturbations to escape basins of attraction. Define take_step as a custom step function that perturbs positions and radii appropriately. Use niter=100-200 iterations, T=1.0 temperature parameter, and stepsize=0.05-0.1. The local minimizer handles constraints while random jumps enable global exploration.",
+        "what_to_optimize": "primary evaluator score while satisfying all constraints",
+        "cautions": "Must define constraints in SLSQP format for the local minimizer. The take_step function should respect bounds (positions in [0,1], radii positive). May need to tune T and stepsize for the problem scale. Use callback to track best solution found. Initial point matters - try multiple random starts.",
+        "approach_type": "scipy.optimize.basinhopping",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use numpy for corner-priority placement with geometric radius computation",
+        "description": "Place circles starting from the 4 corners where maximum radii are achievable. Place 4 corner circles at positions (r,r), (1-r,r), (r,1-r), (1-r,1-r) where r is computed to maximize radius while leaving space for edge circles. Then place circles along edges, then fill interior in hexagonal pattern. For each circle, compute exact maximum radius as min(boundary_distance, min(neighbor_distances)/2) where neighbor_distances are computed using numpy.linalg.norm. This prioritizes larger circles in corners and edges.",
+        "what_to_optimize": "Sum of radii by placing larger circles where boundaries allow bigger radii",
+        "cautions": "Corner circles must not overlap with each other (diagonal constraint). Edge circles must fit between corners. Interior circles must respect all neighbors. Use numpy for efficient distance calculations.",
+        "approach_type": "numpy.linalg.norm",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use numpy for optimal hexagonal spacing calculation with row pattern [4,5,4,5,4,4]",
+        "description": "Instead of pattern [5,4,5,4,5,3], use [4,5,4,5,4,4]=26 which has more uniform row sizes and may allow larger minimum radius. Compute exact optimal spacing: for horizontal fit with max 5 circles, r_h = 1/(2*(5-1)) = 0.125; for vertical fit with 6 rows, r_v = 1/(sqrt(3)*(6-1)+2) \u2248 0.092. Use r = min(r_h, r_v). Then compute actual radii for each position using boundary constraints and neighbor constraints. The more balanced pattern may yield better overall sum.",
+        "what_to_optimize": "Sum of radii by using more uniform pattern distribution and exact spacing calculation",
+        "cautions": "Verify the pattern sums to exactly 26 circles. Ensure alternating row offsets for hexagonal packing. Calculate radii exactly from constraints rather than using iterative reduction.",
+        "approach_type": "numpy.sqrt",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use numpy for boundary-distance-weighted radius computation with symmetric placement",
+        "description": "Place circles in symmetric positions using the current hexagonal pattern, but compute radii using a fundamentally different method. For each circle, compute boundary_distance = min(x, y, 1-x, 1-y). Initialize radius to boundary_distance. Then for each pair, if r_i + r_j > dist_ij, reduce proportionally to boundary_distance (circles with larger boundary_distance keep more of their radius). This weighted reduction preserves larger radii for boundary circles. Use numpy for all calculations.",
+        "what_to_optimize": "Sum of radii by preserving larger radii for boundary-positioned circles during constraint resolution",
+        "cautions": "The weighted reduction must still satisfy all overlap constraints. May need multiple iterations for convergence. Ensure final radii are valid (non-overlapping, within boundaries).",
+        "approach_type": "numpy.minimum",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Uniform radius calculation instead of greedy reduction",
+        "description": "The current compute_max_radii function uses greedy proportional reduction which severely penalizes edge circles when they overlap with interior circles (edge circle at r=0.095 gets reduced to ~0.035). Instead, calculate the exact maximum uniform radius analytically: for hexagonal pattern [5,4,5,4,5,3], the horizontal constraint gives r \u2264 1/10 (5 circles need width 10r), and vertical constraint gives r \u2264 1/(2+5\u221a3) \u2248 0.094. Use r = min(1/10, 1/(2+5\u221a3)) directly for all circles. This should give sum \u2248 26 \u00d7 0.094 \u2248 2.44, much better than current ~1.60.",
+        "what_to_optimize": "primary sum_radii score by eliminating the greedy reduction that incorrectly shrinks edge circles",
+        "cautions": "Verify that all circles fit within the unit square and don't overlap. The placement code already uses correct hexagonal spacing (h=2r, v=r\u221a3), so uniform radius should work perfectly.",
+        "approach_type": "numpy.ndarray",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Corner-priority placement with larger corner circles",
+        "description": "Place 4 circles in corners at positions (r,r), (1-r,r), (r,1-r), (1-r,1-r) with radius r=0.25 (touching two walls each). These 4 circles contribute sum = 1.0. Then fill remaining 22 circles in the interior using hexagonal pattern. The interior space after corner circles is approximately 0.5\u00d70.5 centered, where smaller circles can fit. Calculate the maximum radius for interior circles accounting for corner circle boundaries. This leverages the geometric advantage that corner circles can be much larger since they're constrained by only 2 walls instead of 4.",
+        "what_to_optimize": "sum_radii by placing large circles in corners where geometric constraints allow maximum expansion",
+        "cautions": "Corner circles at r=0.25 will touch at the center point (0.5, 0.5), so no center circle can be placed. Interior circles must fit in the gaps between corner circles. Calculate exact positions to avoid overlaps.",
+        "approach_type": "numpy.ndarray",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Hierarchical radius computation with wall constraints first",
+        "description": "Fix the compute_max_radii function by processing constraints in correct order: (1) For each circle, compute wall-constrained radius as min(x, y, 1-x, 1-y), (2) Sort circles by wall constraint (smallest first), (3) For each pair, reduce only the larger radius to satisfy overlap constraint, never reducing below wall constraint. This ensures edge circles keep their wall-limited radius while interior circles shrink to accommodate. The current greedy reduction incorrectly reduces both circles proportionally, causing edge circles to become tiny when they neighbor large interior circles.",
+        "what_to_optimize": "sum_radii by preserving edge circle radii that are correctly limited by walls, not by overlaps",
+        "cautions": "Must process pairs in correct order to avoid cascading reductions. Edge circles with small wall constraints should never be reduced below their wall limit. Interior circles should reduce to accommodate edge circles.",
+        "approach_type": "numpy.ndarray",
+        "uses": 2,
+        "starting_score": 0.6067443693465289,
+        "ending_score": 0.6067443693465289,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      }
+    ],
+    "best_score_at_paradigm_gen": 0.6067443693465289,
+    "best_score_during_paradigm": 0.6067443693465289
+  }
+}

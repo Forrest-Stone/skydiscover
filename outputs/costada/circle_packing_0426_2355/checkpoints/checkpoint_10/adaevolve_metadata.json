@@ -1,0 +1,197 @@
+{
+  "num_islands": 2,
+  "current_island": 1,
+  "iteration_count": 9,
+  "global_best_score": 0.36423689449571406,
+  "decay": 0.9,
+  "intensity_min": 0.15,
+  "intensity_max": 0.5,
+  "migration_interval": 15,
+  "diversity_strategy_type": "code",
+  "use_unified_archive": true,
+  "use_adaptive_search": true,
+  "use_ucb_selection": true,
+  "fixed_intensity": 0.4,
+  "adapter": {
+    "states": [
+      {
+        "accumulated_signal": 0.09999999999999998,
+        "best_score": 0.36423689449571406,
+        "improvement_count": 1,
+        "total_evaluations": 6,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      },
+      {
+        "accumulated_signal": 0.09999999999999998,
+        "best_score": 0.36423689449571406,
+        "improvement_count": 0,
+        "total_evaluations": 5,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      }
+    ],
+    "dimension_visits": [
+      6,
+      5
+    ],
+    "dimension_rewards": [
+      0.5904900000000002,
+      0.0
+    ],
+    "decayed_visits": [
+      4.68559,
+      4.0951
+    ],
+    "global_best_score": 0.36423689449571406,
+    "ucb_exploration": 1.41,
+    "min_visits": 3,
+    "decay": 0.9,
+    "epsilon": 1e-08
+  },
+  "island_config_names": [
+    "balanced",
+    "balanced"
+  ],
+  "islands": [
+    [
+      "674f4a57-35d0-4d44-b33f-952d6e4952f9",
+      "56889a7d-c038-45d6-9d76-119046204c4a",
+      "17ab60ae-0cf6-46a2-a766-4bc75c45fc8c",
+      "622b7faf-3c5f-4b40-b451-6668f535eed5",
+      "4261e288-da9f-43e5-93e8-b53e857b3b9c",
+      "bbc5ddc9-13e4-441b-a2af-257be7807e81"
+    ],
+    [
+      "ef8f461a-1fd4-40ca-8a1a-9511587347e5",
+      "7cf91f70-a1d1-42b0-8d39-e23bd062b764",
+      "9ff8f17f-058c-4847-954f-93d74ff3d469",
+      "6b408e7a-8d90-45ba-a950-f261d9996125",
+      "82ac3833-fc94-4f4a-ab37-47fbe5ed65f8",
+      "b2ba6a9e-38bd-42e6-8539-afe650c911dc"
+    ]
+  ],
+  "archive_genealogies": [
+    {
+      "parents": {
+        "674f4a57-35d0-4d44-b33f-952d6e4952f9": [],
+        "56889a7d-c038-45d6-9d76-119046204c4a": [
+          "674f4a57-35d0-4d44-b33f-952d6e4952f9"
+        ],
+        "17ab60ae-0cf6-46a2-a766-4bc75c45fc8c": [
+          "674f4a57-35d0-4d44-b33f-952d6e4952f9"
+        ],
+        "622b7faf-3c5f-4b40-b451-6668f535eed5": [
+          "674f4a57-35d0-4d44-b33f-952d6e4952f9"
+        ],
+        "4261e288-da9f-43e5-93e8-b53e857b3b9c": [
+          "17ab60ae-0cf6-46a2-a766-4bc75c45fc8c"
+        ],
+        "bbc5ddc9-13e4-441b-a2af-257be7807e81": [
+          "674f4a57-35d0-4d44-b33f-952d6e4952f9"
+        ]
+      },
+      "children": {
+        "674f4a57-35d0-4d44-b33f-952d6e4952f9": [
+          "56889a7d-c038-45d6-9d76-119046204c4a",
+          "17ab60ae-0cf6-46a2-a766-4bc75c45fc8c",
+          "622b7faf-3c5f-4b40-b451-6668f535eed5",
+          "bbc5ddc9-13e4-441b-a2af-257be7807e81"
+        ],
+        "17ab60ae-0cf6-46a2-a766-4bc75c45fc8c": [
+          "4261e288-da9f-43e5-93e8-b53e857b3b9c"
+        ]
+      }
+    },
+    {
+      "parents": {
+        "ef8f461a-1fd4-40ca-8a1a-9511587347e5": [],
+        "7cf91f70-a1d1-42b0-8d39-e23bd062b764": [
+          "ef8f461a-1fd4-40ca-8a1a-9511587347e5"
+        ],
+        "9ff8f17f-058c-4847-954f-93d74ff3d469": [
+          "ef8f461a-1fd4-40ca-8a1a-9511587347e5"
+        ],
+        "6b408e7a-8d90-45ba-a950-f261d9996125": [
+          "7cf91f70-a1d1-42b0-8d39-e23bd062b764"
+        ],
+        "82ac3833-fc94-4f4a-ab37-47fbe5ed65f8": [
+          "ef8f461a-1fd4-40ca-8a1a-9511587347e5"
+        ],
+        "b2ba6a9e-38bd-42e6-8539-afe650c911dc": [
+          "674f4a57-35d0-4d44-b33f-952d6e4952f9"
+        ]
+      },
+      "children": {
+        "ef8f461a-1fd4-40ca-8a1a-9511587347e5": [
+          "7cf91f70-a1d1-42b0-8d39-e23bd062b764",
+          "9ff8f17f-058c-4847-954f-93d74ff3d469",
+          "82ac3833-fc94-4f4a-ab37-47fbe5ed65f8"
+        ],
+        "7cf91f70-a1d1-42b0-8d39-e23bd062b764": [
+          "6b408e7a-8d90-45ba-a950-f261d9996125"
+        ],
+        "674f4a57-35d0-4d44-b33f-952d6e4952f9": [
+          "b2ba6a9e-38bd-42e6-8539-afe650c911dc"
+        ]
+      }
+    }
+  ],
+  "use_dynamic_islands": true,
+  "max_islands": 5,
+  "last_spawn_iteration": -30,
+  "use_paradigm_breakthrough": true,
+  "paradigm_tracker": {
+    "window_size": 10,
+    "improvement_threshold": 0.12,
+    "max_paradigm_uses": 2,
+    "max_tried_paradigms": 10,
+    "num_paradigms_to_generate": 3,
+    "improvement_history": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "active_paradigms": [
+      {
+        "idea": "Use scipy.optimize.minimize with SLSQP to optimize all circle positions simultaneously",
+        "description": "Flatten 26 circle positions into 52 variables. Define objective function that computes optimal radii via linear programming (scipy.optimize.linprog) for given positions and returns negative sum. Use SLSQP with bounds [0.05, 0.95] for all coordinates. Initialize with multiple starting points: hexagonal pattern (5-4-5-4-5-3 rows), random perturbations, and grid-based layouts. The LP subproblem optimizes radii given fixed positions: maximize sum(r_i) subject to r_i + r_j <= d_ij for all pairs and r_i <= min(x_i, y_i, 1-x_i, 1-y_i) for boundaries.",
+        "what_to_optimize": "Primary metric: sum of radii. Focus on position optimization that allows LP to find larger radii.",
+        "cautions": "The nested optimization (outer for positions, inner LP for radii) is computationally intensive. Use coarse tolerance for LP during optimization, refine at end. SLSQP may struggle with non-smooth objective from LP - consider 'trust-constr' method as alternative. Multiple starting points essential due to non-convex landscape.",
+        "approach_type": "scipy.optimize.minimize"
+      },
+      {
+        "idea": "Explicit hexagonal pattern constructor with 5-4-5-4-5-3 row arrangement",
+        "description": "Design positions for 6 rows: row 0 has 5 circles, row 1 has 4 circles (offset by half spacing), row 2 has 5 circles, row 3 has 4 circles, row 4 has 5 circles, row 5 has 3 circles in corners/remaining space. Calculate spacing: for equal radius r, horizontal spacing = 2r, vertical spacing = sqrt(3)*r. Fit to unit square by solving for r such that 5*2r \u2248 1 and 6*(sqrt(3)*r) \u2248 1, giving r \u2248 0.09-0.1. Place circles with these spacings, offset alternating rows. Use scipy.optimize.linprog to compute optimal radii for these fixed positions. Fine-tune row positions with small optimization if needed.",
+        "what_to_optimize": "Position pattern layout that maximizes the LP-computed sum of radii.",
+        "cautions": "Must ensure all 26 circles are placed exactly. Row offsets must be exactly half the horizontal spacing for true hexagonal packing. Corner handling may need adjustment - consider placing 4 larger circles in corners first. The LP solver is critical for getting optimal radii from positions.",
+        "approach_type": "scipy.optimize.linprog"
+      },
+      {
+        "idea": "Use scipy.optimize.differential_evolution for global position optimization",
+        "description": "Use differential_evolution to optimize the 52 position variables globally. Define objective: given positions, use greedy radius assignment (for each circle i, radius = min(distance to boundary, distance to nearest neighbor/2) initially, then iteratively expand radii where possible). Set bounds [0.08, 0.92] for all coordinates. Differential evolution handles the non-convex, non-smooth objective better than gradient-based methods. Use strategy='best1bin' or 'best2bin' with popsize=15-20. After global optimization, apply scipy.optimize.linprog to compute final optimal radii for the found positions.",
+        "what_to_optimize": "Global search for position configuration that maximizes sum of radii.",
+        "cautions": "Differential evolution can be slow - use appropriate maxiter (200-500) and tol (1e-6). The bounds must be tight enough to ensure circles fit but loose enough to allow optimization. Consider using workers=-1 for parallel evaluation if available. Post-process with linprog for optimal radii.",
+        "approach_type": "scipy.optimize.differential_evolution"
+      }
+    ],
+    "paradigm_usage_counts": {
+      "0": 1
+    },
+    "current_paradigm_index": 1,
+    "tried_paradigms": [],
+    "best_score_at_paradigm_gen": 0.36423689449571406,
+    "best_score_during_paradigm": 0.36423689449571406
+  }
+}

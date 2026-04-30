@@ -1,0 +1,993 @@
+Active models:
+  1. z-ai/glm-5 (provider: openai, weight: 1.0)
+Using search algorithm: evox
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpv381_t6b.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 0.9597642169962064
+Results saved to /tmp/tmp_m4k51gv.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpv381_t6b.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 0.9597642169962064
+Results saved to /tmp/tmpjrh5zzim.py.results
+
+Evaluation: valid=True, sum_radii=0.959764, target=2.635, ratio=0.364237, time=0.17s
+
+  Live monitor: http://localhost:8766/
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp7g47xi0q.py
+Calling run_packing()...
+Error in subprocess: index 26 is out of bounds for axis 0 with size 26
+Error saved to /tmp/tmpcl1bx492.py.results
+
+Subprocess stderr: Traceback (most recent call last):
+  File "/tmp/tmpcl1bx492.py", line 23, in <module>
+    centers, radii, sum_radii = program.run_packing()
+                                ~~~~~~~~~~~~~~~~~~~^^
+  File "/tmp/tmp7g47xi0q.py", line 121, in run_packing
+    centers, radii, sum_radii = construct_packing()
+                                ~~~~~~~~~~~~~~~~~^^
+  File "/tmp/tmp7g47xi0q.py", line 61, in construct_packing
+    centers[idx] = [x, 0.50]
+    ~~~~~~~^^^^^
+IndexError: index 26 is out of bounds for axis 0 with size 26
+
+Stage 1 evaluation failed: Program execution failed: index 26 is out of bounds for axis 0 with size 26
+Traceback (most recent call last):
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/benchmarks/math/circle_packing/evaluator.py", line 286, in evaluate_stage1
+    centers, radii, sum_radii = run_with_timeout(program_path, timeout_seconds=600)
+                                ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/benchmarks/math/circle_packing/evaluator.py", line 164, in run_with_timeout
+    raise RuntimeError(f"Program execution failed: {results['error']}")
+RuntimeError: Program execution failed: index 26 is out of bounds for axis 0 with size 26
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp7xbz_4qj.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.830925640652798
+Results saved to /tmp/tmp99d93078.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp7xbz_4qj.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.830925640652798
+Results saved to /tmp/tmp34itjuid.py.results
+
+Evaluation: valid=True, sum_radii=1.830926, target=2.635, ratio=0.694848, time=0.15s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp4omigw8e.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.830925640652798
+Results saved to /tmp/tmpqmtsa0n9.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp4omigw8e.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.830925640652798
+Results saved to /tmp/tmp80jy2yw9.py.results
+
+Evaluation: valid=True, sum_radii=1.830926, target=2.635, ratio=0.694848, time=0.15s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpuex863zc.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.5230685724289754
+Results saved to /tmp/tmpifrfxeun.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpuex863zc.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.5230685724289754
+Results saved to /tmp/tmp4rl6zu2i.py.results
+
+Evaluation: valid=True, sum_radii=1.523069, target=2.635, ratio=0.578015, time=1.05s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp0nih3209.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.6733279720272727
+Results saved to /tmp/tmpdby7bzjm.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp0nih3209.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.6733279720272727
+Results saved to /tmp/tmpec7e1ubr.py.results
+
+Evaluation: valid=True, sum_radii=1.673328, target=2.635, ratio=0.635039, time=0.19s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp0xy8i2_h.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.4294420548247504
+Results saved to /tmp/tmpr8rmjgve.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp0xy8i2_h.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.4294420548247504
+Results saved to /tmp/tmp6ff1kgle.py.results
+
+Evaluation: valid=True, sum_radii=1.429442, target=2.635, ratio=0.542483, time=0.18s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpc754w6u7.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.5405270489184133
+Results saved to /tmp/tmpal2mcawm.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpc754w6u7.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.5405270489184133
+Results saved to /tmp/tmpa5gryp26.py.results
+
+Evaluation: valid=True, sum_radii=1.540527, target=2.635, ratio=0.584640, time=0.15s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmprxcroyjh.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.5359423709361109
+Results saved to /tmp/tmp54c8hzco.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmprxcroyjh.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.5359423709361109
+Results saved to /tmp/tmprerzsruf.py.results
+
+Evaluation: valid=True, sum_radii=1.535942, target=2.635, ratio=0.582900, time=0.16s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpqzsvjoz4.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.2181448286596943
+Results saved to /tmp/tmpytxbr0sk.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpqzsvjoz4.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.2181448286596943
+Results saved to /tmp/tmpvkx9l4v6.py.results
+
+Evaluation: valid=True, sum_radii=1.218145, target=2.635, ratio=0.462294, time=0.16s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmps1itl2q3.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.4429910558956536
+Results saved to /tmp/tmp7r4dtgh6.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmps1itl2q3.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.4429910558956536
+Results saved to /tmp/tmp362n1xt7.py.results
+
+Evaluation: valid=True, sum_radii=1.442991, target=2.635, ratio=0.547625, time=0.18s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpmptx1be0.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.623258487069974
+Results saved to /tmp/tmpbfjfaxxr.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpmptx1be0.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.623258487069974
+Results saved to /tmp/tmpqan5k1v7.py.results
+
+Evaluation: valid=True, sum_radii=1.623258, target=2.635, ratio=0.616037, time=0.18s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpdrzdno0v.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.6328346623719612
+Results saved to /tmp/tmp4ckxivdt.py.results
+
+Stage 1 evaluation timed out: Process timed out after 600 seconds
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpk9jyk04w.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6086313963302468
+Results saved to /tmp/tmpopu31_up.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpk9jyk04w.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6086313963302468
+Results saved to /tmp/tmpuduzwlb3.py.results
+
+Evaluation: valid=True, sum_radii=2.608631, target=2.635, ratio=0.989993, time=6.49s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpw2xqxfap.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5922886946419217
+Results saved to /tmp/tmpl_22vk5u.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpw2xqxfap.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5922886946419217
+Results saved to /tmp/tmprqkknx2m.py.results
+
+Evaluation: valid=True, sum_radii=2.592289, target=2.635, ratio=0.983791, time=2.85s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpbveivt6e.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.5353238467901726
+Results saved to /tmp/tmpgr5ex1zc.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpbveivt6e.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.5353238467901726
+Results saved to /tmp/tmpfzi7klj9.py.results
+
+Evaluation: valid=True, sum_radii=1.535324, target=2.635, ratio=0.582666, time=0.19s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpxmasmbuy.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5922886946419217
+Results saved to /tmp/tmpkajhc5sv.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpxmasmbuy.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5922886946419217
+Results saved to /tmp/tmp6yd6qrkm.py.results
+
+Evaluation: valid=True, sum_radii=2.592289, target=2.635, ratio=0.983791, time=3.26s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpkffktm0v.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5922886946419217
+Results saved to /tmp/tmpdz3md4dd.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpkffktm0v.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5922886946419217
+Results saved to /tmp/tmp_j_2yqd5.py.results
+
+Evaluation: valid=True, sum_radii=2.592289, target=2.635, ratio=0.983791, time=2.77s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp0_4polnb.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5922886946419217
+Results saved to /tmp/tmp0y14aisc.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp0_4polnb.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5922886946419217
+Results saved to /tmp/tmpj6tr3m73.py.results
+
+Evaluation: valid=True, sum_radii=2.592289, target=2.635, ratio=0.983791, time=2.71s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp0tkw1nti.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.610529791766233
+Results saved to /tmp/tmpmou9njm3.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp0tkw1nti.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.610529791766233
+Results saved to /tmp/tmppdv2rtly.py.results
+
+Evaluation: valid=True, sum_radii=2.610530, target=2.635, ratio=0.990713, time=13.35s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpg8bmo6ys.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.0190573678831294
+Results saved to /tmp/tmpp18nqhl9.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpg8bmo6ys.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.0190573678831294
+Results saved to /tmp/tmpigzet313.py.results
+
+Evaluation: valid=True, sum_radii=1.019057, target=2.635, ratio=0.386739, time=228.09s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpodf6_fhh.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6089206677176175
+Results saved to /tmp/tmpngrabrk5.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpodf6_fhh.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6089206677176175
+Results saved to /tmp/tmpic54aolw.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+
+Evaluation: valid=True, sum_radii=2.608921, target=2.635, ratio=0.990103, time=6.95s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpi1zvdeny.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.620267848471423
+Results saved to /tmp/tmp2iwf4clf.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpi1zvdeny.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.620267848471423
+Results saved to /tmp/tmpte64vgnq.py.results
+
+Evaluation: valid=True, sum_radii=2.620268, target=2.635, ratio=0.994409, time=21.59s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp8c11y7wo.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.5065920106813955
+Results saved to /tmp/tmpsy0w_cay.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp8c11y7wo.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.5065920106813955
+Results saved to /tmp/tmpg6ij05iv.py.results
+
+Evaluation: valid=True, sum_radii=1.506592, target=2.635, ratio=0.571762, time=121.44s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmplaol7x2u.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5747980710649916
+Results saved to /tmp/tmpi6bij0rm.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmplaol7x2u.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5747980710649916
+Results saved to /tmp/tmpe3_o88hr.py.results
+
+Evaluation: valid=True, sum_radii=2.574798, target=2.635, ratio=0.977153, time=3.72s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpqqe6h9od.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6062304823686833
+Results saved to /tmp/tmph_qae7xs.py.results
+
+Circle 8 at (0.8921493768447342, 0.8285099329018089) with radius 0.13203668905458912 is outside the unit square
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpo38hmsbe.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5519991113350624
+Results saved to /tmp/tmp0v3w5wlg.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:737: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(delta_x, delta_g)
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpo38hmsbe.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5519991113350624
+Results saved to /tmp/tmpp6vkay1e.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:737: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(delta_x, delta_g)
+
+Evaluation: valid=True, sum_radii=2.551999, target=2.635, ratio=0.968501, time=69.48s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpa2xkrnyu.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.604943532471934
+Results saved to /tmp/tmpgsn3bxp5.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpa2xkrnyu.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.604943532471934
+Results saved to /tmp/tmpej0mi0ui.py.results
+
+Evaluation: valid=True, sum_radii=2.604944, target=2.635, ratio=0.988593, time=18.59s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpa8ou9rx8.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.0421517275929864
+Results saved to /tmp/tmpys8ksqtx.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpa8ou9rx8.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.9537242750592243
+Results saved to /tmp/tmpkxzz7i87.py.results
+
+Evaluation: valid=True, sum_radii=1.953724, target=2.635, ratio=0.741451, time=4.17s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp9d8hn0sc.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.3718555079647707
+Results saved to /tmp/tmpshuyr_o4.py.results
+
+Stage 1 evaluation timed out: Process timed out after 600 seconds
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpp8hgbrpc.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5526983716321485
+Results saved to /tmp/tmpdt6ptgto.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpzxg702bz.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 3.7899496429110835
+Results saved to /tmp/tmpzeuhj5cn.py.results
+
+Circles 0 and 1 overlap: dist=0.14180984039630998, r1+r2=0.364123592123473
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp3jg17vlv.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5910449550552177
+Results saved to /tmp/tmp7gvc9i86.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp3jg17vlv.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5910449550552177
+Results saved to /tmp/tmpq164do87.py.results
+
+Evaluation: valid=True, sum_radii=2.591045, target=2.635, ratio=0.983319, time=59.69s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp1e_kegkm.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6139484712312306
+Results saved to /tmp/tmp9vw3cd05.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp1e_kegkm.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6139484712312306
+Results saved to /tmp/tmpzwr0nujs.py.results
+
+Evaluation: valid=True, sum_radii=2.613948, target=2.635, ratio=0.992011, time=1.34s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp71g993vd.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.606565613053629
+Results saved to /tmp/tmpep48bynr.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:737: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(delta_x, delta_g)
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp71g993vd.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.606565613053629
+Results saved to /tmp/tmpfknq_5_8.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:737: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(delta_x, delta_g)
+
+Evaluation: valid=True, sum_radii=2.606566, target=2.635, ratio=0.989209, time=86.17s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpnywcmskz.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.5967638397976556
+Results saved to /tmp/tmp1bqsjjul.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpnywcmskz.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.3469539046250896
+Results saved to /tmp/tmp0exo2b6c.py.results
+
+Evaluation: valid=True, sum_radii=1.346954, target=2.635, ratio=0.511178, time=7.34s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpa94iwi2s.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6086313962665955
+Results saved to /tmp/tmpp9bx4hzx.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpa94iwi2s.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6086313962665955
+Results saved to /tmp/tmp13d03lja.py.results
+
+Evaluation: valid=True, sum_radii=2.608631, target=2.635, ratio=0.989993, time=3.69s
+Stage 1 evaluation timed out: Process timed out after 600 seconds
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpf001s6h2.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.228740668836785
+Results saved to /tmp/tmp5rc6hten.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpf001s6h2.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.228740668836785
+Results saved to /tmp/tmpzcwkqbtk.py.results
+
+Evaluation: valid=True, sum_radii=1.228741, target=2.635, ratio=0.466315, time=248.57s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpa3u5d5df.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.021186027160843
+Results saved to /tmp/tmp2dtlmcib.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpyw6a0b5p.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.616608798817748
+Results saved to /tmp/tmpngs4yr_m.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:737: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(delta_x, delta_g)
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpa3u5d5df.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.021186027160843
+Results saved to /tmp/tmp7d4kuq6h.py.results
+
+Evaluation: valid=True, sum_radii=1.021186, target=2.635, ratio=0.387547, time=60.71s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpknt9gmno.py
+Calling run_packing()...
+Error in subprocess: index 78 is out of bounds for axis 0 with size 78
+Error saved to /tmp/tmpg7ipxoyu.py.results
+
+Subprocess stderr: Traceback (most recent call last):
+  File "/tmp/tmpg7ipxoyu.py", line 23, in <module>
+    centers, radii, sum_radii = program.run_packing()
+                                ~~~~~~~~~~~~~~~~~~~^^
+  File "/tmp/tmpknt9gmno.py", line 217, in run_packing
+    centers, radii, sum_radii = construct_packing()
+                                ~~~~~~~~~~~~~~~~~^^
+  File "/tmp/tmpknt9gmno.py", line 150, in construct_packing
+    x0 = make_valid(init_func())
+                    ~~~~~~~~~^^
+  File "/tmp/tmpknt9gmno.py", line 118, in corner_init
+    x0[2*n + idx] = 0.07
+    ~~^^^^^^^^^^^
+IndexError: index 78 is out of bounds for axis 0 with size 78
+
+Stage 1 evaluation failed: Program execution failed: index 78 is out of bounds for axis 0 with size 78
+Traceback (most recent call last):
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/benchmarks/math/circle_packing/evaluator.py", line 286, in evaluate_stage1
+    centers, radii, sum_radii = run_with_timeout(program_path, timeout_seconds=600)
+                                ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/benchmarks/math/circle_packing/evaluator.py", line 164, in run_with_timeout
+    raise RuntimeError(f"Program execution failed: {results['error']}")
+RuntimeError: Program execution failed: index 78 is out of bounds for axis 0 with size 78
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpl1u1_vdb.py
+Calling run_packing()...
+Error in subprocess: construct_packing.<locals>.local_minimizer() takes 1 positional argument but 2 were given
+Error saved to /tmp/tmp0tg52iny.py.results
+
+Subprocess stderr: Traceback (most recent call last):
+  File "/tmp/tmp0tg52iny.py", line 23, in <module>
+    centers, radii, sum_radii = program.run_packing()
+                                ~~~~~~~~~~~~~~~~~~~^^
+  File "/tmp/tmpl1u1_vdb.py", line 216, in run_packing
+    centers, radii, sum_radii = construct_packing()
+                                ~~~~~~~~~~~~~~~~~^^
+  File "/tmp/tmpl1u1_vdb.py", line 169, in construct_packing
+    result = basinhopping(
+        objective, x0, minimizer_kwargs=minimizer_kwargs,
+        niter=50, stepsize=0.05, seed=42,
+        take_step=None, accept_test=None
+    )
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/_lib/_util.py", line 365, in wrapper
+    return fun(*args, **kwargs)
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_basinhopping.py", line 703, in basinhopping
+    bh = BasinHoppingRunner(x0, wrapped_minimizer, take_step_wrapped,
+                            accept_tests, disp=disp)
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_basinhopping.py", line 79, in __init__
+    minres = minimizer(self.x)
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_basinhopping.py", line 299, in __call__
+    return self.minimizer(self.func, x0, **self.kwargs)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_minimize.py", line 695, in minimize
+    return method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,
+                  bounds=bounds, constraints=constraints,
+                  callback=callback, **options)
+TypeError: construct_packing.<locals>.local_minimizer() takes 1 positional argument but 2 were given
+
+Stage 1 evaluation failed: Program execution failed: construct_packing.<locals>.local_minimizer() takes 1 positional argument but 2 were given
+Traceback (most recent call last):
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/benchmarks/math/circle_packing/evaluator.py", line 286, in evaluate_stage1
+    centers, radii, sum_radii = run_with_timeout(program_path, timeout_seconds=600)
+                                ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/benchmarks/math/circle_packing/evaluator.py", line 164, in run_with_timeout
+    raise RuntimeError(f"Program execution failed: {results['error']}")
+RuntimeError: Program execution failed: construct_packing.<locals>.local_minimizer() takes 1 positional argument but 2 were given
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpbm8m8dlk.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6092963917179026
+Results saved to /tmp/tmp5qv6tkiw.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpbm8m8dlk.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6092963917179026
+Results saved to /tmp/tmpyctn2jn0.py.results
+
+Evaluation: valid=True, sum_radii=2.609296, target=2.635, ratio=0.990245, time=156.31s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp0ezlbh5b.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.58999599965272
+Results saved to /tmp/tmpvuu3dk28.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentialevolution.py:533: UserWarning: differential evolution didn't find a solution satisfying the constraints, attempting to polish from the least infeasible solution
+  ret = solver.solve()
+/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:737: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(delta_x, delta_g)
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp0ezlbh5b.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.58999599965272
+Results saved to /tmp/tmp6v4swtaz.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentialevolution.py:533: UserWarning: differential evolution didn't find a solution satisfying the constraints, attempting to polish from the least infeasible solution
+  ret = solver.solve()
+/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:737: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(delta_x, delta_g)
+
+Evaluation: valid=True, sum_radii=2.589996, target=2.635, ratio=0.982921, time=87.26s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpg8k0wmji.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6234095148050054
+Results saved to /tmp/tmp24l34ob3.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpg8k0wmji.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.625894569545598
+Results saved to /tmp/tmpe_qy2td1.py.results
+
+Evaluation: valid=True, sum_radii=2.625895, target=2.635, ratio=0.996544, time=5.20s
+Stage 1 evaluation timed out: Process timed out after 600 seconds
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp53_anbkd.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.601949583489176
+Results saved to /tmp/tmpof8v383w.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp53_anbkd.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.601949583489176
+Results saved to /tmp/tmpkl1vh0rj.py.results
+
+Evaluation: valid=True, sum_radii=2.601950, target=2.635, ratio=0.987457, time=76.27s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpeypdn5xc.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.956143367883737
+Results saved to /tmp/tmpghsm5o0c.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:737: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(delta_x, delta_g)
+
+Circles 0 and 5 overlap: dist=0.2234279874171459, r1+r2=0.3131258427089414
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpuw9itl26.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.62693018166344
+Results saved to /tmp/tmph0yd5r_2.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpuw9itl26.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.62693018166344
+Results saved to /tmp/tmpblcd0yhe.py.results
+
+Evaluation: valid=True, sum_radii=2.626930, target=2.635, ratio=0.996937, time=10.02s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpa_m_l4kq.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.2500838466155781
+Results saved to /tmp/tmplz34ubtd.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpa_m_l4kq.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.2500838466155781
+Results saved to /tmp/tmp64nj__uz.py.results
+
+Evaluation: valid=True, sum_radii=1.250084, target=2.635, ratio=0.474415, time=49.56s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmphsfngaks.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.618425447494459
+Results saved to /tmp/tmpnbq9sq7w.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmphsfngaks.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6184254474943547
+Results saved to /tmp/tmpthfaojd0.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+
+Evaluation: valid=True, sum_radii=2.618425, target=2.635, ratio=0.993710, time=50.64s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpxi0dnqm5.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.352016781946592
+Results saved to /tmp/tmp9b9r4fdo.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp14de3pb2.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.862101043769772
+Results saved to /tmp/tmpls41hxef.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp14de3pb2.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.862101043769772
+Results saved to /tmp/tmpu_5qltbh.py.results
+
+Evaluation: valid=True, sum_radii=1.862101, target=2.635, ratio=0.706680, time=285.20s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpxc_llvs6.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6155459794843856
+Results saved to /tmp/tmp735rb6la.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpxc_llvs6.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6155459794843856
+Results saved to /tmp/tmp3v_qrz75.py.results
+
+Evaluation: valid=True, sum_radii=2.615546, target=2.635, ratio=0.992617, time=9.67s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpqs1ecc5q.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.7006544907020074
+Results saved to /tmp/tmptuy7stpl.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpqs1ecc5q.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.7006544907020074
+Results saved to /tmp/tmpe9ndav3z.py.results
+
+Evaluation: valid=True, sum_radii=1.700654, target=2.635, ratio=0.645410, time=264.60s
+Stage 1 evaluation timed out: Process timed out after 600 seconds
+Stage 1 evaluation timed out: Process timed out after 600 seconds
+Stage 1 evaluation timed out: Process timed out after 600 seconds
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpi1gj6kz4.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6176201239092296
+Results saved to /tmp/tmpn2t_l1ke.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpi1gj6kz4.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6176201239092296
+Results saved to /tmp/tmp9tw4b4s1.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+
+Evaluation: valid=True, sum_radii=2.617620, target=2.635, ratio=0.993404, time=207.74s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpg88ww5f1.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6127631355062255
+Results saved to /tmp/tmpzd4am_ny.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpg88ww5f1.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6127631355062255
+Results saved to /tmp/tmperxxagni.py.results
+
+Evaluation: valid=True, sum_radii=2.612763, target=2.635, ratio=0.991561, time=4.00s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpt2n1yxkv.py
+Calling run_packing()...
+Error in subprocess: dual_annealing() got an unexpected keyword argument 'local_search_options'
+Error saved to /tmp/tmpit7_kloz.py.results
+
+Subprocess stderr: Traceback (most recent call last):
+  File "/tmp/tmpit7_kloz.py", line 23, in <module>
+    centers, radii, sum_radii = program.run_packing()
+                                ~~~~~~~~~~~~~~~~~~~^^
+  File "/tmp/tmpt2n1yxkv.py", line 89, in run_packing
+    centers, radii, sum_radii = construct_packing()
+                                ~~~~~~~~~~~~~~~~~^^
+  File "/tmp/tmpt2n1yxkv.py", line 57, in construct_packing
+    result = dual_annealing(
+        objective,
+    ...<5 lines>...
+        restart_temp_ratio=0.1
+    )
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/_lib/_util.py", line 365, in wrapper
+    return fun(*args, **kwargs)
+TypeError: dual_annealing() got an unexpected keyword argument 'local_search_options'
+
+Stage 1 evaluation failed: Program execution failed: dual_annealing() got an unexpected keyword argument 'local_search_options'
+Traceback (most recent call last):
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/benchmarks/math/circle_packing/evaluator.py", line 286, in evaluate_stage1
+    centers, radii, sum_radii = run_with_timeout(program_path, timeout_seconds=600)
+                                ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/benchmarks/math/circle_packing/evaluator.py", line 164, in run_with_timeout
+    raise RuntimeError(f"Program execution failed: {results['error']}")
+RuntimeError: Program execution failed: dual_annealing() got an unexpected keyword argument 'local_search_options'
+
+Stage 1 evaluation timed out: Process timed out after 600 seconds
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpwclux64l.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.24272449108065
+Results saved to /tmp/tmp8u9l0vlz.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpwclux64l.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.24272449108065
+Results saved to /tmp/tmpu73vadcw.py.results
+
+Evaluation: valid=True, sum_radii=2.242724, target=2.635, ratio=0.851129, time=89.82s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp2jvw_8vn.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.6882810047923589
+Results saved to /tmp/tmpwv4emeh1.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp2jvw_8vn.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.6882810047923589
+Results saved to /tmp/tmpnphw2ekw.py.results
+
+Evaluation: valid=True, sum_radii=1.688281, target=2.635, ratio=0.640714, time=33.97s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp4zz5zujp.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 14.94
+Results saved to /tmp/tmpr7j62ccu.py.results
+
+Circle 0 at (0.99, 0.99) with radius 0.99 is outside the unit square
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpwrkuaeey.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.2021979489017922
+Results saved to /tmp/tmpg94mgbbv.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpwrkuaeey.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 1.2021979489017922
+Results saved to /tmp/tmpn6kscl0y.py.results
+
+Evaluation: valid=True, sum_radii=1.202198, target=2.635, ratio=0.456242, time=64.63s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpuer1d99a.py
+Calling run_packing()...
+Error in subprocess: `x0` is infeasible with respect to some inequality constraint with `keep_feasible` set to True.
+Error saved to /tmp/tmp4cb570hn.py.results
+
+Subprocess stderr: Traceback (most recent call last):
+  File "/tmp/tmp4cb570hn.py", line 23, in <module>
+    centers, radii, sum_radii = program.run_packing()
+                                ~~~~~~~~~~~~~~~~~~~^^
+  File "/tmp/tmpuer1d99a.py", line 191, in run_packing
+    centers, radii, sum_radii = construct_packing()
+                                ~~~~~~~~~~~~~~~~~^^
+  File "/tmp/tmpuer1d99a.py", line 21, in construct_packing
+    refined_solution = trust_constr_refine(n, best_solution)
+  File "/tmp/tmpuer1d99a.py", line 122, in trust_constr_refine
+    result = minimize(
+        objective, x_init,
+    ...<3 lines>...
+        options={'maxiter': 500, 'gtol': 1e-8}
+    )
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_minimize.py", line 799, in minimize
+    res = _minimize_trustregion_constr(fun, x0, args, jac, hess, hessp,
+                                       bounds, constraints,
+                                       callback=callback, **options)
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_trustregion_constr/minimize_trustregion_constr.py", line 364, in _minimize_trustregion_constr
+    PreparedConstraint(c, x0, sparse_jacobian, finite_diff_bounds)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_constraints.py", line 383, in __init__
+    raise ValueError("`x0` is infeasible with respect to some "
+                     "inequality constraint with `keep_feasible` "
+                     "set to True.")
+ValueError: `x0` is infeasible with respect to some inequality constraint with `keep_feasible` set to True.
+
+Stage 1 evaluation failed: Program execution failed: `x0` is infeasible with respect to some inequality constraint with `keep_feasible` set to True.
+Traceback (most recent call last):
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/benchmarks/math/circle_packing/evaluator.py", line 286, in evaluate_stage1
+    centers, radii, sum_radii = run_with_timeout(program_path, timeout_seconds=600)
+                                ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data1/zhangyansen/code/IDEA/skydiscover-xx/benchmarks/math/circle_packing/evaluator.py", line 164, in run_with_timeout
+    raise RuntimeError(f"Program execution failed: {results['error']}")
+RuntimeError: Program execution failed: `x0` is infeasible with respect to some inequality constraint with `keep_feasible` set to True.
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp1u1gpa3q.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5024793477952727
+Results saved to /tmp/tmp5g1u40vv.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp1u1gpa3q.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.5024793477952727
+Results saved to /tmp/tmpjsyk9ubv.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+
+Evaluation: valid=True, sum_radii=2.502479, target=2.635, ratio=0.949708, time=11.72s
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmpoz2v1eup.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.6003126377850974
+Results saved to /tmp/tmpx_cd00b3.py.results
+
+Subprocess stderr: /data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentialevolution.py:533: UserWarning: differential evolution didn't find a solution satisfying the constraints, attempting to polish from the least infeasible solution
+  ret = solver.solve()
+/data1/zhangyansen/code/IDEA/skydiscover-xx/.venv/lib/python3.13/site-packages/scipy/optimize/_differentiable_functions.py:385: UserWarning: delta_grad == 0.0. Check if the approximated function is linear. If the function is linear better results can be obtained by defining the Hessian as zero instead of using quasi-Newton approximations.
+  self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp95mo3k59.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.62693018166344
+Results saved to /tmp/tmp0_8zzqk1.py.results
+
+Subprocess stdout: Running in subprocess, Python version: 3.13.12 (main, Mar 20 2026, 00:34:08) [Clang 22.1.1 ]
+Program path: /tmp/tmp95mo3k59.py
+Calling run_packing()...
+run_packing() returned successfully: sum_radii = 2.62693018166344
+Results saved to /tmp/tmpp6aj2ky4.py.results
+
+Evaluation: valid=True, sum_radii=2.626930, target=2.635, ratio=0.996937, time=9.40s
+
+Discovery complete!
+Best program metrics:
+  validity: 1.0000
+  sum_radii: 2.6269
+  target_ratio: 0.9969
+  combined_score: 0.9969
+  eval_time: 10.0185
+  test_validity: 1.0000
+  test_sum_radii: 2.6269
+  test_target_ratio: 0.9969
+  test_combined_score: 0.9969
+  test_eval_time: 9.4006
+
+Latest checkpoint: outputs/evox/circle_packing_0429_0008/checkpoints/checkpoint_100
+To resume: --checkpoint outputs/evox/circle_packing_0429_0008/checkpoints/checkpoint_100

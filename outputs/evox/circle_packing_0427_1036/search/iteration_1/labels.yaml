@@ -1,0 +1,71 @@
+iteration: 1
+diverge_label_length: 2596
+refine_label_length: 2240
+
+diverge_label: |
+  ## IMPORTANT: YOU MUST FOLLOW THE FOLLOWING IN YOUR GENERATION, OTHERWISE THE SOLUTION WILL BE REJECTED.
+  
+  ### Goal
+  You MUST USE a FUNDAMENTALLY DIFFERENT APPROACH to the following code, NOT JUST parameter tweaks or local changes.
+  This may mean using different solver, function, or library, a different algorithm, or a different method entirely; or adding new components that have never been used before.
+  You can replace partial or the entire code if needed (i.e., rewrite a simpler solution from scratch), or build upon / complement it.
+  Think through what is needed to achieve a BREAKTHROUGH SCORE.
+  
+  **Tools Available:**
+  You have access to a list of libraries. Use these tools to your advantage.
+  - Choose library functions appropriate to the problem's structure and constraints.
+  - Feel free to break from the existing code entirely — focus on correct library usage for the problem, not on preserving the current code's structure.
+  - **Prioritize libraries and functions not already used by the parent program.** Adding new components or changing how existing ones are combined is fine, but prefer approaches that introduce something the parent has never tried.
+  
+  **CRITICAL: IF A LIBRARY EXISTS FOR AN ALGORITHM, USE IT. DO NOT REIMPLEMENT MANUALLY. SEE THE EXAMPLES BELOW FOR RELEVANT LIBRARIES.**
+  
+  ### Examples
+  EXAMPLES OF DIFFERENT approaches (NOT LIMITED TO, PROPOSE YOUR OWN):
+  - **Libraries / solvers for refinement**: scipy.optimize: minimize(method='SLSQP'), minimize(method='COBYLA'), minimize(method='trust-constr') ↔ scipy.optimize: differential_evolution, basinhopping, dual_annealing
+  - **Geometric construction patterns**: Hexagonal lattice packing (triangular grid) ↔ Square lattice packing ↔ Mixed hexagonal interior with edge-adapted boundary circles ↔ Layer/shell-based concentric arrangements
+  - **Explicit placement strategies**: Fixed equal radii in regular patterns ↔ Variable radii adapting to local gaps ↔ Corner-first placement (largest circles in corners) ↔ Edge-aligned placement with interior fill
+  - **Multi-phase pipeline**: Geometric pattern initialization → local optimization refinement ↔ Multiple pattern candidates → select best valid packing ↔ Greedy sequential placement with local adjustment
+  - **Constraint handling**: Penalty-based objective (overlap + boundary violations) ↔ Projection/repair (move circles into valid region) ↔ Barrier methods for feasibility
+  
+  ### Output
+  Your solution MUST still be VALID / CORRECT for the same problem. A broken "creative" solution is worthless.
+  
+  Format:
+  1. APPROACH: Describe your different approach.
+  2. CODE: Implementation.
+
+refine_label: |
+  ## IMPORTANT: YOU MUST FOLLOW THE FOLLOWING IN YOUR GENERATION, OTHERWISE THE SOLUTION WILL BE REJECTED.
+  
+  ### Goal
+  You should keep the same fundamental approach and algorithm structure.
+  DO NOT switch to a different problem formulation.
+  Focus on REFINING / EXPLOITING the current approach: better inputs, additional polish, etc.
+  Think through what is needed to SQUEEZE the last few percent of performance.
+  Use sufficient computational budget for refinement.
+  
+  **Tools Available:**
+  You have access to a list of libraries. Use these tools to your advantage.
+  - Choose library functions appropriate to the problem's structure and constraints.
+  - Feel free to break from the existing code entirely — focus on correct library usage for the problem, not on preserving the current code's structure.
+  
+  **CRITICAL: IF A LIBRARY EXISTS FOR AN ALGORITHM, USE IT. DO NOT REIMPLEMENT MANUALLY. SEE THE EXAMPLES BELOW FOR RELEVANT LIBRARIES.**
+  
+  ### Examples
+  ```
+  
+  REFINEMENT strategies examples:
+  - **Libraries / tools for refinement**: scipy.optimize: minimize(method='SLSQP'), minimize(method='COBYLA'), minimize(method='trust-constr') ↔ scipy.optimize: differential_evolution, basinhopping, dual_annealing ↔ scipy.optimize: minimize(method='Powell'), minimize(method='Nelder-Mead') for unconstrained polish
+  - **Computational budget**: Increase max iterations/function evaluations ↔ Larger population sizes for evolutionary methods ↔ More basinhopping iterations ↔ Longer annealing schedules
+  - **Solver tolerances / convergence**: Tighter ftol and xtol thresholds ↔ Stricter constraint tolerance ↔ Smaller step sizes for derivative-free methods
+  - **Initial solution quality**: Refine geometric pattern parameters (spacing, offsets) ↔ Try multiple lattice orientations/rotations ↔ Better corner and edge placements before interior fill
+  - **Post-processing / polish**: Local refinement from constructor output ↔ Sequential radius expansion (grow circles until contact) ↔ Contact-graph-based adjustment ↔ Alternate position/radii optimization phases
+  
+  ```
+  
+  ### Output
+  Your solution MUST still be VALID / CORRECT for the same problem. A broken solution is worthless.
+  
+  Format:
+  1. REFINEMENT: Describe what you are refining.
+  2. CODE: Implementation with refinement.

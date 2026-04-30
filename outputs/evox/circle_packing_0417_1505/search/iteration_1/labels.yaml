@@ -1,0 +1,68 @@
+iteration: 1
+diverge_label_length: 2733
+refine_label_length: 2268
+
+diverge_label: |
+  ## IMPORTANT: YOU MUST FOLLOW THE FOLLOWING IN YOUR GENERATION, OTHERWISE THE SOLUTION WILL BE REJECTED.
+  
+  ### Goal
+  You MUST USE a FUNDAMENTALLY DIFFERENT APPROACH to the following code, NOT JUST parameter tweaks or local changes.
+  This may mean using different solver, function, or library, a different algorithm, or a different method entirely; or adding new components that have never been used before.
+  You can replace partial or the entire code if needed (i.e., rewrite a simpler solution from scratch), or build upon / complement it.
+  Think through what is needed to achieve a BREAKTHROUGH SCORE.
+  
+  **Tools Available:**
+  You have access to a list of libraries. Use these tools to your advantage.
+  - Choose library functions appropriate to the problem's structure and constraints.
+  - Feel free to break from the existing code entirely — focus on correct library usage for the problem, not on preserving the current code's structure.
+  - **Prioritize libraries and functions not already used by the parent program.** Adding new components or changing how existing ones are combined is fine, but prefer approaches that introduce something the parent has never tried.
+  
+  **CRITICAL: IF A LIBRARY EXISTS FOR AN ALGORITHM, USE IT. DO NOT REIMPLEMENT MANUALLY. SEE THE EXAMPLES BELOW FOR RELEVANT LIBRARIES.**
+  
+  ### Examples
+  EXAMPLES OF DIFFERENT approaches (NOT LIMITED TO, PROPOSE YOUR OWN):
+  - **Libraries / solvers**: scipy.optimize: minimize(method='SLSQP'), minimize(method='trust-constr'), differential_evolution, basinhopping → use for local refinement of constructed solutions.
+  - **Geometric patterns / layouts**: Hexagonal lattice packing ↔ Square grid packing ↔ Staggered row patterns ↔ Concentric shell arrangements ↔ Spiral-inward placement.
+  - **Radius assignment strategies**: Equal radii for all circles ↔ Graduated radii by layer (larger at corners/edges) ↔ Optimized heterogeneous radii ↔ Two-tier size distribution (large + small circles).
+  - **Boundary handling**: Corner-first placement (large circles in corners) ↔ Edge-following patterns ↔ Central core with edge adaptation ↔ Symmetric quarter-mirrored designs.
+  - **Construction paradigm**: Direct coordinate specification ↔ Template-based with parameters ↔ Hybrid: explicit pattern + local optimization refinement ↔ Multi-start: try multiple patterns, keep best.
+  - **Input availability**: The constructor function has full control over 26 circle positions and radii; scipy.optimize functions can refine positions/radii as 78 continuous variables with nonlinear constraints.
+  
+  ### Output
+  Your solution MUST still be VALID / CORRECT for the same problem. A broken "creative" solution is worthless.
+  
+  Format:
+  1. APPROACH: Describe your different approach.
+  2. CODE: Implementation.
+
+refine_label: |
+  ## IMPORTANT: YOU MUST FOLLOW THE FOLLOWING IN YOUR GENERATION, OTHERWISE THE SOLUTION WILL BE REJECTED.
+  
+  ### Goal
+  You should keep the same fundamental approach and algorithm structure.
+  DO NOT switch to a different problem formulation.
+  Focus on REFINING / EXPLOITING the current approach: better inputs, additional polish, etc.
+  Think through what is needed to SQUEEZE the last few percent of performance.
+  Use sufficient computational budget for refinement.
+  
+  **Tools Available:**
+  You have access to a list of libraries. Use these tools to your advantage.
+  - Choose library functions appropriate to the problem's structure and constraints.
+  - Feel free to break from the existing code entirely — focus on correct library usage for the problem, not on preserving the current code's structure.
+  
+  **CRITICAL: IF A LIBRARY EXISTS FOR AN ALGORITHM, USE IT. DO NOT REIMPLEMENT MANUALLY. SEE THE EXAMPLES BELOW FOR RELEVANT LIBRARIES.**
+  
+  ### Examples
+  EXAMPLES OF REFINEMENT strategies (NOT LIMITED TO, PROPOSE YOUR OWN):
+  - **Libraries / tools for refinement**: scipy.optimize: minimize(method='SLSQP'), minimize(method='trust-constr'), differential_evolution ↔ scipy.optimize.minimize with constraints for local polishing of positions and radii.
+  - **Computational budget**: Increase optimization iterations ↔ Increase function evaluations ↔ Use multi-start from perturbed initial positions ↔ Run longer differential_evolution with larger population.
+  - **Solver tolerances / convergence**: Tighten ftol and gtol tolerances ↔ Reduce step size in local search ↔ Increase maxiter for SLSQP/trust-constr ↔ Use tighter constraint tolerance (1e-9).
+  - **Post-processing / polish**: Local gradient-based refinement after construction ↔ Perturb-and-reoptimize cycles ↔ Constraint satisfaction pass to fix minor overlaps ↔ Radius inflation pass (grow circles until touching).
+  - **Initial solution quality**: Start from known good patterns (hexagonal, staggered) ↔ Use previous best solution as seed ↔ Refine positions before refining radii ↔ Use analytical solutions for sub-regions.
+  
+  ### Output
+  Your solution MUST still be VALID / CORRECT for the same problem. A broken solution is worthless.
+  
+  Format:
+  1. REFINEMENT: Describe what you are refining.
+  2. CODE: Implementation with refinement.

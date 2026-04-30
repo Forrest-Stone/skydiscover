@@ -1,0 +1,7 @@
+One or more budget plots were not generated.
+Common reasons:
+- matplotlib is unavailable in this runtime
+- no valid iteration trace rows were found
+Expected budget artifacts:
+- iterations.jsonl
+- summary.json
