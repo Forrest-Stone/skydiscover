@@ -1,12 +1,12 @@
-# CostAda / BCHD (`skydiscover.search.costada`)
+# CostAda (`skydiscover.search.costada`)
 
-This directory contains the implementation of **Budget-Calibrated Hierarchical Discovery (BCHD)** as `search.type: costada`.
+This directory contains the implementation of **CostAda** as `search.type: costada`.
 
-CostAda is parallel to other search methods (`adaevolve`, `evox`) and reuses the shared search scaffold + shared budget subsystem.
+CostAda is parallel to the other search methods and reuses the shared search scaffold + shared budget subsystem.
 
 ---
 
-## 1) What CostAda changes vs AdaEvolve
+## 1) What CostAda Controls
 
 CostAda keeps:
 
@@ -123,9 +123,9 @@ State containers:
 
 ### `database.py`
 
-Minimal extension over `AdaEvolveDatabase` for CostAda sampling knobs:
+Database layer for CostAda sampling knobs:
 
-- explicit exploration vs exploitation sampling
+- intensity-conditioned local-mode sampling
 - context program count caps/floors by prompt budget mode
 - feedback budget hints by prompt budget mode
 

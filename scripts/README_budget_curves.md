@@ -137,7 +137,7 @@ If matplotlib is unavailable, it prints:
 - `global_gain_normalized_vs_cost.png`
 - `utility_vs_iteration.png`
 - `utility_vs_cost.png`
-- `tier_usage_vs_iteration.png` (prompt budget mode usage for CostAda)
+- `tier_usage_vs_iteration.png` (local sampling mode usage: exploration/exploitation/balanced)
 - `meta_trigger_vs_iteration.png`
 - `frontier_selection_counts.png`
 - `frontier_selection_share.png`
@@ -150,7 +150,7 @@ If matplotlib is unavailable, it prints:
 - `budget_adherence.png`
 - `performance_vs_avg_cost.png`
 - `cost_composition.png`
-- `tier_usage.png` (prompt budget mode usage for CostAda)
+- `tier_usage.png` (local sampling mode usage: exploration/exploitation/balanced)
 - `meta_trigger_rate.png`
 - `speedup_vs_baseline.png`
 

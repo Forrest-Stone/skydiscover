@@ -1,4 +1,4 @@
-"""CostAda database: AdaEvolve archive with CostAda sampling controls."""
+"""CostAda database: archive sampling with budget-aware prompt controls."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class CostAdaDatabase(AdaEvolveDatabase):
-    """AdaEvolve DB with H-intensity local sampling and prompt budget gates."""
+    """Archive DB with H-intensity local sampling and prompt budget gates."""
 
     def __init__(self, name: str, config: DatabaseConfig):
         super().__init__(name, config)
