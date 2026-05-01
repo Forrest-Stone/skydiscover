@@ -1,0 +1,341 @@
+{
+  "num_islands": 2,
+  "current_island": 0,
+  "iteration_count": 19,
+  "global_best_score": 0.9932909610109321,
+  "decay": 0.9,
+  "intensity_min": 0.15,
+  "intensity_max": 0.5,
+  "migration_interval": 15,
+  "diversity_strategy_type": "code",
+  "use_unified_archive": true,
+  "use_adaptive_search": true,
+  "use_ucb_selection": true,
+  "fixed_intensity": 0.4,
+  "adapter": {
+    "states": [
+      {
+        "accumulated_signal": 0.13563279325992095,
+        "best_score": 0.9932909610109321,
+        "improvement_count": 4,
+        "total_evaluations": 13,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      },
+      {
+        "accumulated_signal": 0.16186010547344648,
+        "best_score": 0.9932909610109321,
+        "improvement_count": 2,
+        "total_evaluations": 11,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      }
+    ],
+    "dimension_visits": [
+      13,
+      11
+    ],
+    "dimension_rewards": [
+      0.7312648829662296,
+      0.5288429427596861
+    ],
+    "decayed_visits": [
+      7.458134171671,
+      6.861894039100001
+    ],
+    "global_best_score": 0.9932909610109321,
+    "ucb_exploration": 1.41,
+    "min_visits": 3,
+    "decay": 0.9,
+    "epsilon": 1e-08
+  },
+  "island_config_names": [
+    "balanced",
+    "balanced"
+  ],
+  "islands": [
+    [
+      "d68fd911-4238-4c1f-8e90-ae96713760cd",
+      "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd",
+      "537a576e-84c4-41a7-a646-68f07b769e89",
+      "b5cf3927-9db3-4a17-a1c9-943a3febd859",
+      "8de00cda-da4a-4f7a-a4ec-a052ea3f162e",
+      "e33e4582-01e9-4354-b666-3935d516e41f",
+      "0473b3ed-1a47-4933-bafe-e16554ed30f2",
+      "dd92264f-2b61-4694-bcc6-9424c7669699",
+      "107a3c90-626f-4acc-9ff6-b59cc5836f5f",
+      "7cd76847-a412-466a-ba85-9eecc91eb917",
+      "cf3014d4-27ed-44a2-94b7-f09c1f4548ac",
+      "fc0ef75f-20a0-4e3d-aacf-7412af99b882",
+      "e5b5073d-4f03-4bba-be92-1f9dac00ce43"
+    ],
+    [
+      "a3c6b5e4-7fc3-4bdb-b446-85d98c841024",
+      "cc83758d-c55a-4a17-9e97-85392da9c61b",
+      "34ede835-79bf-433d-be7e-4507f45e2603",
+      "9a4c23ba-16b6-4348-a775-29c961eb4620",
+      "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6",
+      "d6466242-14d6-4e4c-8933-992f5576b8e3",
+      "ed87ef81-28df-4c6a-b628-d5340343f13b",
+      "3a3315c0-44e0-4972-90cf-911993b36c33",
+      "9dc8527a-a38e-4df1-938f-af35c9b5b297",
+      "eec6ff37-65f6-4368-a300-725108a211d0",
+      "e85dbf61-4164-4afb-85f3-c55f7f53bcaa",
+      "241655e0-6c1a-4918-b998-f9e2f7aa45e1",
+      "bcd54d5f-fa0f-4ddf-8b70-60db1acbe733",
+      "f1a5aff1-4e1a-4745-b5c4-58276370498a",
+      "0cd01962-a9ab-4b34-939f-d986d9fe1866",
+      "45c23f68-4c56-4332-96e2-703bc1fea271"
+    ]
+  ],
+  "archive_genealogies": [
+    {
+      "parents": {
+        "d68fd911-4238-4c1f-8e90-ae96713760cd": [],
+        "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd": [
+          "d68fd911-4238-4c1f-8e90-ae96713760cd"
+        ],
+        "537a576e-84c4-41a7-a646-68f07b769e89": [
+          "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd"
+        ],
+        "b5cf3927-9db3-4a17-a1c9-943a3febd859": [
+          "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd"
+        ],
+        "8de00cda-da4a-4f7a-a4ec-a052ea3f162e": [
+          "537a576e-84c4-41a7-a646-68f07b769e89"
+        ],
+        "e33e4582-01e9-4354-b666-3935d516e41f": [
+          "537a576e-84c4-41a7-a646-68f07b769e89"
+        ],
+        "0473b3ed-1a47-4933-bafe-e16554ed30f2": [
+          "e33e4582-01e9-4354-b666-3935d516e41f"
+        ],
+        "dd92264f-2b61-4694-bcc6-9424c7669699": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "107a3c90-626f-4acc-9ff6-b59cc5836f5f": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "7cd76847-a412-466a-ba85-9eecc91eb917": [
+          "cc83758d-c55a-4a17-9e97-85392da9c61b"
+        ],
+        "cf3014d4-27ed-44a2-94b7-f09c1f4548ac": [
+          "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6"
+        ],
+        "fc0ef75f-20a0-4e3d-aacf-7412af99b882": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "e5b5073d-4f03-4bba-be92-1f9dac00ce43": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ]
+      },
+      "children": {
+        "d68fd911-4238-4c1f-8e90-ae96713760cd": [
+          "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd"
+        ],
+        "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd": [
+          "537a576e-84c4-41a7-a646-68f07b769e89",
+          "b5cf3927-9db3-4a17-a1c9-943a3febd859"
+        ],
+        "537a576e-84c4-41a7-a646-68f07b769e89": [
+          "8de00cda-da4a-4f7a-a4ec-a052ea3f162e",
+          "e33e4582-01e9-4354-b666-3935d516e41f"
+        ],
+        "e33e4582-01e9-4354-b666-3935d516e41f": [
+          "0473b3ed-1a47-4933-bafe-e16554ed30f2"
+        ],
+        "ed87ef81-28df-4c6a-b628-d5340343f13b": [
+          "dd92264f-2b61-4694-bcc6-9424c7669699",
+          "107a3c90-626f-4acc-9ff6-b59cc5836f5f",
+          "fc0ef75f-20a0-4e3d-aacf-7412af99b882",
+          "e5b5073d-4f03-4bba-be92-1f9dac00ce43"
+        ],
+        "cc83758d-c55a-4a17-9e97-85392da9c61b": [
+          "7cd76847-a412-466a-ba85-9eecc91eb917"
+        ],
+        "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6": [
+          "cf3014d4-27ed-44a2-94b7-f09c1f4548ac"
+        ]
+      }
+    },
+    {
+      "parents": {
+        "a3c6b5e4-7fc3-4bdb-b446-85d98c841024": [],
+        "cc83758d-c55a-4a17-9e97-85392da9c61b": [
+          "a3c6b5e4-7fc3-4bdb-b446-85d98c841024"
+        ],
+        "34ede835-79bf-433d-be7e-4507f45e2603": [
+          "cc83758d-c55a-4a17-9e97-85392da9c61b"
+        ],
+        "9a4c23ba-16b6-4348-a775-29c961eb4620": [
+          "cc83758d-c55a-4a17-9e97-85392da9c61b"
+        ],
+        "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6": [
+          "a3c6b5e4-7fc3-4bdb-b446-85d98c841024"
+        ],
+        "d6466242-14d6-4e4c-8933-992f5576b8e3": [
+          "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6"
+        ],
+        "ed87ef81-28df-4c6a-b628-d5340343f13b": [
+          "537a576e-84c4-41a7-a646-68f07b769e89"
+        ],
+        "3a3315c0-44e0-4972-90cf-911993b36c33": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "9dc8527a-a38e-4df1-938f-af35c9b5b297": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "eec6ff37-65f6-4368-a300-725108a211d0": [
+          "537a576e-84c4-41a7-a646-68f07b769e89"
+        ],
+        "e85dbf61-4164-4afb-85f3-c55f7f53bcaa": [
+          "b5cf3927-9db3-4a17-a1c9-943a3febd859"
+        ],
+        "241655e0-6c1a-4918-b998-f9e2f7aa45e1": [
+          "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd"
+        ],
+        "bcd54d5f-fa0f-4ddf-8b70-60db1acbe733": [
+          "8de00cda-da4a-4f7a-a4ec-a052ea3f162e"
+        ],
+        "f1a5aff1-4e1a-4745-b5c4-58276370498a": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "0cd01962-a9ab-4b34-939f-d986d9fe1866": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "45c23f68-4c56-4332-96e2-703bc1fea271": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ]
+      },
+      "children": {
+        "a3c6b5e4-7fc3-4bdb-b446-85d98c841024": [
+          "cc83758d-c55a-4a17-9e97-85392da9c61b",
+          "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6"
+        ],
+        "cc83758d-c55a-4a17-9e97-85392da9c61b": [
+          "34ede835-79bf-433d-be7e-4507f45e2603",
+          "9a4c23ba-16b6-4348-a775-29c961eb4620"
+        ],
+        "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6": [
+          "d6466242-14d6-4e4c-8933-992f5576b8e3"
+        ],
+        "537a576e-84c4-41a7-a646-68f07b769e89": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b",
+          "eec6ff37-65f6-4368-a300-725108a211d0"
+        ],
+        "ed87ef81-28df-4c6a-b628-d5340343f13b": [
+          "3a3315c0-44e0-4972-90cf-911993b36c33",
+          "9dc8527a-a38e-4df1-938f-af35c9b5b297",
+          "f1a5aff1-4e1a-4745-b5c4-58276370498a",
+          "0cd01962-a9ab-4b34-939f-d986d9fe1866",
+          "45c23f68-4c56-4332-96e2-703bc1fea271"
+        ],
+        "b5cf3927-9db3-4a17-a1c9-943a3febd859": [
+          "e85dbf61-4164-4afb-85f3-c55f7f53bcaa"
+        ],
+        "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd": [
+          "241655e0-6c1a-4918-b998-f9e2f7aa45e1"
+        ],
+        "8de00cda-da4a-4f7a-a4ec-a052ea3f162e": [
+          "bcd54d5f-fa0f-4ddf-8b70-60db1acbe733"
+        ]
+      }
+    }
+  ],
+  "use_dynamic_islands": true,
+  "max_islands": 5,
+  "last_spawn_iteration": -30,
+  "use_paradigm_breakthrough": true,
+  "paradigm_tracker": {
+    "window_size": 10,
+    "improvement_threshold": 0.12,
+    "max_paradigm_uses": 2,
+    "max_tried_paradigms": 10,
+    "num_paradigms_to_generate": 3,
+    "improvement_history": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "active_paradigms": [
+      {
+        "idea": "Use scipy.optimize.minimize with trust-constr method and squared constraint formulation",
+        "description": "Replace SLSQP with trust-constr, which handles nonlinear constraints more robustly. Reformulate non-overlap constraints to avoid sqrt: use (x_i - x_j)^2 + (y_i - y_j)^2 >= (r_i + r_j)^2 instead of sqrt(dist) >= r_i + r_j. This eliminates numerical instability near constraint boundaries. trust-constr uses a trust-region approach that is more stable for highly nonlinear problems. Keep the multiple initialization strategy but add more diverse starting points including ones based on the known 2.635 solution structure.",
+        "what_to_optimize": "sum of radii through better convergence to global optimum",
+        "cautions": "trust-constr may be slower than SLSQP; set maxiter=3000 and gtol/xtol appropriately. The squared constraint formulation changes the constraint landscape but is mathematically equivalent for feasible points.",
+        "approach_type": "scipy.optimize.minimize"
+      },
+      {
+        "idea": "Use scipy.optimize.differential_evolution for global optimization with NonlinearConstraint",
+        "description": "Differential evolution is a population-based global optimizer that can escape local optima where SLSQP gets trapped. Use scipy.optimize.differential_evolution with bounds for all 78 variables. Define non-overlap and boundary constraints using NonlinearConstraint objects. Set population size to 15-20 (roughly 10-15x dimension) and use strategy 'best1bin' or 'randtobest1bin'. The evolutionary approach explores multiple regions simultaneously and is less sensitive to initialization. Set maxiter=2000, tol=1e-7, mutation=(0.5, 1.0), recombination=0.7.",
+        "what_to_optimize": "sum of radii through global exploration of search space",
+        "cautions": "differential_evolution is slower than local methods; use polish=True to refine with L-BFGS-B after finding good region. Ensure constraints are properly defined as NonlinearConstraint with correct bounds (lb=0 for inequality constraints).",
+        "approach_type": "scipy.optimize.differential_evolution"
+      },
+      {
+        "idea": "Use scipy.optimize.shgo (Simplicial Homology Global Optimization) for deterministic global optimization",
+        "description": "SHGO is a deterministic global optimizer that uses simplicial homology to systematically explore the search space. Unlike stochastic methods, it provides theoretical guarantees about finding the global optimum given sufficient iterations. Use scipy.optimize.shgo with the same constraint formulation as minimize. Set sampling_method='sobol' for better coverage, n=78 variables, iters=5-10 for iterations, and appropriate minimizer_kwargs. SHGO builds a simplicial complex to identify basins of attraction and can find global optima that local methods miss.",
+        "what_to_optimize": "sum of radii through systematic global search with optimality guarantees",
+        "cautions": "SHGO can be computationally expensive for high-dimensional problems (78 variables). Set minimizer_kwargs to use a fast local method like SLSQP for the local searches. May need to reduce iters if timeout is a concern.",
+        "approach_type": "scipy.optimize.shgo"
+      }
+    ],
+    "paradigm_usage_counts": {
+      "0": 1,
+      "1": 1,
+      "2": 1
+    },
+    "current_paradigm_index": 0,
+    "tried_paradigms": [
+      {
+        "idea": "Use scipy.optimize.minimize with SLSQP for joint position and radius optimization",
+        "description": "Formulate the problem as maximizing sum of radii subject to non-overlap and boundary constraints. Variables: 52 position coordinates + 26 radii = 78 variables. Constraints: 325 non-overlap constraints (pairwise distances >= r_i + r_j) and 104 boundary constraints (r_i <= x_i <= 1-r_i, r_i <= y_i <= 1-r_i). Use SLSQP method with multiple random initializations including hexagonal pattern, corner-heavy, and random starts. The objective is simply -sum(radii) for maximization. This directly optimizes all variables jointly rather than fixing positions.",
+        "what_to_optimize": "sum of radii (primary metric)",
+        "cautions": "Must use constraint tolerances carefully (1e-6 for feasibility). Start with diverse initializations including structured patterns. May need 1000+ iterations for convergence. Scale variables to similar magnitudes. Use bounds to keep radii positive and positions in valid range.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.5963024618908521,
+        "ending_score": 0.9932909610109321,
+        "score_improvement": 0.39698849912007994,
+        "outcome": "SUCCESS"
+      },
+      {
+        "idea": "Use scipy.spatial.Voronoi to compute maximum inscribed circles from optimized positions",
+        "description": "Place circle centers, compute Voronoi diagram, then set each radius to the minimum distance from center to its Voronoi cell boundary (including square edges). This guarantees non-overlap since Voronoi cells partition space. Optimize only positions (52 variables) using scipy.optimize.minimize with differential evolution or L-BFGS-B. The radius computation becomes automatic via Voronoi - no explicit overlap constraints needed. Start with hexagonal pattern positions and optimize for sum of inscribed radii.",
+        "what_to_optimize": "sum of radii computed from Voronoi cells",
+        "cautions": "Handle boundary cells specially - their Voronoi cells extend outside the square. Clip cells to unit square before computing inscribed radii. Some Voronoi cells may be unbounded; treat distance to square edge as constraint. Use scipy.spatial.Voronoi with incremental=False for stability.",
+        "approach_type": "scipy.spatial.Voronoi",
+        "uses": 2,
+        "starting_score": 0.5963024618908521,
+        "ending_score": 0.9932909610109321,
+        "score_improvement": 0.39698849912007994,
+        "outcome": "SUCCESS"
+      },
+      {
+        "idea": "Use scipy.optimize.differential_evolution for global optimization of parametric circle patterns",
+        "description": "Define a parametric pattern with few parameters (e.g., row spacing, offset, corner circle positions) and let differential_evolution find optimal values. Parameters could include: base radius r, row spacing factor, horizontal offset per row, and special corner radii. This reduces 78 variables to ~10-15 parameters while maintaining flexibility. The pattern generator creates all 26 positions from parameters, computes max valid radii, and returns sum. Differential evolution handles the non-convex optimization landscape well.",
+        "what_to_optimize": "pattern parameters that maximize sum of radii",
+        "cautions": "Parameter bounds must allow valid packings. The pattern generator must handle edge cases (negative positions, overlaps). Use polish=True for local refinement. Population size should be 10-15x number of parameters. Set maxiter high enough (500+) for convergence.",
+        "approach_type": "scipy.optimize.differential_evolution",
+        "uses": 2,
+        "starting_score": 0.5963024618908521,
+        "ending_score": 0.9932909610109321,
+        "score_improvement": 0.39698849912007994,
+        "outcome": "SUCCESS"
+      }
+    ],
+    "best_score_at_paradigm_gen": 0.9932909610109321,
+    "best_score_during_paradigm": 0.9932909610109321
+  }
+}

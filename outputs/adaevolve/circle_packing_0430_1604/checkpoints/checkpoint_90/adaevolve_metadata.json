@@ -1,0 +1,484 @@
+{
+  "num_islands": 2,
+  "current_island": 1,
+  "iteration_count": 89,
+  "global_best_score": 0.9932909610109321,
+  "decay": 0.9,
+  "intensity_min": 0.15,
+  "intensity_max": 0.5,
+  "migration_interval": 15,
+  "diversity_strategy_type": "code",
+  "use_unified_archive": true,
+  "use_adaptive_search": true,
+  "use_ucb_selection": true,
+  "fixed_intensity": 0.4,
+  "adapter": {
+    "states": [
+      {
+        "accumulated_signal": 0.13563279325992095,
+        "best_score": 0.9932909610109321,
+        "improvement_count": 4,
+        "total_evaluations": 34,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      },
+      {
+        "accumulated_signal": 0.16186010547344648,
+        "best_score": 0.9932909610109321,
+        "improvement_count": 2,
+        "total_evaluations": 33,
+        "decay": 0.9,
+        "epsilon": 1e-08,
+        "intensity_min": 0.15,
+        "intensity_max": 0.5
+      }
+    ],
+    "dimension_visits": [
+      34,
+      33
+    ],
+    "dimension_rewards": [
+      0.08001426428153854,
+      0.052078914185489246
+    ],
+    "decayed_visits": [
+      9.72187161055631,
+      9.690968456173676
+    ],
+    "global_best_score": 0.9932909610109321,
+    "ucb_exploration": 1.41,
+    "min_visits": 3,
+    "decay": 0.9,
+    "epsilon": 1e-08
+  },
+  "island_config_names": [
+    "balanced",
+    "balanced"
+  ],
+  "islands": [
+    [
+      "d68fd911-4238-4c1f-8e90-ae96713760cd",
+      "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd",
+      "537a576e-84c4-41a7-a646-68f07b769e89",
+      "8de00cda-da4a-4f7a-a4ec-a052ea3f162e",
+      "e33e4582-01e9-4354-b666-3935d516e41f",
+      "0473b3ed-1a47-4933-bafe-e16554ed30f2",
+      "107a3c90-626f-4acc-9ff6-b59cc5836f5f",
+      "7cd76847-a412-466a-ba85-9eecc91eb917",
+      "cf3014d4-27ed-44a2-94b7-f09c1f4548ac",
+      "fc0ef75f-20a0-4e3d-aacf-7412af99b882",
+      "e5b5073d-4f03-4bba-be92-1f9dac00ce43",
+      "45280f33-f178-41d3-a82f-994e3a034fd2",
+      "c944a124-33f6-46fc-9818-6a89a5d4a107",
+      "c712cb7c-fba6-4204-99a3-815afbcd7322",
+      "0d9a7b89-f50f-4e64-b5ba-2e29c456b1f9",
+      "910baa0d-5e59-4d88-946a-fa9c72f88cb1",
+      "29813c78-24d4-417a-88bd-321c761093a3",
+      "7f4ead1d-4c19-4753-9a27-b9da8256cd55",
+      "e9bc6d0f-5ac5-49f5-8149-75dd17226035",
+      "613612a7-080d-4d40-b292-48c02beacbc9"
+    ],
+    [
+      "a3c6b5e4-7fc3-4bdb-b446-85d98c841024",
+      "cc83758d-c55a-4a17-9e97-85392da9c61b",
+      "34ede835-79bf-433d-be7e-4507f45e2603",
+      "9a4c23ba-16b6-4348-a775-29c961eb4620",
+      "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6",
+      "d6466242-14d6-4e4c-8933-992f5576b8e3",
+      "ed87ef81-28df-4c6a-b628-d5340343f13b",
+      "eec6ff37-65f6-4368-a300-725108a211d0",
+      "e85dbf61-4164-4afb-85f3-c55f7f53bcaa",
+      "241655e0-6c1a-4918-b998-f9e2f7aa45e1",
+      "f1a5aff1-4e1a-4745-b5c4-58276370498a",
+      "1926d394-5614-45ac-aa9b-53465ac7b551",
+      "e8a50b07-d09b-4db2-96c0-f3eb421cadf9",
+      "96ce1e7f-e02d-472a-8a1b-7563ed464f42",
+      "2ff5344a-a13e-485a-b86e-181d9e2e3e6e",
+      "1ba9cee9-4724-477b-b61c-7ebb8ee0bbe7",
+      "163598e2-b78e-4dc3-bdb1-15d4c04d15ec",
+      "84c64164-d393-49bf-b137-7cc4e5bcaec2",
+      "9a8677ec-d63f-42c1-b676-37cb15f6ed52",
+      "e7b05cd1-a3f0-4110-89a4-94c3fe81b669"
+    ]
+  ],
+  "archive_genealogies": [
+    {
+      "parents": {
+        "d68fd911-4238-4c1f-8e90-ae96713760cd": [],
+        "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd": [
+          "d68fd911-4238-4c1f-8e90-ae96713760cd"
+        ],
+        "537a576e-84c4-41a7-a646-68f07b769e89": [
+          "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd"
+        ],
+        "8de00cda-da4a-4f7a-a4ec-a052ea3f162e": [
+          "537a576e-84c4-41a7-a646-68f07b769e89"
+        ],
+        "e33e4582-01e9-4354-b666-3935d516e41f": [
+          "537a576e-84c4-41a7-a646-68f07b769e89"
+        ],
+        "0473b3ed-1a47-4933-bafe-e16554ed30f2": [
+          "e33e4582-01e9-4354-b666-3935d516e41f"
+        ],
+        "107a3c90-626f-4acc-9ff6-b59cc5836f5f": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "7cd76847-a412-466a-ba85-9eecc91eb917": [
+          "cc83758d-c55a-4a17-9e97-85392da9c61b"
+        ],
+        "cf3014d4-27ed-44a2-94b7-f09c1f4548ac": [
+          "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6"
+        ],
+        "fc0ef75f-20a0-4e3d-aacf-7412af99b882": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "e5b5073d-4f03-4bba-be92-1f9dac00ce43": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "45280f33-f178-41d3-a82f-994e3a034fd2": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "c944a124-33f6-46fc-9818-6a89a5d4a107": [
+          "1926d394-5614-45ac-aa9b-53465ac7b551"
+        ],
+        "c712cb7c-fba6-4204-99a3-815afbcd7322": [
+          "7a3288b6-d190-4c18-a34a-7fc40bf899b2"
+        ],
+        "0d9a7b89-f50f-4e64-b5ba-2e29c456b1f9": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "910baa0d-5e59-4d88-946a-fa9c72f88cb1": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "29813c78-24d4-417a-88bd-321c761093a3": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "7f4ead1d-4c19-4753-9a27-b9da8256cd55": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "e9bc6d0f-5ac5-49f5-8149-75dd17226035": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "613612a7-080d-4d40-b292-48c02beacbc9": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ]
+      },
+      "children": {
+        "d68fd911-4238-4c1f-8e90-ae96713760cd": [
+          "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd"
+        ],
+        "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd": [
+          "537a576e-84c4-41a7-a646-68f07b769e89"
+        ],
+        "537a576e-84c4-41a7-a646-68f07b769e89": [
+          "8de00cda-da4a-4f7a-a4ec-a052ea3f162e",
+          "e33e4582-01e9-4354-b666-3935d516e41f"
+        ],
+        "e33e4582-01e9-4354-b666-3935d516e41f": [
+          "0473b3ed-1a47-4933-bafe-e16554ed30f2"
+        ],
+        "ed87ef81-28df-4c6a-b628-d5340343f13b": [
+          "107a3c90-626f-4acc-9ff6-b59cc5836f5f",
+          "fc0ef75f-20a0-4e3d-aacf-7412af99b882",
+          "e5b5073d-4f03-4bba-be92-1f9dac00ce43",
+          "45280f33-f178-41d3-a82f-994e3a034fd2",
+          "0d9a7b89-f50f-4e64-b5ba-2e29c456b1f9",
+          "910baa0d-5e59-4d88-946a-fa9c72f88cb1",
+          "29813c78-24d4-417a-88bd-321c761093a3",
+          "7f4ead1d-4c19-4753-9a27-b9da8256cd55",
+          "e9bc6d0f-5ac5-49f5-8149-75dd17226035",
+          "613612a7-080d-4d40-b292-48c02beacbc9"
+        ],
+        "cc83758d-c55a-4a17-9e97-85392da9c61b": [
+          "7cd76847-a412-466a-ba85-9eecc91eb917"
+        ],
+        "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6": [
+          "cf3014d4-27ed-44a2-94b7-f09c1f4548ac"
+        ],
+        "1926d394-5614-45ac-aa9b-53465ac7b551": [
+          "c944a124-33f6-46fc-9818-6a89a5d4a107"
+        ],
+        "7a3288b6-d190-4c18-a34a-7fc40bf899b2": [
+          "c712cb7c-fba6-4204-99a3-815afbcd7322"
+        ]
+      }
+    },
+    {
+      "parents": {
+        "a3c6b5e4-7fc3-4bdb-b446-85d98c841024": [],
+        "cc83758d-c55a-4a17-9e97-85392da9c61b": [
+          "a3c6b5e4-7fc3-4bdb-b446-85d98c841024"
+        ],
+        "34ede835-79bf-433d-be7e-4507f45e2603": [
+          "cc83758d-c55a-4a17-9e97-85392da9c61b"
+        ],
+        "9a4c23ba-16b6-4348-a775-29c961eb4620": [
+          "cc83758d-c55a-4a17-9e97-85392da9c61b"
+        ],
+        "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6": [
+          "a3c6b5e4-7fc3-4bdb-b446-85d98c841024"
+        ],
+        "d6466242-14d6-4e4c-8933-992f5576b8e3": [
+          "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6"
+        ],
+        "ed87ef81-28df-4c6a-b628-d5340343f13b": [
+          "537a576e-84c4-41a7-a646-68f07b769e89"
+        ],
+        "eec6ff37-65f6-4368-a300-725108a211d0": [
+          "537a576e-84c4-41a7-a646-68f07b769e89"
+        ],
+        "e85dbf61-4164-4afb-85f3-c55f7f53bcaa": [
+          "b5cf3927-9db3-4a17-a1c9-943a3febd859"
+        ],
+        "241655e0-6c1a-4918-b998-f9e2f7aa45e1": [
+          "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd"
+        ],
+        "f1a5aff1-4e1a-4745-b5c4-58276370498a": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "1926d394-5614-45ac-aa9b-53465ac7b551": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "e8a50b07-d09b-4db2-96c0-f3eb421cadf9": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "96ce1e7f-e02d-472a-8a1b-7563ed464f42": [
+          "e5b5073d-4f03-4bba-be92-1f9dac00ce43"
+        ],
+        "2ff5344a-a13e-485a-b86e-181d9e2e3e6e": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "1ba9cee9-4724-477b-b61c-7ebb8ee0bbe7": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "163598e2-b78e-4dc3-bdb1-15d4c04d15ec": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "84c64164-d393-49bf-b137-7cc4e5bcaec2": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "9a8677ec-d63f-42c1-b676-37cb15f6ed52": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ],
+        "e7b05cd1-a3f0-4110-89a4-94c3fe81b669": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b"
+        ]
+      },
+      "children": {
+        "a3c6b5e4-7fc3-4bdb-b446-85d98c841024": [
+          "cc83758d-c55a-4a17-9e97-85392da9c61b",
+          "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6"
+        ],
+        "cc83758d-c55a-4a17-9e97-85392da9c61b": [
+          "34ede835-79bf-433d-be7e-4507f45e2603",
+          "9a4c23ba-16b6-4348-a775-29c961eb4620"
+        ],
+        "ae1e3004-bf27-44f2-9fe3-0a57a2266cb6": [
+          "d6466242-14d6-4e4c-8933-992f5576b8e3"
+        ],
+        "537a576e-84c4-41a7-a646-68f07b769e89": [
+          "ed87ef81-28df-4c6a-b628-d5340343f13b",
+          "eec6ff37-65f6-4368-a300-725108a211d0"
+        ],
+        "ed87ef81-28df-4c6a-b628-d5340343f13b": [
+          "f1a5aff1-4e1a-4745-b5c4-58276370498a",
+          "1926d394-5614-45ac-aa9b-53465ac7b551",
+          "e8a50b07-d09b-4db2-96c0-f3eb421cadf9",
+          "2ff5344a-a13e-485a-b86e-181d9e2e3e6e",
+          "1ba9cee9-4724-477b-b61c-7ebb8ee0bbe7",
+          "163598e2-b78e-4dc3-bdb1-15d4c04d15ec",
+          "84c64164-d393-49bf-b137-7cc4e5bcaec2",
+          "9a8677ec-d63f-42c1-b676-37cb15f6ed52",
+          "e7b05cd1-a3f0-4110-89a4-94c3fe81b669"
+        ],
+        "b5cf3927-9db3-4a17-a1c9-943a3febd859": [
+          "e85dbf61-4164-4afb-85f3-c55f7f53bcaa"
+        ],
+        "cf0c7379-ecd5-4e0e-a529-07b40a67c2cd": [
+          "241655e0-6c1a-4918-b998-f9e2f7aa45e1"
+        ],
+        "e5b5073d-4f03-4bba-be92-1f9dac00ce43": [
+          "96ce1e7f-e02d-472a-8a1b-7563ed464f42"
+        ]
+      }
+    }
+  ],
+  "use_dynamic_islands": true,
+  "max_islands": 5,
+  "last_spawn_iteration": -30,
+  "use_paradigm_breakthrough": true,
+  "paradigm_tracker": {
+    "window_size": 10,
+    "improvement_threshold": 0.12,
+    "max_paradigm_uses": 2,
+    "max_tried_paradigms": 10,
+    "num_paradigms_to_generate": 3,
+    "improvement_history": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "active_paradigms": [
+      {
+        "idea": "Use scipy.optimize.least_squares with soft constraint penalty formulation",
+        "description": "Formulate the problem as nonlinear least squares instead of constrained optimization. Create a residual vector containing: (1) soft constraint violations for non-overlap: max(0, ri + rj - dist_ij) for each pair, (2) boundary violations: max(0, ri - xi), max(0, xi + ri - 1), etc., (3) objective term: (target_sum - sum(ri)) * large_weight. Use least_squares with bounds and trust-region reflective algorithm. This handles constraints differently than SLSQP and may escape local optima through the different optimization landscape.",
+        "what_to_optimize": "sum_radii through residual minimization with embedded objective",
+        "cautions": "Weight the objective term appropriately - too small and constraints dominate, too large and constraints are ignored. Use bounds=(0,1) for positions and (1e-6, 0.5) for radii. Try multiple initializations.",
+        "approach_type": "scipy.optimize.least_squares"
+      },
+      {
+        "idea": "Use scipy.spatial.Voronoi with Lloyd's algorithm for centroidal Voronoi tessellation initialization",
+        "description": "Before optimization, use Voronoi-based relaxation to find well-distributed initial positions. Start with initial points, compute Voronoi diagram using scipy.spatial.Voronoi, move each point to the centroid of its Voronoi cell (clipped to unit square), repeat until convergence. This produces a centroidal Voronoi tessellation with evenly spaced points. Then compute initial radii as half the minimum distance to Voronoi edges or neighbors. Use this refined initialization for the existing SLSQP optimizer. The better initial positions may lead to a better local optimum.",
+        "what_to_optimize": "initial positions for subsequent optimization",
+        "cautions": "Handle boundary Voronoi cells carefully - clip to unit square. The number of Lloyd iterations should be limited (50-100) to avoid over-relaxation. Ensure points don't converge to degenerate configurations.",
+        "approach_type": "scipy.spatial.Voronoi"
+      },
+      {
+        "idea": "Use scipy.optimize.dual_annealing for global optimization with embedded local search",
+        "description": "Apply dual annealing (simulated annealing variant) which combines global exploration with local refinement. Define objective as negative sum of radii with penalty for constraint violations. dual_annealing can handle bounds natively and uses a local minimizer (L-BFGS-B by default) for refinement. Set maxiter to 500-1000, initial_temp high enough for exploration, and visit parameter around 2-3. This global optimizer can escape local optima that trap SLSQP. The key is that dual_annealing explores the solution space globally before converging.",
+        "what_to_optimize": "sum_radii through global search",
+        "cautions": "dual_annealing is slower than local methods - balance maxiter with evaluation timeout. Use bounds for all 78 variables. The objective must include penalty terms for constraint violations since dual_annealing only supports bounds, not constraints. Try multiple random seeds.",
+        "approach_type": "scipy.optimize.dual_annealing"
+      }
+    ],
+    "paradigm_usage_counts": {
+      "0": 2,
+      "1": 2,
+      "2": 2
+    },
+    "current_paradigm_index": 2,
+    "tried_paradigms": [
+      {
+        "idea": "Use scipy.optimize.minimize with COBYLA method",
+        "description": "Apply COBYLA (Constrained Optimization BY Linear Approximation), a derivative-free method that constructs linear approximations of objective and constraints. This fundamentally different algorithm doesn't rely on gradient information, which can be advantageous when the optimization landscape has sharp corners or when gradient-based methods cycle. COBYLA constructs a simplex and uses linear interpolation. For 78 variables, convert bounds to inequality constraints since COBYLA doesn't natively support bounds. The derivative-free nature may find solutions in regions where gradient information misleads SLSQP.",
+        "what_to_optimize": "sum_radii - derivative-free approach may find different local optima unreachable by gradient methods",
+        "cautions": "COBYLA can be slow for 78 variables. Use rhobeg=0.1, rhoend=1e-8, maxiter=5000. Convert bounds to constraints: x-r>=0, x+r<=1, y-r>=0, y+r<=1. May need more function evaluations. Less precise than gradient methods but can escape gradient-induced traps.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.9932909610109321,
+        "ending_score": 0.9932909610109321,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.minimize with COBYLA method for derivative-free constrained optimization",
+        "description": "COBYLA (Constrained Optimization BY Linear Approximation) constructs linear approximations of both objective and constraints within a trust region. Unlike SLSQP which relies on gradient information and can get stuck in local minima where gradients vanish, COBYLA is derivative-free and explores the feasible region differently. It maintains a simplex of n+1 points and iteratively improves by adjusting the simplex vertices. Use the same constraint definitions as current approach but with method='COBYLA', maxiter=10000, and rhobeg=0.05 (smaller initial trust region for better local exploration). The derivative-free nature might find solutions in regions where gradient-based methods fail.",
+        "what_to_optimize": "primary evaluator score (sum of radii) by finding different local optima than SLSQP",
+        "cautions": "COBYLA may require more function evaluations than SLSQP. Use the same initializations (hexagonal, corner, dense, random) for fair comparison. The rhobeg parameter affects convergence - smaller values give better local exploration but may need more iterations. Ensure maxiter is high enough (10000+) for convergence.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.9932909610109321,
+        "ending_score": 0.9932909610109321,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use penalty-based L-BFGS-B method with adaptive penalty weights for bound-constrained optimization",
+        "description": "Reformulate the constrained problem as unconstrained by adding quadratic penalty terms: minimize -sum(radii) + penalty_weight * (sum of squared overlap violations + sum of squared boundary violations). L-BFGS-B efficiently handles the position bounds [0,1] and radius bounds [1e-8, 0.5] natively. This is fundamentally different from SLSQP because constraints become soft penalties in the objective, creating a smoother optimization landscape. Start with penalty_weight=1000, run optimization, check constraint violations, and increase penalty if needed (e.g., multiply by 10 and re-run from current solution). The iterative penalty increase ensures constraint satisfaction while allowing better exploration of the objective.",
+        "what_to_optimize": "primary evaluator score through smooth penalty-based objective function",
+        "cautions": "Penalty weight must be tuned - start moderate (1000) and increase if constraints violated. Final solution may slightly violate constraints - need post-validation. The penalty function should use squared violations for smoothness: sum(max(0, r_i + r_j - dist_ij)^2) for overlaps. Use multiple initializations as penalty landscape may have different local minima than constrained formulation.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.9932909610109321,
+        "ending_score": 0.9932909610109321,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use Powell method with augmented penalty formulation for derivative-free exploration",
+        "description": "Powell's method is a derivative-free conjugate direction method that performs sequential line searches along conjugate directions. It doesn't require gradient information and can efficiently explore non-smooth regions of the parameter space. Combine with penalty formulation: minimize -sum(radii) + penalty * (overlap_violations + boundary_violations). Since Powell doesn't support bounds natively, include all constraints in the penalty function. The method constructs search directions by minimizing along each coordinate and then along conjugate directions, which can find solutions in regions where gradient-based methods fail due to numerical issues. Use maxiter=10000 and ftol=1e-12 for thorough exploration.",
+        "what_to_optimize": "primary evaluator score through derivative-free directional search without gradient information",
+        "cautions": "Powell method requires all constraints to be in the penalty function since it doesn't support bounds. May need more iterations than gradient methods. Use penalty_weight starting at 1000. The method can converge slowly near optima, so use tight tolerance (ftol=1e-12). Multiple random initializations are essential since Powell can get stuck in local minima. Consider using disp=True to monitor convergence.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.9932909610109321,
+        "ending_score": 0.9932909610109321,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.differential_evolution for global optimization",
+        "description": "Apply differential_evolution to find global optimum for the 78-variable circle packing problem. Define bounds for all positions (0,1) and radii (small positive, 0.5). Use NonlinearConstraint for non-overlap and boundary constraints. This population-based evolutionary approach can escape local optima better than gradient-based SLSQP. Use strategy='best1bin', popsize=20, maxiter=2000, tol=1e-10, seed=42. After differential_evolution finds a good region, optionally refine with SLSQP for final polish.",
+        "what_to_optimize": "primary evaluator score (sum of radii)",
+        "cautions": "differential_evolution is slower than SLSQP but explores globally. Use tight bounds and proper constraint tolerances (1e-6). The constraint function must be vectorized or handle single points. Consider polynomial mutation/recombination parameters for better convergence.",
+        "approach_type": "scipy.optimize.differential_evolution",
+        "uses": 2,
+        "starting_score": 0.9932909610109321,
+        "ending_score": 0.9932909610109321,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use penalty method with scipy.optimize.minimize BFGS",
+        "description": "Convert the constrained optimization to unconstrained by adding penalty terms for constraint violations. Define penalty(v) = sum of squared non-overlap violations + sum of squared boundary violations. Minimize -sum(radii) + penalty_weight * penalty(v). Use increasing penalty schedule [100, 1000, 10000, 100000]. For each penalty level, run BFGS optimization starting from previous solution. This handles constraints through objective modification, which is fundamentally different from SLSQP's explicit constraint handling.",
+        "what_to_optimize": "primary evaluator score (sum of radii)",
+        "cautions": "Penalty weights need careful tuning - too low causes constraint violations, too high causes numerical conditioning issues. Use warm-starting between penalty levels. BFGS doesn't handle bounds natively, so add boundary violations to penalty term. Consider L-BFGS-B for better handling.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.9932909610109321,
+        "ending_score": 0.9932909610109321,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use coordinate descent with sequential single-circle optimization",
+        "description": "Optimize circles one at a time instead of jointly. Start with initial configuration. For each circle i, optimize (x_i, y_i, r_i) while keeping all other circles fixed, using SLSQP with constraints from fixed circles. Order circles strategically: largest radii first (corners), then edge circles, then interior. Iterate through all circles multiple times until convergence. This reduces problem dimension from 78 to 3 at each step, allowing deeper optimization per circle.",
+        "what_to_optimize": "primary evaluator score (sum of radii)",
+        "cautions": "Order of circles significantly impacts results. Consider sorting by initial radius estimate. Multiple passes (10-20) needed for convergence. Track improvement per pass and stop when improvement < 1e-8. Initialize with good starting configuration from hexagonal or known patterns.",
+        "approach_type": "scipy.optimize.minimize",
+        "uses": 2,
+        "starting_score": 0.9932909610109321,
+        "ending_score": 0.9932909610109321,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.optimize.differential_evolution with adaptive penalty formulation",
+        "description": "Apply differential evolution (DE) which is a global optimizer that doesn't get trapped in local optima like SLSQP. Encode the problem as: minimize -sum(radii) subject to constraints handled via adaptive penalty functions. DE naturally handles the non-convex landscape of circle packing. Use strategy='best1bin' with population size 15-20, and set bounds for positions [0,1] and radii [0.001, 0.5]. The penalty function increases weight on constraint violations over generations, guiding the search toward feasible regions while maximizing the objective. This global approach can find better packings that gradient-based methods miss.",
+        "what_to_optimize": "sum of radii while satisfying all non-overlap and boundary constraints",
+        "cautions": "DE is slower than SLSQP; use maxiter=500-1000 with appropriate mutation/recombination parameters (mutation=0.5-0.8, recombination=0.7). Ensure penalty weights are scaled properly to balance feasibility vs objective. Polish with L-BFGS-B at the end.",
+        "approach_type": "scipy.optimize.differential_evolution",
+        "uses": 2,
+        "starting_score": 0.9932909610109321,
+        "ending_score": 0.9932909610109321,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use scipy.spatial.Voronoi diagram with Lloyd's algorithm for iterative radius maximization",
+        "description": "Place circles using a Voronoi-based approach: start with initial positions, compute Voronoi diagram, then iteratively adjust each circle's position to the centroid of its Voronoi cell while maximizing its radius to touch nearest neighbors/boundaries. This geometric approach naturally avoids overlap and maximizes space utilization. For boundary circles, clip Voronoi cells to the unit square. The algorithm alternates between: (1) computing Voronoi diagram of current centers, (2) moving each center to its cell centroid, (3) computing maximum radius for each circle as min distance to neighbors and boundaries. This is fundamentally different from gradient-based optimization.",
+        "what_to_optimize": "maximize each circle's radius based on available Voronoi cell space",
+        "cautions": "Handle degenerate Voronoi cells (unbounded regions) by clipping to unit square. Use scipy.spatial.Voronoi with qhull options. May need 50-100 iterations for convergence. Edge circles need special handling for boundary distances.",
+        "approach_type": "scipy.spatial.Voronoi",
+        "uses": 2,
+        "starting_score": 0.9932909610109321,
+        "ending_score": 0.9932909610109321,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      },
+      {
+        "idea": "Use simulated annealing with scipy.optimize.dual_annealing for global exploration",
+        "description": "Apply dual annealing which combines simulated annealing with local search. This hybrid approach explores the solution space globally (avoiding local optima that trap SLSQP) then refines with local optimization. Encode variables as [x0...x25, y0...y25, r0...r25] with bounds. Use penalty function for constraints: penalty = sum(max(0, r_i+r_j - dist_ij)^2) + sum(boundary_violations)^2. Dual annealing parameters: maxiter=1000, initial_temp=5230, restart_temp_ratio=2e-5. The algorithm's ability to accept worse solutions temporarily allows escaping local optima that gradient methods cannot.",
+        "what_to_optimize": "maximize sum of radii through global search with constraint satisfaction via penalties",
+        "cautions": "Set no_local_search=False to enable local search refinement. Use appropriate penalty scaling factor (try 100-1000). The minimizer_kwargs should specify bounds and optionally a local minimizer like L-BFGS-B. Results may vary between runs; consider multiple runs with different seeds.",
+        "approach_type": "scipy.optimize.dual_annealing",
+        "uses": 2,
+        "starting_score": 0.9932909610109321,
+        "ending_score": 0.9932909610109321,
+        "score_improvement": 0.0,
+        "outcome": "FAILED"
+      }
+    ],
+    "best_score_at_paradigm_gen": 0.9932909610109321,
+    "best_score_during_paradigm": 0.9932909610109321
+  }
+}
